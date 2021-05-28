@@ -1,9 +1,10 @@
 
-;LAST UPDATE: 20.10.2012 savelij
+;LAST UPDATE: 28.05.2021 savelij
 	
 		include ../../../pentevo/rom/macros.a80
+		include vers.a80
 
-ADRWORK		EQU 0X6000
+ADRWORK		EQU 0x8000
 UNPACKER	EQU 0X5B00
 
 		ORG ADRWORK-0X11
@@ -12,7 +13,7 @@ UNPACKER	EQU 0X5B00
 		DI
 		JR START0
 
-		DB "Flasher for NeoGS v0.2"
+		DB "Flasher for NeoGS v",FLASH_VERS
 START0		
 		LD HL,ADRWORK
 		PUSH HL

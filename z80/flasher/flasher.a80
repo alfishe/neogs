@@ -1,14 +1,15 @@
 
-;LAST UPDATE: 10.06.2013 savelij
+;LAST UPDATE: 28.05.2021 savelij
 
 		include ../../../pentevo/rom/macros.a80
 		include ports_ngs.a80
+		include vers.a80
 
-DDMMYY		EQU "10.06.2013"
+DDMMYY		EQU "28.05.20121"
 
-DD		EQU 30				;—ˆ‘‹Ž
-MM		EQU 1				;Œ…‘Ÿ–
-YY		EQU 11				;ƒŽ„
+DD		EQU 28				;—ˆ‘‹Ž
+MM		EQU 5				;Œ…‘Ÿ–
+YY		EQU 21				;ƒŽ„
 DATA		EQU DD|MM<<5|YY<<9|0X8000	;‡€ŠŽ„ˆŽ‚€€Ÿ „€’€
 
 SM_LDT		EQU 0X54
@@ -61,7 +62,7 @@ DRV_VAR		EQU SKLAD+0X100
 ;+12 "C" | ’…Š“™ˆ‰
 ;+13 "B" | “Š’ Œ…ž
 
-		ORG 0X6000
+		ORG 0x8000
 START_		DI
 		LD A,0X10
 		LD BC,0X7FFD
@@ -169,10 +170,29 @@ RVN1		CALL WN
 		DEC HL
 		EX DE,HL
 		LD A,IXL
+		CP '2'
+		CALL Z,COPY_VERS
 		CP "8"
 		JR C,RVN2
 		LD HL,TEXT_VERSUS
 		JP NEXT
+
+COPY_VERS	PUSH AF
+		PUSH DE
+		EXX
+		POP DE
+		LD HL,MAINROM_VERS
+.L2		LD A,(HL)
+		AND A
+		JR Z,.L1
+		LDI
+		JR .L2
+
+.L1		PUSH DE
+		EXX
+		POP DE
+		POP AF
+		RET
 
 NGSNOTFOUND	LD IX,ERROR_UPDATE
 		CALL WINW
@@ -381,6 +401,43 @@ ADRAT		LD HL,0
 		POP BC
 		RET
 
+READ_NGS_VERS	EXX
+		LD HL,BUFRD
+		LD DE,0x138
+		LD B,8
+		LD A,B
+		CALL SD			; LEN LOW
+		LD A,0X15
+		CALL SC
+		EI
+		HALT
+		DI
+		XOR A
+		CALL SD			; LEN HIGH
+		CALL WD
+		LD A,E
+		CALL SD			; ADR LOW
+		CALL WD
+		LD A,D
+		CALL SD			; ADR HIGH
+.L1		CALL WN
+		CALL GD
+		LD (HL),A
+		INC HL
+		INC DE
+		DJNZ .L1
+.L2		DEC HL
+		LD A,'!'
+		CP (HL)
+		JR NC,.L2
+		INC HL
+		LD (HL),0
+		EXX
+		RET
+
+MAINROM_VERS	DB "ver "
+BUFRD		DUPL 0x18
+
 FINDNGS		LD A,0X80
 		OUT (GSCTR),A
 
@@ -436,6 +493,7 @@ INPORT		LD A,E
 INITLOADER	CALL FINDNGS
 		AND A
 		RET NZ
+		CALL READ_NGS_VERS
 		LD BC,GSDAT
 		LD HL,0X5800
 		LD DE,MINILDE-MINILD
@@ -483,19 +541,28 @@ OUTCOD1		OUTI
 		XOR A
 		RET
 
+SC		OUT (GSCOM),A
+		RET
+
+SD		OUT (GSDAT),A
+		RET
+
+GD		IN A,(GSDAT)
+		RET
+
 WC		IN A,(GSCOM)
-		RRA
-		JR C,$-3
+		RRCA
+		JR C,WC
 		RET
 
 WD		IN A,(GSCOM)
-		RLA
-		JR C,$-3
+		RLCA
+		JR C,WD
 		RET
 
 WN		IN A,(GSCOM)
-		RLA
-		JR NC,$-3
+		RLCA
+		JR NC,WN
 		RET
 
 MINISTR

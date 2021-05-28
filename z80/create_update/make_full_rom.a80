@@ -1,17 +1,30 @@
 
-;LAST UPDATE: 24.04.2014 savelij
+; LAST UPDATE: 28.05.2021 savelij
 
-;‘Š€ ‹ƒ ‡“ 512Š „‹Ÿ NEOGS
+; ‘Š€ ‹ƒ ‡“ 512Š „‹Ÿ NEOGS
 
 		include ../macros.a80
+		include define.a80
 
 		ORG 0
+; LOADER
 		binclude loader_ngs.rom
 
-		DUPL 0X10000-$,0XFF
+		DUPL 0X10000-$-8,0XFF
+		DB "LOADER"
+		DW DATA_P0
+
+; MAIN ROM
 		binclude neogs.rom
+		
+		DUPL 0x20000-$-8,0xFF
+		DB "ROM   "
+		DW DATA_P1
 
 		DUPL 0X70000-$,0XFF
+; FPGA
 		binclude fpga.bin
 
-		DUPL 0X80000-$,0XFF
+		DUPL 0X80000-$-8,0XFF
+		DB "FPGA  "
+		DW DATA_P7

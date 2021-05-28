@@ -29,6 +29,5 @@ del neogs.rom
 del loader.crc
 del fpga.crc
 del neogs.crc
-del *.lst
 
 pause

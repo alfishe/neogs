@@ -1,4 +1,4 @@
-@ECHO OFF
+@ECHO On
 
 cd ..\main_rom
 
@@ -16,9 +16,7 @@ del *.lst
 
 cd ..\bootFPGA00
 
-cp ../../fpga/current/quartus/main.rbf ./
-
-..\..\tools\mhmt\mhmt main.rbf main.mlz
+..\..\tools\mhmt\mhmt ..\..\fpga\current\quartus\main.rbf main.mlz
 
 call mk.bat bootFPGA
 
@@ -40,8 +38,7 @@ copy /B /Y ..\bootFPGA00\bootFPGA.crc fpga.bin
 
 del loader_ngs.rom
 del neogs.rom
-del *.lst
 
-copy /B /Y full_ngs.rom D:\UnrealSpeccy\bootgs.bin
+copy /B /Y full_ngs.rom D:\yad\UnrealSpeccy\bootgs.rom
 
 pause

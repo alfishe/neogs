@@ -1,5 +1,5 @@
 
-;LAST UPDATE 10.07.2017 savelij
+; LAST UPDATE 28.05.2021 savelij
 
 		include macros.a80
 	        include ports_ngs.a80
@@ -179,7 +179,10 @@ LOOP27		CP 0XCC
 		JP NZ,RST_NGS_CODE		;плата GS стараго типав
 		JP NO_NGS
 
-LOOP16		BIT 5,(IY+1)
+LOOP16		EI
+		HALT
+		DI
+		BIT 5,(IY+1)
 		JR Z,LOOP16
 		LD A,(IY-0X32)
 		RES 5,(IY+1)

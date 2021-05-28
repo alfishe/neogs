@@ -3,7 +3,7 @@
 
 		include ../../../pentevo/rom/macros.a80
 
-ADR_LOADING	EQU 0X6000			;адрес загрузки и компиляции
+ADR_LOADING	EQU 0x8000			;адрес загрузки и компиляции
 START_CODE	EQU ADR_LOADING
 
 		ORG ADR_LOADING-0X117		;(END_HEADER-START_SCL)
