@@ -1,11 +1,12 @@
 
-;LAST UPDATE 07.08.2014 savelij
+; LAST UPDATE 11.01.2022 savelij
 
-;Š„ „‹Ÿ ƒ‘
+; Š„ „‹Ÿ ƒ‘
 
 		include macros.a80
 		include ports_ngs.a80
 		include sdcomand.a80
+		include bootsecfat.a80
 
 ;€’— ˜ˆ‚Šˆ „‹Ÿ ‹………ˆŸ MOD
 ;‹………ˆ…, ‚…Š€ ˆ —……
@@ -113,7 +114,7 @@ INI__SD		LD HL,0
 
 START1		LD HL,FLAGS
 		RES 7,(HL)
-		LD A,Wc_fat
+		LD A,Init_Fatvars
 		CALL COM_FAT			;ˆˆ–ˆ€‹ˆ‡€–ˆŸ FAT
 		CP 0X80
 		JR Z,START11

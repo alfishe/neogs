@@ -1,10 +1,10 @@
 
-;LAST UPDATE: 24.02.2016 savelij
+; LAST UPDATE: 01.04.2023 savelij
 	
-		include ../../../pentevo/rom/macros.a80
+		include macros.a80
 		include vers.a80
 
-ADRWORK		EQU 0X8000
+ADRWORK		EQU ADR_START
 UNPACKER	EQU 0X5B00
 
 		ORG ADRWORK-0X11
@@ -15,8 +15,7 @@ UNPACKER	EQU 0X5B00
 
 		DB "Neo Player Light ",VERS_PLAYER
 
-START0		
-		LD HL,ADRWORK
+START0		LD HL,ADRWORK
 		PUSH HL
 		LD HL,DEPACK
 		LD DE,UNPACKER
@@ -33,7 +32,7 @@ START0
 		RET
 
 DEPACK		include dec40.a80
-BINFLASHER	binclude npl_pack.rom
+BINFLASHER	binclude tmp/npl_pack.rom
 EBINFLASHER
 
 		DUPL 0X100-LOW ($),0

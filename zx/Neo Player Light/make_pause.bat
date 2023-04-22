@@ -1,4 +1,0 @@
-
-call make.bat
-
-pause

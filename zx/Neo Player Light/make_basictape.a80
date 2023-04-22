@@ -1,0 +1,20 @@
+
+; LAST UPDATE: 02.04.2023 savelij
+
+		include macros.a80
+		include basic_tokens.a80
+
+		ORG 0x0100 - 0x11
+		SUM_HOB "ngsplay B", BASIC_FULL, BASIC_FULL, 1
+
+BASIC_START	DW 0x100,BASIC_END-STROKA1 + 1
+STROKA1		DB __CLEAR,__VAL,"\"24575\":"		;CLEAR VAL "ADDRESS":
+		DB __LOAD,"\"\"",__CODE,__VAL,"\"33024\":"
+		DB __RANDOMIZE,__USR,__VAL,"\"33024\""	;RANDOMIZE USR VAL "ADDRESS"
+
+BASIC_END	DB 0x0D,0x80,0xAA
+		DW 1					;çéåÖê ëíêéäà áÄèìëäÄ
+
+BASIC_FULL	EQU BASIC_END - BASIC_START + 1
+
+		DUPL LOW (-$)

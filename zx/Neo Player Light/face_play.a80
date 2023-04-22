@@ -1,0 +1,1226 @@
+
+; LAST UPDATE 22.04.2023 savelij
+
+		include macros.a80
+		include ports_ngs.a80
+
+		include local_macros.a80
+		include vers.a80
+
+	        include macros_sp.a80
+		include dss.a80
+		include bios_sp.a80
+		include define_sp.a80
+		include ports_sp.a80
+
+GSCOD		EQU 0x8000			; адрес куда закидывать код на нгс
+
+SIZ_PAT		EQU 0x14
+
+		ORG ADR_START
+START		DI
+	IFDEF _SPRINTER
+		CALL CLS
+	DE_ADR_SCR ((32-(EMESS24-MESS24))/2),15
+		LD HL,MESS24
+		CALL PRINT
+	DE_ADR_SCR 4,9
+		LD HL,MESS28
+		CALL PRINT
+		XOR A
+		CALL DETECT_ISA
+		CALL CHECK_ISA
+		JR NC,.L1
+		CALL CLOSE_ISA
+		LD A,1
+		CALL DETECT_ISA
+		JR NC,.L1
+	DE_ADR_SCR 8,8
+		LD HL,NOT_FOUND_ISA
+		CALL PRINT
+		JP NO_ISA
+	ELSE
+		LD HL,0x0110
+		LD (0x5C09),HL			; установка переменной клавиатуры
+		RES 3,(IY+48)
+		RES 5,(IY+1)
+	ENDIF
+.L1		LD (OLD_STACK),SP		; сохранение стека
+		LD SP,0
+OLD_STACK	EQU $-2
+
+; удержание при запуске CS =  Turbo off
+;		LD A,0xFE
+;		IN A,(0xFE)
+;		RRA
+;		LD A,0
+;		JR C,$+4
+;		LD A,0x10
+;		LD BC,0xEFF7
+;		OUT (C),A
+
+; удержание при запуске SS = reset NeoGS
+	IFDEF _SPRINTER
+; TODO добавить получение ключей из командной строки доса
+	ELSE
+		LD A,0x7F
+		IN A,(0xFE)
+		RRA
+		RRA
+		JR NC,LOOP21
+	ENDIF
+
+; тест наличия GS/NeoGS
+		LD B,0x30			; для определения наличия нгс используется
+						; команда 0x1D с параметром =0
+	OUT_GSDAT 0				; ждем ответа 0x30 прерываний
+	OUT_GSCOM 0x1D
+LOOP22		EI
+		HALT
+		DI
+		DEC B
+		JR Z,LOOP21			; счетчик обнулился, а может нгс висит?
+	IN_GSCOM				; ждем сброса команд бита
+		RRA
+		JR C,LOOP22
+	IN_GSDAT				; команд бит сбросился, читаем ответ из дата порта
+						; попытка получить флаговый байт с нгс
+	OUT_GSDAT 0				; при первом запуске команда 0xFF еще не пропатчена
+		LD B,0x30			; ждем ответа 0x30 прерываний
+	OUT_GSCOM 0xFF
+LOOP001		EI
+		HALT
+		DI
+		DEC B
+		JR Z,LOOP21			; счетчик обнулился, пробуем перезапустить нгс
+	IN_GSCOM
+		RRA
+		JR C,LOOP001
+		JR LOOP13			; нгс ответил на команду, подключаемся к внутреннему плееру
+
+; принудительный перезапуск NeoGS
+LOOP21
+	OUT_GSCTR M_DBIT			; полный сброс нгс
+		EI
+		HALT
+		HALT
+		DI
+	OUT_GSCOM 0xF3				; холодный перезапуск нгс прошивки
+		LD B,0x30			; ждем 0x30 прерываний
+LOOP25		EI
+		HALT
+		HALT
+		DI
+		DEC B
+		JP Z,NO__GS			; нет ответа, нет нгс
+	IN_GSCOM
+		RRA
+		JR C,LOOP25			; команд бит изменился, продолжаем
+; загрузка и запуск кода на NeoGS
+RST_NGS_CODE					; запрос количества страниц памяти
+	OUT_GSCOM 0x23				; для определения в какую страницу плеер закидывать
+		CALL WC
+	IN_GSDAT
+		OR 0x3F
+		LD D,A
+		LD E,MPAG			; включаем стандартной командой прошивки
+		CALL OUTPORT			; страницу на нгс для загрузки внутреннего плеера
+						; стандартными средствами грузим код на нгс 
+		LD DE,FAT_END - GO_YES
+		LD A,E
+	OUT_GSDAT_A
+	OUT_GSCOM 0x14
+		CALL WC
+		LD A,D
+	OUT_GSDAT_A
+		CALL WD
+	OUT_GSDAT LOW (GSCOD)
+		CALL WD
+	OUT_GSDAT HIGH(GSCOD)
+		CALL WD
+		LD HL,GO_YES
+.LODCOD		LD A,(HL)
+		INC HL
+	OUT_GSDAT_A
+		CALL WD
+		DEC DE
+		LD A,D
+		OR E
+		JR NZ,.LODCOD
+; код загрузили, запускаем
+	OUT_GSDAT LOW (GSCOD)
+	OUT_GSCOM 0x13
+		CALL WC
+	OUT_GSDAT HIGH (GSCOD)
+		EI
+		HALT
+		HALT
+		DI				; подождали 2 прерывания запуска кода
+LOOP13		LD A,7
+		CALL CLS			; очистили экран
+	DE_ADR_SCR 0,8
+		LD HL,MESS20			; печать текста о поиске на SD карточке
+		CALL PRINT
+						; подаем команду проверки что на нгс крутится
+	OUT_GSDAT 0x1D
+	OUT_GSCOM 0x1F
+		LD B,0
+		CALL WAITGS			; ожидаем ответа покручивавая палочку
+	IN_GSDAT				; читаем ответ
+		CP 0x8B	
+		JP Z,RST_NGS_CODE		; если 0x8B то ответила стандартная прошивка
+		CP 0x77
+		JP Z,Warm			; если ответ 0x77, то ответил внутренний плеер
+		CP 0xEE
+		JP NZ,LOOP17			; SD карта найдена?
+		LD A,7
+		CALL CLS
+		LD HL,MESS13
+	DE_ADR_SCR 0,16
+LOOP20		CALL PRINT
+		LD HL,MESS15
+	DE_ADR_SCR 0,18
+		CALL PRINT
+		LD HL,MESS16
+	DE_ADR_SCR 0,20
+		CALL PRINT
+		JR LOOP16
+
+LOOP17		CP 0xDD
+		JR NZ,LOOP26			; на SD карте FAT не обнаружен
+		LD A,7
+		CALL CLS
+		LD HL,MESS14
+	DE_ADR_SCR 0,16
+		JR LOOP20
+
+LOOP26		CP 0xBB
+		JR NZ,LOOP27
+		LD A,7
+		CALL CLS
+		LD HL,MESS23
+	DE_ADR_SCR 0,16
+		JR LOOP20
+
+LOOP27		CP 0xCC
+		JP NZ,RST_NGS_CODE		; плата GS стараго типав
+		JP NO_NGS
+
+LOOP16
+	IFDEF _SPRINTER
+		EI
+	SPDSS DSSF.SCANKEY
+		JR Z,LOOP16
+	ELSE
+		EI
+		HALT
+		DI
+		BIT 5,(IY+1)
+		JR Z,LOOP16
+		LD A,(IY-0x32)
+		RES 5,(IY+1)
+	ENDIF
+		CP 0x0D
+		JP Z,START
+		CP 0x20
+		JP Z,RESCOMP
+		JR LOOP16
+
+Warm		LD A,7
+		CALL CLS			; очистка экрана
+		CALL MORDALL			; вывод основных надписей
+		LD A,0x15
+	DE_ADR_SCR 13,0
+		CALL READ5BT			; вывод кол-ва найденного
+		CALL NAMELNG			; вывод имени текущего файла
+LOOP_3		CALL DAT_VTS			; вывод инфы текущего файла
+LOOP		XOR A
+		CALL GET_VTS
+		BIT 7,A
+		JP NZ,EJECT
+;		AND 5
+;		CP 5
+;		JR Z,LOOPM
+		CALL FGETVTS
+		LD A,H
+		PUSH AF
+		BIT 5,A
+		CALL NZ,NAMELNG
+		POP AF
+		BIT 1,A
+		JR NZ,LOOPM
+	DE_ADR_SCR 11,11
+		CALL READSEC			; время играния
+		CALL BITRATE
+		JR LOOP14
+
+LOOPM		CALL POSMOD
+LOOP14
+	IFDEF _SPRINTER
+		EI
+	SPDSS DSSF.SCANKEY
+		JR Z,LOOP
+	ELSE
+		EI
+		HALT
+		DI
+		BIT 5,(IY+1)
+		JR Z,LOOP
+		RES 5,(IY+1)
+		LD A,(IY-0x32)
+	ENDIF
+		LD B,A
+		CALL FGETVTS
+		LD A,H
+		BIT 1,A
+		LD HL,MODCOM
+		JR NZ,LOOP14_1
+		LD HL,MP3COM
+LOOP14_1	LD DE,4
+LOOP14_2	LD A,(HL)
+		AND A
+		JR Z,LOOP
+		CP B
+		JR Z,RDCOMM
+		ADD HL,DE
+		JR LOOP14_2
+
+RDCOMM		INC HL
+		LD A,(HL)
+		INC HL
+		LD E,(HL)
+		INC HL
+		LD D,(HL)
+		EX DE,HL
+		JP (HL)
+
+MP3COM		DB "6",0x09
+		DW EXE1
+		DB "7",0x08
+		DW EXE1
+		DB "8",0x07
+		DW EXE1
+		DB "9",0x06
+		DW EXE2
+		DB 0x0D,0x0A
+		DW EXE1
+		DB ":",0x17
+		DW EXE1
+;		DB "q",0x03
+;		DW EXE3
+;		DB "a",0x01
+;		DW EXE3
+;		DB "w",0x0C
+;		DW EXE3
+;		DB "s",0x04
+;		DW EXE3
+;		DB "e",0x30
+;		DW EXE3
+;		DB "d",0x10
+;		DW EXE3
+;		DB "r",0xC0
+;		DW EXE3
+;		DB "f",0x40
+;		DW EXE3
+
+MODCOM		DB "1",0x01
+		DW EXE1
+		DB "2",0x02
+		DW EXE4
+		DB "3",0x03
+		DW EXE4
+		DB "4",0x04
+		DW EXE4
+		DB "5",0x05
+		DW EXE1
+		DB "!",0x18
+		DW EXE1
+		DB "%",0x19
+		DW EXE1
+		DB "0",0x00
+		DW EJECT
+		DB " ",0x00
+		DW RESCOMP
+		DB 0
+
+EXE1
+	OUT_GSDAT_A
+	OUT_GSCOM 0x1F
+		CALL WC
+		JP LOOP_3
+
+EXE2
+	OUT_GSDAT_A
+	OUT_GSCOM 0x1F
+		CALL WC
+		CALL PRTTBL
+		JP LOOP_3
+
+EXE3		PUSH AF
+	OUT_GSDAT 0x1A
+	OUT_GSCOM 0x1F
+		CALL WC
+		POP AF
+	OUT_GSDAT_A
+		CALL PRTTBL
+		JP LOOP
+
+EXE4
+	OUT_GSDAT_A
+	OUT_GSCOM 0x1F
+		CALL WC
+		JP LOOP
+
+; ожидание отпускания кнопки и сброс
+RESCOMP		CALL NANYKEY
+	IFDEF _SPRINTER
+		CALL CLS
+		CALL CLOSE_ISA
+	SPDSS DSSF.EXIT
+	ELSE
+		XOR A
+		LD BC,0x7FFD
+		OUT (C),A
+		JP 0
+	ENDIF
+
+WAITGS		LD E,B
+		LD D,0
+		LD HL,VENTIL
+		ADD HL,DE
+		LD A,(HL)
+	DE_ADR_SCR 27,8
+		CALL PRISYM
+		LD C,5
+.L1		EI
+		HALT
+		DI
+		DEC C
+		JR NZ,.L1
+	IN_GSCOM
+		RRA
+		RET NC
+		INC B
+		RES 2,B
+		JR WAITGS
+
+; распечатка номера трека и имени играемого файла
+NAMELNG		LD A,0x16
+	DE_ADR_SCR 13,10
+		CALL READ5BT			; текущий номер трека
+		LD HL,0x8000
+	OUT_GSDAT 0x11
+	OUT_GSCOM 0x1F
+		CALL WC				; получить длинное имя
+		LD A,H
+	OUT_GSDAT_A
+		CALL WD
+		LD A,L
+	OUT_GSDAT_A
+		LD HL,OPISAT
+		LD E,0
+		PUSH HL
+		CALL INI_E
+	IFDEF _SPRINTER
+	DE_ADR_SCR 0,16
+	SPBIOS BIOSF.LP_PRINT_SYM,78,' '
+	DE_ADR_SCR 0,17
+	SPBIOS BIOSF.LP_PRINT_SYM,78,' '
+	DE_ADR_SCR 0,18
+	SPBIOS BIOSF.LP_PRINT_SYM,78,' '
+	DE_ADR_SCR 0,19
+	SPBIOS BIOSF.LP_PRINT_SYM,78,' '
+	ELSE
+		LD HL,0x5000
+		LD D,H
+		LD E,L
+		LD BC,0x07FF
+		INC E
+		LD (HL),L
+		LDIR
+	ENDIF
+		POP HL
+		LD B,0x20
+	DE_ADR_SCR 0,16
+		CALL PRINT_B
+		LD B,0x20
+	DE_ADR_SCR 0,17
+		CALL PRINT_B
+		LD B,0x20
+	DE_ADR_SCR 0,18
+		CALL PRINT_B
+		LD B,0x20
+	DE_ADR_SCR 0,19
+		CALL PRINT_B
+		LD B,0x20
+	DE_ADR_SCR 0,20
+		CALL PRINT_B
+		LD B,0x20
+	DE_ADR_SCR 0,21
+		CALL PRINT_B
+		LD B,0x20
+	DE_ADR_SCR 0,22
+		CALL PRINT_B
+		LD B,0x20
+	DE_ADR_SCR 0,23
+		CALL PRINT_B
+		JP MORDAR
+
+DAT_VTS		CALL FGETVTS		; запрос флагового байта
+	DE_ADR_SCR 16,13
+		BIT 1,H
+		RET NZ			; это MOD
+		BIT 7,H
+		LD A,0x2B
+		JR NZ,.L1
+		LD A,"-"
+.L1		CALL PRISYM		; вывод положения TREBLE/BASS
+		BIT 0,H
+		LD A,"+"
+		JR NZ,.L2
+		LD A,"-"
+.L2
+	DE_ADR_SCR 16,12
+		CALL PRISYM		; вывод положения VIRTUAL SURROUND
+		BIT 6,H
+		LD A,"+"
+		JR NZ,.L3
+		LD A,"-"
+.L3
+	DE_ADR_SCR 31,14
+		CALL PRISYM		; вывод положения MUTE ON/OFF
+		LD A,L
+	DE_ADR_SCR 16,14
+		CALL PRIHEX
+; вывод индикатора SOFT/HARD RESET
+		BIT 4,H
+		LD HL,MESS16+2
+		JR Z,DATVTS1
+		RES 5,(HL)
+		INC HL
+		RES 5,(HL)
+		INC HL
+		RES 5,(HL)
+		INC HL
+		RES 5,(HL)
+		JR DATVTS2
+
+DATVTS1		SET 5,(HL)
+		INC HL
+		SET 5,(HL)
+		INC HL
+		SET 5,(HL)
+		INC HL
+		SET 5,(HL)
+DATVTS2		LD HL,MESS16
+	DE_ADR_SCR 20,0
+		CALL PRINT
+; получение и распечатка инфы темброблока
+PRTTBL		
+;		CALL FGETVTS
+;		BIT 3,H
+;		JR Z,EMPTSTR
+;		BIT 7,H
+;		JR Z,EMPTSTR
+;		LD A,0x1B
+;		OUT (GSDAT),A
+;		LD A,0x1F
+;		OUT (GSCOM),A
+;		CALL WC
+;		LD HL,OPISAT+0x0100
+;		LD E,8
+;		PUSH HL
+;		CALL INI_E
+;		LD DE,0x48B1
+;		LD B,2
+;		POP HL
+;		CALL PRINT_B
+;		LD A,"0"
+;		CALL PRISYM
+;		LD A,"0"
+;		CALL PRISYM
+;		LD A,"0"
+;		CALL PRISYM
+;		LD A,"/"
+;		CALL PRISYM
+;		LD B,2
+;		CALL PRINT_B
+;		INC E
+;		LD B,2
+;		CALL PRINT_B
+;		LD A,"0"
+;		CALL PRISYM
+;		LD A,"/"
+;		CALL PRISYM
+;		LD B,2
+;		JP PRINT_B
+
+; печать пустой строки
+EMPTSTR		LD HL,EMPT16+1
+	DE_ADR_SCR 17,13
+		JP PRINT
+
+; распечатка когда ничего не играет
+BITRAT1		LD HL,EMPT16+2
+	DE_ADR_SCR 22,10
+		PUSH HL
+		LD B,5
+		CALL PRINT_B
+	DE_ADR_SCR 24,11
+		LD B,3
+		POP HL
+		PUSH HL
+		CALL PRINT_B
+		POP HL
+		LD B,0x0C
+	DE_ADR_SCR 20,9
+		JP PRINT_B
+
+; печать MP3 битрейта
+BITRATE
+	OUT_GSDAT 0x1C
+	OUT_GSCOM 0x1F
+		CALL WC
+		CALL WN
+	IN_GSDAT
+		LD B,A
+		CALL WN
+	IN_GSDAT
+		LD C,A
+		LD A,B
+		AND 0xE0
+		CP %10100000
+		JR Z,BITRAT1
+		LD A,C
+		AND 3
+		LD L,A
+		ADD A,A
+		ADD A,A
+		ADD A,L
+		LD L,A
+		LD H,0
+		LD A,C
+		RRCA
+		RRCA
+		AND 3
+		LD DE,SR0
+		JR Z,BITRAT3
+		DEC A
+		LD DE,SR1
+		JR Z,BITRAT3
+		LD DE,SR2
+BITRAT3		ADD HL,DE
+	DE_ADR_SCR 22,10
+		PUSH BC
+		LD B,5
+		CALL PRINT_B
+		POP BC
+		LD A,C
+		RLCA
+		RLCA
+		AND 3
+		ADD A,A
+		ADD A,A
+		LD L,A
+		ADD A,A
+		ADD A,L
+		LD L,A
+		LD H,0
+		LD DE,REJCHAN
+		ADD HL,DE
+		PUSH BC
+		LD B,0x0C
+	DE_ADR_SCR 20,9
+		CALL PRINT_B
+		POP BC
+		LD A,B
+		AND 0x0F
+		LD L,A
+		ADD A,A
+		ADD A,L
+		LD L,A
+		LD H,0
+		LD A,C
+		AND 3
+		CP 3
+		JR NZ,BITRAT4
+		LD A,0x30
+		ADD A,L
+		LD L,A
+BITRAT4		LD A,C
+		AND 0x30
+		SUB 0x10
+		LD DE,L3ID0
+		JR Z,BITRAT2
+		SUB 0x10
+		LD DE,L2ID0
+		JR Z,BITRAT2
+		LD DE,L1ID0
+BITRAT2		ADD HL,DE
+		LD B,3
+	DE_ADR_SCR 24,11
+		JP PRINT_B
+
+; получение и распечатка кол-ва найденных файлов (15)
+; или номера текущего файла (16)
+READ5BT
+	OUT_GSDAT_A
+	OUT_GSCOM 0x1F
+		CALL WC
+		CALL WN
+	IN_GSDAT
+		CALL PRISYM
+		CALL WN
+	IN_GSDAT
+		CALL PRISYM
+		CALL WN
+	IN_GSDAT
+		CALL PRISYM
+		CALL WN
+	IN_GSDAT
+		CALL PRISYM
+		CALL WN
+	IN_GSDAT
+		JP PRISYM
+
+; получение времени проигрывания в
+; текстовом виде и распечатка
+READSEC
+	OUT_GSDAT 0x0B
+	OUT_GSCOM 0x1F
+		CALL WC
+		CALL WN
+	IN_GSDAT
+		CALL PRISYM
+		CALL WN
+	IN_GSDAT
+		CALL PRISYM
+		LD A,':'
+		CALL PRISYM
+		CALL WN
+	IN_GSDAT
+		CALL PRISYM
+		CALL WN
+	IN_GSDAT
+		CALL PRISYM
+		LD A,':'
+		CALL PRISYM
+		CALL WN
+	IN_GSDAT
+		CALL PRISYM
+		CALL WN
+	IN_GSDAT
+		JP PRISYM
+
+; при отсутствии NeoGS выход в 128 басик
+NO_NGS		LD A,7
+		CALL CLS
+	DE_ADR_SCR 9,8
+		LD HL,MESS17
+		CALL PRINT
+NO_ISA
+	DE_ADR_SCR 6,10
+		LD HL,MESS19
+		CALL PRINT
+		CALL ANYKEY
+		JP RESCOMP
+
+; ждем нажатия кнопки
+ANYKEY
+	IFDEF _SPRINTER
+		EI
+	SPDSS DSSF.SCANKEY
+		JR Z,ANYKEY
+		RET
+	ELSE
+.L1		XOR A
+		IN A,(0xFE)
+		CPL
+		AND 0x1F
+		JR Z,.L1
+		RET
+	ENDIF
+
+; ждем отпускания кнопки
+NANYKEY
+	IFDEF _SPRINTER
+		EI
+	SPDSS DSSF.SCANKEY
+		JR NZ,NANYKEY
+		RET
+	ELSE
+.L1		XOR A
+		IN A,(0xFE)
+		CPL
+		AND 0x1F
+		JR NZ,.L1
+		RET
+	ENDIF
+
+; при отсутствии GS выход в 128 басик
+NO__GS		LD A,7
+		CALL CLS
+	DE_ADR_SCR 10,8
+		LD HL,MESS18
+		CALL PRINT
+	DE_ADR_SCR 6,10
+		LD HL,MESS19
+		CALL PRINT
+		CALL ANYKEY
+		JP RESCOMP
+
+; печать текста до байта 0 или пока B не обнулица
+PRINT_B		LD A,(HL)
+		AND A
+		RET Z
+		INC HL
+		CALL PRISYM
+		DJNZ PRINT_B
+		RET
+
+; печать текста до байта 0
+PRINT		LD A,(HL)
+		INC HL
+		AND A
+		RET Z
+		CALL PRISYM
+		JR PRINT
+
+MORDALL		LD HL,MESS1
+	DE_ADR_SCR 0,0
+		CALL PRINT
+		LD HL,MESS16
+	DE_ADR_SCR 20,0
+		CALL PRINT
+		LD HL,MESS2
+	DE_ADR_SCR 0,2
+		CALL PRINT
+		LD HL,MESS3
+	DE_ADR_SCR 0,3
+		CALL PRINT
+		LD HL,MESS4
+	DE_ADR_SCR 0,4
+		CALL PRINT
+		LD HL,MESS5
+	DE_ADR_SCR 0,5
+		CALL PRINT
+		LD HL,MESS6
+	DE_ADR_SCR 0,6
+		CALL PRINT
+		LD HL,MESS7
+	DE_ADR_SCR 0,8
+		CALL PRINT
+		LD HL,MESS8
+	DE_ADR_SCR 0,10
+		CALL PRINT
+		LD HL,MESS24
+	DE_ADR_SCR ((32-(EMESS24-MESS24))/2),15
+		CALL PRINT
+		LD A,3
+		CALL GET_VTS
+		AND %00001100
+		LD C,A
+	IFDEF _SPRINTER
+		PUSH BC
+	DE_ADR_SCR 0,15
+		POP BC
+		PUSH BC
+		LD A,C
+		RLCA
+		RLCA
+		XOR %00110000
+		OR %01000000 + BLUE
+		LD E,A
+	SPBIOS BIOSF.LP_PRINT_ATR,32
+		POP BC		
+	ELSE
+		XOR 0x0C
+		ADD A,A
+		OR 0x21				; INK = BLUE, PAPER = GREEN + !номер чипа MP3 (0..3)
+		LD HL,0x59E0
+		LD B,32
+.L1		LD (HL),A
+		INC L
+		DJNZ .L1
+	ENDIF
+		LD A,C
+		RRCA
+		RRCA
+		ADD A,"0"			; номер версии MP3 чипа
+	DE_ADR_SCR 31,15
+		CALL PRISYM
+MORDAR		LD A,3
+		CALL GET_VTS
+		BIT 1,A
+		JR NZ,MORDMOD
+		LD HL,MESS9
+	DE_ADR_SCR 0,11
+		CALL PRINT
+		LD HL,MESS10
+	DE_ADR_SCR 0,13
+		CALL PRINT
+		LD HL,MESS11
+	DE_ADR_SCR 0,12
+		CALL PRINT
+		LD HL,MESS12
+	DE_ADR_SCR 0,14
+		CALL PRINT
+		LD HL,MESSEM
+	DE_ADR_SCR 19,14
+		CALL PRINT
+		LD HL,MESS26
+	DE_ADR_SCR 28,10
+		CALL PRINT
+		LD HL,MESS27
+	DE_ADR_SCR 28,11
+		CALL PRINT
+		JP PRTTBL
+
+MORDMOD		LD HL,EMPT16+3
+	DE_ADR_SCR 19,10
+		CALL PRINT
+		LD HL,EMPT16
+	DE_ADR_SCR 16,12
+		CALL PRINT
+		LD HL,EMPT16
+	DE_ADR_SCR 16,13
+		CALL PRINT
+		LD HL,EMPT16
+	DE_ADR_SCR 16,9
+		CALL PRINT
+		LD HL,MOD00
+	DE_ADR_SCR 0,11
+		CALL PRINT
+		LD HL,EMPT16
+	DE_ADR_SCR 16,11
+		CALL PRINT
+		LD HL,MOD02
+	DE_ADR_SCR 0,12
+		CALL PRINT
+		LD HL,MOD03
+	DE_ADR_SCR 0,13
+		CALL PRINT
+		LD HL,EMPT16
+	DE_ADR_SCR 16,14
+		CALL PRINT
+		LD HL,EMPT16
+	DE_ADR_SCR 0,14
+		JP PRINT
+
+POSMOD		LD A,SIZ_PAT
+		CALL GET_VTS
+	DE_ADR_SCR 14,11
+		CALL PRIHEX
+	DE_ADR_SCR 14,12
+	OUT_GSCOM 0x60
+		CALL WC
+	IN_GSDAT
+		CALL PRIHEX
+	DE_ADR_SCR 14,13
+	OUT_GSCOM 0x61
+		CALL WC
+	IN_GSDAT
+		JP PRIHEX
+
+; читать байт переменных по смещению в "A"
+GET_VTS
+	OUT_GSDAT_A
+	OUT_GSCOM 0xFF
+		CALL WC
+	IN_GSDAT
+		RET
+
+; получение 16 битного состояния
+FGETVTS
+	OUT_GSDAT 0x0C
+	OUT_GSCOM 0x1F
+		CALL WC
+		CALL WN
+	IN_GSDAT
+		LD H,A
+		CALL WN
+	IN_GSDAT
+		LD L,A
+		RET
+
+MOD00		DB "Length:        ",0
+MOD02		DB "Position:      ",0
+MOD03		DB "Note:          ",0
+
+VENTIL		DB 0xC4,0x5C,0x7C,0x2F
+
+MESS1		DB "Found files:",0
+MESS16		DB "\"Space\" Exit",0
+MESS2		DB "1 Prev. File  SS+1 Prev. DIR",0
+MESS3		DB "2 Play File",0
+MESS4		DB "3 Pause",0
+MESS5		DB "4 Stop",0
+MESS6		DB "5 Next File   SS+5 Next DIR",0
+MESS7		DB "0 Eject SD Card",0
+MESS8		DB "Play Number:",0
+MESS9		DB "Time Play:      ",0
+MESS10		DB "9 Treble/Bass:  ",0
+MESS11		DB "8 Surround:     ",0
+MESS12		DB "<6-7> Volume:   ",0
+MESSEM		DB "\"Enter\" Mute",0
+MESS13		DB "SD-Card Not Found",0
+MESS14		DB "FAT not Found",0
+MESS15		DB "Press \"ENTER\" 4 Restart Init SD",0
+MESS17		DB "Neo"
+MESS18		DB "GS not found",0
+MESS19		DB "Press any key for "
+	IFDEF _SPRINTER
+		DB "exit",0
+	ELSE
+		DB "reset",0
+	ENDIF
+MESS20		DB "Please wait, search files",0
+MESS21		DB "Eject SD card or insert new card",0
+MESS22		DB "Press any key",0
+MESS23		DB "File(s) not found",0
+MESS24		DB "Neo Player Light v",VERS_PLAYER,0
+EMESS24		EQU $-1
+EMPT32		DB "                "
+EMPT16		DB "                ",0
+MESS26		DB "Hz",0
+MESS27		DB "kbps",0
+MESS28		DB "Please wait, detect NeoGS",0
+
+	IFDEF _SPRINTER
+NOT_FOUND_ISA	DB "ISA Slot not found. Emulator?",0
+	ENDIF
+
+REJCHAN		DB "      stereo"
+		DB "joint stereo"
+		DB "dual channel"
+		DB "        mono"
+
+SR0		DB "11025110252205044100"
+SR1		DB "12000120002400048000"
+SR2		DB " 8000 80001600032000"
+
+L3ID0		DB "  -  8 16 24 32 40 48 56 64 80 96112128144160   "
+		DB "  - 32 40 48 56 64 80 96112128160192224256320"
+
+L2ID0		DB "  -  8 16 24 32 40 48 56 64 80 96112128144 160  "
+		DB "  - 32 48 56 64 80 96112128160192224256320384"
+
+L1ID0		DB "  - 32 48 56 64 80 96112128144160176192224256   "
+		DB "  - 32 64 96128160192224256288320352384416448"
+
+EJECT
+	OUT_GSDAT 4
+	OUT_GSCOM 0x1F
+		CALL WC
+		LD A,7
+		CALL CLS
+		LD HL,MESS21
+	DE_ADR_SCR 0,8
+		CALL PRINT
+		LD HL,MESS22
+	DE_ADR_SCR 9,10
+		CALL PRINT
+		CALL NANYKEY
+		CALL ANYKEY
+		CALL NANYKEY
+	OUT_GSDAT 0
+	OUT_GSCOM 0x1F
+		JP LOOP21
+
+CLS
+	IFDEF _SPRINTER
+		LD HL,32 << 8 + 80
+		LD DE,0
+	SPBIOS BIOSF.LP_CLS_WIN, LGRAY
+	ELSE
+		LD HL,0x4000
+		LD E,L
+		LD D,H
+		LD (HL),L
+		INC E
+		LD BC,0x1800
+		LDIR
+		LD (0x5C8D),A
+		LD (0x5C48),A
+		LD HL,0x5800
+		LD D,H
+		LD E,L
+		LD (HL),A
+		LD BC,0x02FF
+		INC E
+		LDIR
+		RRCA
+		RRCA
+		RRCA
+		AND 7
+		OUT (0xFE),A
+	ENDIF
+		RET
+
+; чтение из порта NeoGS
+; вход: E-адрес порта
+; выход: A-прочитанное значение
+INPORT		LD A,E
+	OUT_GSDAT_A
+	OUT_GSCOM 0x11
+		CALL WC
+	IN_GSDAT
+		RET
+
+; запись в порт NEOGS
+; вход: E-адрес порта, D-значение
+OUTPORT		LD A,E
+	OUT_GSDAT_A
+	OUT_GSCOM 0x10
+		CALL WC
+		LD A,D
+	OUT_GSDAT_A
+		JR WD
+
+; ожидание байта ответа с паузой
+;WAIT_WN		PUSH BC
+;		LD B,2
+;		DJNZ $
+;		POP BC
+
+; ожидание установки DATA бита
+WN
+	IN_GSCOM
+		RLA
+		JR NC,WN
+		RET
+
+; ожидание сброса COMMAND бита
+WC
+	IN_GSCOM
+		RRA
+		JR C,WC
+		RET
+
+; ожидание сброса DATA бита
+WD
+	IN_GSCOM
+		RLA
+		JR C,WD
+		RET
+
+; прием E байт из NeoGS
+INI_E
+INI_E1		LD D,0
+INI_E2		DEC D
+		JR Z,INI_E3
+		CALL WN
+	IN_GSDAT
+		LD (HL),A
+		INC HL
+		DEC E
+		JR NZ,INI_E1
+		RET
+
+INI_E3		XOR A
+		CALL GET_VTS
+		BIT 7,A
+		JR Z,INI_E1
+		LD SP,(OLD_STACK)
+		JP EJECT
+
+PRIHEX		PUSH AF
+		RRA
+		RRA
+		RRA
+		RRA
+		CALL .PHC
+		POP AF
+.PHC		AND 0x0F
+		CP 0x0A
+		JR C,.L1
+		ADD A,7
+.L1		ADD A,'0'
+PRISYM		PUSH HL
+		PUSH DE
+	IFDEF _SPRINTER
+		PUSH BC
+		LD B,1
+	SPBIOS BIOSF.LP_PRINT_SYM
+		POP BC
+		POP DE
+		POP HL
+		RET
+	ELSE
+		PUSH DE
+		LD L,A
+		LD H,0
+		LD DE,CHARS
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,DE
+		POP DE
+	REPT 8
+		LD A,(HL)
+		LD (DE),A
+		INC HL
+		INC D
+	ENDM
+		POP DE
+		POP HL
+		INC E
+		RET
+	ENDIF
+
+	IFDEF _SPRINTER
+; установка позиции печати
+SET_DE_ADR_SCR	PUSH AF
+		PUSH HL
+		PUSH DE
+		PUSH BC
+	SPBIOS BIOSF.LP_SET_PLACE
+		POP BC
+		POP DE
+		POP HL
+		POP AF
+		RET
+
+DETECT_ISA	LD (OPEN_ISA.SLOT),A
+; A - номер слота 0 или 1
+OPEN_ISA	LD A,0
+.SLOT		EQU $-1
+		ex af,af'
+		in a,(PAGE_CPU3);(mmu3)
+		ld (CLOSE_ISA.pg),a
+		ld bc,0x1FFD;sc_port
+		ld a,0x11
+		out (c),a
+		ex af,af'
+		rlca
+		or %11010100;ISA.SLOT0_PORT
+		out (PAGE_CPU3),a;(mmu3),a
+		ld bc,ISA_PORT;ISA.DIR
+		xor a
+		out (c),a
+		ret
+
+CLOSE_ISA	ld bc,0x1FFD;sc_port
+		ld a,1
+		out (c),a
+		ld a,0
+.pg		EQU $-1
+		out (PAGE_CPU3),a;(mmu3),a
+		ret
+
+CHECK_ISA	ld a,(0xC000)
+		cp 0xff
+		ret z				; норм, шина ISA есть
+		scf				; нет, шины нет (эмулятор?)
+		ret
+	ENDIF
+
+GO_YES		binclude tmp/play4ngs.rom
+FAT_END
+
+	IFNDEF _SPRINTER
+CHARS		binclude make/altstd.bin
+	ENDIF
+
+		DUPL LOW (-GO_YES)
+OPISAT		EQU $				; адрес складирования описателя при приеме с нгс

@@ -1,0 +1,42 @@
+
+;LAST UPDATE: 12.04.2018 savelij
+
+ INIT_VAR
+ SETVAR _BS_jmpBoot,		3;		;3
+ SETVAR _BS_OEMName,		8;		;8
+ SETVAR _BPB_BytsPerSec,	WORD;		;2 количество байт в секторе
+ SETVAR _BPB_SecPerClus,	BYTE;		;1 количество секторов в кластере
+ SETVAR _BPB_RsvdSecCnt,	WORD;		;2 количество зарезервированных секторов
+ SETVAR _BPB_NumFATs,		BYTE;		;1 количество FAT таблиц
+ SETVAR _BPB_RootEntCnt,	WORD;		;2 для FAT12/16 число 32-байтных элементов, для FAT32 = 0
+ SETVAR _BPB_TotSec16,		WORD;		;2 количество секторов на разделе
+ SETVAR _BPB_Media,		BYTE;		;1 медиа байт
+ SETVAR _BPB_FATSz16,		WORD;		;2 Для FAT12/16 количество секторов одной FAT, для FAT32 = 0
+
+ SETVAR _BPB_SecPerTrk,		WORD;		;2 количество секторов на дорожке
+ SETVAR _BPB_NumHeads,		WORD;		;2 количество головок
+ SETVAR _BPB_HiddSec,		DWORD;		;4 количество скрытых секторов перед началом раздела
+ SETVAR _BPB_TotSec32,		DWORD;		;4 общее количество секторов на разделе
+
+ SETVAR _BS_TEMP,		0
+ SETVAR _BS16DrvNum,		BYTE;		;1 номер устройства
+ SETVAR _BS16Reserved1,		BYTE;		;1 зарезервировнно
+ SETVAR _BS16BootSig,		BYTE;		;1 дополнительная сигнатура
+ SETVAR _BS16VolID,		DWORD;		;4 серийный номер раздела
+ SETVAR _BS16VolLab,		8+3;		;B имя раздела
+ SETVAR _BS16FilSysType,	8;		;8 текстовый тип FAT
+
+ INIT_VAR _BS_TEMP
+ SETVAR _BPB_FATSz32,		DWORD;		;4 количество секторов одной FAT таблицы
+ SETVAR _BPB_ExtFlags,		WORD;		;2 флаги FAT32
+ SETVAR _BPB_FSVer,		WORD;		;2 номер версии FAT32
+ SETVAR _BPB_RootClus,		DWORD;		;4 номер первого кластера root директории
+ SETVAR _BPB_FSInfo,		WORD;		;2 номер сектора со структурой FSINFO
+ SETVAR _BPB_BkBootSec,		WORD;		;2 0 или номер сектора в резервной области, где хранится копия boot сектора
+ SETVAR _BPB_Reserved,		12;		;C всегда 0
+ SETVAR _BS32DrvNum,		BYTE;		;1 номер устройства
+ SETVAR _BS32Reserved1,		BYTE;		;1 зарезервированно
+ SETVAR _BS32BootSig,		BYTE;		;1 дополнительная сигнатура
+ SETVAR _BS32VolID,		DWORD;		;4 серийный номер раздела
+ SETVAR _BS32VolLab,		8+3;		;B имя раздела
+ SETVAR _BS32FilSysType,	8;		;8 текстовый тип FAT
