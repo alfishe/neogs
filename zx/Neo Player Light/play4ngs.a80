@@ -1,75 +1,75 @@
 
-; LAST UPDATE 11.01.2022 savelij
+; LAST UPDATE 24.04.2023 savelij
 
-; „ „‹ ƒ‘
+; ª®¤ ¤«ο ­£α
 
 		include macros.a80
 		include ports_ngs.a80
 		include sdcomand.a80
 		include bootsecfat.a80
+		include fat_dir.a80
 
-;€’— ‚ „‹ ‹……… MOD
-;‹…………, ‚…€  —……
-COMINT		EQU 0X026B
-COMINT_		EQU 0X026E
-COMINT0		EQU 0X0273
-COMINT1		EQU 0X0295
-WTDTL		EQU 0X02BC
-EMPTY1		EQU 0X0942
-ADDA80		EQU 0X0EF8
-;IP_MOD		EQU 0X11E4
-EMPTY2		EQU 0X3D5F
-NUMPG		EQU 0X4080			;‚‘…ƒ ‘’€–
-CPAGE		EQU 0X4081			;PROCESS EQU 0X4084
-CNTMOD		EQU 0X4090
-CURMOD		EQU 0X4096
-CONVERT		EQU 0X40B7
-MTSTAT		EQU 0X4151
-MTSNGPS		EQU 0X415B
-MTSNGSZ		EQU 0X415C
-PlMode		EQU 0X41A0
-MODLLEN		EQU 0X41A1
-ISTACK		EQU 0X4400
-LDMOD		EQU 0XC3F8
-PLAYMOD		EQU 0XC426
-FXB01		EQU 0XD2B2
+; ― βη ―ΰ®θ¨Άª¨ ¤«ο ―«¥¥ΰ¥­¨ο MOD
+; ―«¥¥ΰ¥­¨¥, ―ΰ®Ά¥ΰª  ¨ ―ΰ®η¥¥
+COMINT		EQU 0x026B
+COMINT_		EQU 0x026E
+COMINT0		EQU 0x0273
+COMINT1		EQU 0x0295
+WTDTL		EQU 0x02BC
+EMPTY1		EQU 0x0942
+ADDA80		EQU 0x0EF8
+;IP_MOD		EQU 0x11E4
+EMPTY2		EQU 0x3D5F
+NUMPG		EQU 0x4080			;‚‘…ƒ ‘’€–
+CPAGE		EQU 0x4081			;PROCESS EQU 0x4084
+CNTMOD		EQU 0x4090
+CURMOD		EQU 0x4096
+CONVERT		EQU 0x40B7
+MTSTAT		EQU 0x4151
+MTSNGPS		EQU 0x415B
+MTSNGSZ		EQU 0x415C
+PlMode		EQU 0x41A0
+MODLLEN		EQU 0x41A1
+ISTACK		EQU 0x4400
+LDMOD		EQU 0xC3F8
+PLAYMOD		EQU 0xC426
+FXB01		EQU 0xD2B2
 
-;B512BAS		EQU 0X9800
-
-FLAGS		EQU 0X4168
-;1 ”‹€ƒ “€‚‹…
+ INIT_VAR 0x4168
+ SETVAR FLAGS,		BYTE
+; δ« £¨ γ―ΰ Ά«¥­¨ο
 ; 7-
 ; 6-
 ; 5-
 ; 4-
 ; 3-
-; 2-1-”€‰‹ ‡€ƒ“†…, 0-…’
+; 2-1-δ ©« § £ΰγ¦¥­, 0-­¥β
 ; 1-
-; 0-1-€‡……… PLAY,0-‘’/€“‡€
-REJIMGS		EQU FLAGS+1			;1 „ ’‚…’€
-GETVTSL		EQU REJIMGS+1			;1 ƒ‘’ MP3 —€
-GETVTSH		EQU GETVTSL+1			;1 ’› …†‚
-VSTBL		EQU GETVTSH+1			;2 ’…“™… €‘’‰ ’…‚
-KOLWMP3		EQU VSTBL+2			;2 ‹—…‘’‚ MP3
-NUMFILE		EQU KOLWMP3+2			;2 … ’…“™…ƒ ”€‰‹€
-TYPRES		EQU NUMFILE+2			;1 ’ ‘‘€
-CALBFAT		EQU TYPRES+1			;1 €‹ FAT
-BUFTIME		EQU CALBFAT+1			;8 “”… „‹ ’…‘’€
-SIZ_PAT		EQU BUFTIME+8			;1 ‹-‚ €’…‚ ‚ ‡€ƒ“†… MOD
-SIZ_MOD		EQU SIZ_PAT+1			;1 ‹-‚ ‘’€– MOD
-TIMEOUT		EQU SIZ_MOD+1			;2 TIMEOUT € €’“ ‘ ‚› ”€‰‹
-KUDAXOR		EQU TIMEOUT+2			;2 €„…‘ ……•„€ € XOR BIT 7
-PG_PLAYER	EQU KUDAXOR+2			;1 … ‘’€–› €‘‹†… ‹……€
-INT_MODE	EQU PG_PLAYER+1			;1 ”‹€ƒ €‡……‘’ …›‚€‰
+; 0-1-ΰ §ΰ¥θ¥­¨¥ PLAY,0-αβ®―/― γ§ 
+ SETVAR REJIMGS,	BYTE			; 1 ª®¤ ®βΆ¥β 
+ SETVAR GETVTSL,	BYTE			; 1 £ΰ®¬ª®αβμ MP3 η¨― 
+ SETVAR GETVTSH,	BYTE			; 1 ΅¨βλ ΰ¥¦¨¬®Ά
+ SETVAR VSTBL,		WORD			; 2 β¥ªγι¨¥ ­ αβΰ®©ª¨ β¥¬΅ΰ®Ά
+ SETVAR KOLWMP3,	WORD			; 2 ª®«¨η¥αβΆ® MP3
+ SETVAR NUMFILE,	WORD			; 2 ­®¬¥ΰ β¥ªγι¥£® δ ©« 
+ SETVAR TYPRES,		BYTE			; 1 β¨― α΅ΰ®α 
+ SETVAR CALBFAT,	BYTE			; 1 ª «¨΅ΰ FAT
+ SETVAR BUFTIME,	8			; 8 ΅γδ¥ΰ ¤«ο β¥ªαβ 
+ SETVAR SIZ_PAT,	BYTE			; 1 ª®«-Ά® ― β¥ΰ­®Ά Ά § £ΰγ¦¥­­®¬ MOD
+ SETVAR SIZ_MOD,	BYTE			; 1 ª®«-Ά® αβΰ ­¨ζ MOD
+ SETVAR TIMEOUT,	WORD			; 2 TIMEOUT ­  ΰ ΅®βγ α ­®Άλ¬ δ ©«®¬
+ SETVAR KUDAXOR,	WORD			; 2  ¤ΰ¥α ―¥ΰ¥ε®¤  ­  XOR BIT 7
+ SETVAR PG_PLAYER,	BYTE			; 1 ­®¬¥ΰ αβΰ ­¨ζλ ΰ α―®«®¦¥­¨ο ―«¥¥ΰ 
+ SETVAR INT_MODE,	BYTE			; 1 δ« £ ΰ §ΰ¥θ¥­­®αβ¨ ―ΰ¥ΰλΆ ­¨©
 
-SIZEVAR		EQU SIZ_PAT+1-FLAGS
+SIZEVAR		EQU SIZ_PAT + 1 - FLAGS
 
 FREQ10		EQU 0
 FREQ12		EQU 1
 FREQ20		EQU 2
 FREQ24		EQU 3
 
-		ORG 0X8000
+		ORG 0x8000
 START		DI
 		LD SP,ISTACK
 		CALL ALLRES			;‘‘ ‚‘…• €‘’…
@@ -77,7 +77,7 @@ START		DI
 		OUT (CLRCBIT),A			;‘™‹ ‘…“  …‡“‹’€’€• ’€
 		LD A,1
 		LD (PlMode),A
-		LD HL,0X0200
+		LD HL,0x0200
 		LD (MODLLEN),HL
 		JP CON_MOD
 
@@ -95,7 +95,7 @@ ALLRES		CALL PATCH			;€’— ‘‚‰ ‚
 		CALL COM__SD
 		AND A				;…„…‹… GS/NeoGS
 		JR Z,INI_MP3
-		LD A,0XCC
+		LD A,0xCC
 		JR START4			;„  =GS
 
 INI_MP3		LD A,Hardmp3
@@ -108,7 +108,7 @@ INI__SD		LD HL,0
 		CALL COM__SD
 		AND A				;–€‹‡€– SD €’›
 		JR Z,START1
-		LD A,0XEE
+		LD A,0xEE
 		LD (CALBFAT),A
 		JR START4			;„  =SD €’€ … €‰„…€
 
@@ -116,34 +116,34 @@ START1		LD HL,FLAGS
 		RES 7,(HL)
 		LD A,Init_Fatvars
 		CALL COM_FAT			;–€‹‡€– FAT
-		CP 0X80
+		CP 0x80
 		JR Z,START11
 		LD (CALBFAT),A
 		INC A
 		JR NZ,START3
-START11		LD A,0XDD
+START11		LD A,0xDD
 		JR START4			;„  =FAT … €‰„…
 
 START3		CALL CP_XB
 		CALL RTYPEVS
 		LD A,Finddir
 		CALL COM_FAT			;‘ ‚‘…• „…’‰
-		CP 0X80
+		CP 0x80
 		JR Z,START11
 		LD A,Findfil
 		CALL COM_FAT			;‘ ‚‘…• ”€‰‹‚  €‘…
-		CP 0X80
+		CP 0x80
 		JR Z,START11
 		LD (KOLWMP3),HL
 		IN A,(CLRCBIT)
 		CALL PAUSEPL			;‘’€‚€ € €“‡“
 		LD A,H
 		OR L
-		LD A,0XBB
+		LD A,0xBB
 		JR Z,START4			;„  =”€‰‹‚ … €‰„…
 		LD BC,0
 		CALL INIPLAY
-		LD A,0X77			;„  =‚‘… ‡€…—€’…‹
+		LD A,0x77			;„  =‚‘… ‡€…—€’…‹
 START4		LD (REJIMGS),A
 		RET
 
@@ -182,17 +182,17 @@ END_TAB
 ;----FUNC1C----
 ;‚…‘ HDAT1,HDAT0
 ;‘‹… —’… BC=HDAT1, DE=HDAT0
-BITRATE		LD HL,0X0309
+BITRATE		LD HL,0x0309
 		LD A,Com_mp3
 		CALL COM__SD
 		PUSH DE
-		LD HL,0X0308
+		LD HL,0x0308
 		LD A,Com_mp3
 		CALL COM__SD
 		POP BC
 		LD A,C
 		AND A
-		LD HL,0XA000
+		LD HL,0xA000
 		JP Z,GET_RZN			;……•„ …‘‹ —…ƒ … ƒ€…’‘
 		AND %00011000
 		RRCA
@@ -236,19 +236,19 @@ SETTMBR		OUT (CLRCBIT),A
 		BIT 7,A				;‚…… † ‹
 		RET Z				;“’’ ’…›
 		PUSH BC				;‘•€… "B"
-		LD HL,0X0302
+		LD HL,0x0302
 		LD A,Com_mp3			;—’€… ’…“™…… ‡€—……
 		CALL COM__SD			;’…‚
 		POP BC				;‚‘‘’€€‚‹‚€… "B"
-		LD C,0X10			;€ƒ ‡……
+		LD C,0x10			;€ƒ ‡……
 		BIT 6,B				;“’ UBASS?
 		JR Z,STTMBR1
 ;…… “‚… BASS, ’› 7-4
 		LD A,E
-		AND 0X0F
+		AND 0x0F
 		LD L,A				;‘•€… ’› 3-0
 		LD A,E
-		AND 0XF0
+		AND 0xF0
 		BIT 7,B				;“„€ “’?
 		JR Z,STMB01			;“‚…‹—……
 		ADD A,C				;“‚…‹—‚€… € 1
@@ -264,10 +264,10 @@ STTMBR1		BIT 2,B				;“’ UTREBLE?
 		JR Z,STTMBR2
 ;…… “‚… TREBLE, ’› 7-4
 		LD A,D
-		AND 0X0F
+		AND 0x0F
 		LD L,A				;‘•€… ’› 3-0
 		LD A,D
-		AND 0XF0
+		AND 0xF0
 		BIT 3,B				;“„€ “’?
 		JR Z,STMB03
 ;“‚…‹—……
@@ -284,15 +284,15 @@ STTMBR2		BIT 4,B				;“’ FBASS?
 		JR Z,STTMBR3
 ;‡……… —€‘’’› BASS, ’› 3-0
 		LD A,E
-		AND 0XF0
+		AND 0xF0
 		LD L,A				;‘•€… ’› 7-4
 		LD A,E
-		AND 0X0F
+		AND 0x0F
 		BIT 5,B				;“„€ “’?
 		JR Z,STMB05
 ;“‚…‹—……
 		INC A
-		CP 0X10
+		CP 0x10
 		JR NC,STTMBR3			;€‘“!
 		JR STMB06
 
@@ -305,15 +305,15 @@ STTMBR3		BIT 0,B				;“’ FTREBLE?
 		JR Z,WRTMBR
 ;‡……… —€‘’’› TREBLE, ’› 3-0
 		LD A,D
-		AND 0XF0
+		AND 0xF0
 		LD L,A				;‘•€… ’› 7-4
 		LD A,D
-		AND 0X0F
+		AND 0x0F
 		BIT 1,B				;“„€ “’?
 		JR Z,STBM07
 ;“‚…‹—……
 		INC A
-		CP 0X10
+		CP 0x10
 		JR NC,WRTMBR			;€‘“!
 		JR STBM08
 
@@ -323,7 +323,7 @@ STBM07		AND A
 		DEC A
 STBM08		ADD A,L
 		LD D,A				;‚…“‹ ’› 7-4
-WRTMBR		LD HL,0X0202
+WRTMBR		LD HL,0x0202
 		LD A,Com_mp3
 		JP COM__SD			;‡€‘€‹ “‘’€‚ ‚‡€„
 
@@ -333,16 +333,16 @@ FATTYPE		LD A,(CALBFAT)
 		JP GET_BYT
 
 ;…„…‹…… “‘’€‚‹…ƒ —€
-RTYPEVS		LD HL,0X0301
+RTYPEVS		LD HL,0x0301
 		LD A,Com_mp3
 		CALL COM__SD
 		LD A,E
 		RRCA
 		RRCA
-		AND 0X0C			;€‘ ’……‘“’ ’› 3-2
+		AND 0x0C			;€‘ ’……‘“’ ’› 3-2
 		LD E,A				;’€ “‘’€‚‹…ƒ MP3 —€
 		LD A,(GETVTSH)
-		AND 0XF3
+		AND 0xF3
 		OR E
 		LD (GETVTSH),A
 		RET
@@ -358,7 +358,7 @@ TESTREJ		IN A,(CLRCBIT)
 ;----FUNC17----
 ;……‹—…… ’€ ‘‘€
 SFT_HRD		LD HL,GETVTSH
-		LD A,0X10
+		LD A,0x10
 		XOR (HL)
 		LD (HL),A
 		LD A,Hardmp3
@@ -441,7 +441,7 @@ P_DIR		LD BC,(NUMFILE)
 		PUSH BC
 		CALL COM_FAT
 		POP HL
-		CP 0X80
+		CP 0x80
 		JP Z,SD_LOST
 		AND A
 		SBC HL,BC
@@ -464,23 +464,23 @@ GET_LNG		CALL RDINBC
 		LD HL,BUF_LNG
 ;		LD A,Getlong
 ;		CALL COM_FAT
-;		CP 0X80
+;		CP 0x80
 ;		JP Z,SD_LOST
 		LD E,0
 		JP OUTDATA
 
 ;----FUNC0A----
 ;‚›‹/‚‹ ‡‚“€
-MUTE		LD HL,0X030B
+MUTE		LD HL,0x030B
 		LD A,Com_mp3
 		CALL COM__SD
 		LD A,E
-		CP 0XFE
+		CP 0xFE
 		JR NC,MUTEOFF
 		LD (MUTEOFF+1),A
 		LD HL,GETVTSH
 		SET 6,(HL)
-		LD E,0XFE
+		LD E,0xFE
 		JR VOL_ALL
 
 MUTEOFF		LD E,0
@@ -490,28 +490,28 @@ MUTEOFF		LD E,0
 
 ;----FUNC08----
 ;“‚…‹—…… ƒ‘’ € …„–“
-VOL_UP		LD HL,0X030B
+VOL_UP		LD HL,0x030B
 		LD A,Com_mp3
 		CALL COM__SD
 		LD A,E
 		AND A
 		RET Z
-		CP 0X80
+		CP 0x80
 		RET NC
 		DEC E
 		JR VOL_ALL
 
 ;----FUNC09----
 ;“……… ƒ‘’ € …„–“
-VOL_DN		LD HL,0X030B
+VOL_DN		LD HL,0x030B
 		LD A,Com_mp3
 		CALL COM__SD
 		LD A,E
-		CP 0X7F
+		CP 0x7F
 		RET NC
 		INC E
 VOL_ALL		LD D,E
-		LD HL,0X020B
+		LD HL,0x020B
 		LD A,E
 		LD (GETVTSL),A
 		JR XB3
@@ -520,7 +520,7 @@ VOL_ALL		LD D,E
 ;……‹—…… VIRTUAL SURROUND
 XORSURR		LD B,1
 XOR_ALL		PUSH BC
-		LD HL,0X0300
+		LD HL,0x0300
 		LD A,Com_mp3
 		CALL COM__SD
 		POP BC
@@ -533,7 +533,7 @@ XOR_ALL		PUSH BC
 		BIT 3,A
 		JR Z,$+4
 		RES 7,E
-		LD HL,0X0200
+		LD HL,0x0200
 XB3		LD A,Com_mp3
 		JP COM__SD
 
@@ -542,21 +542,21 @@ XB3		LD A,Com_mp3
 XORBASS		LD A,(GETVTSH)
 		BIT 3,A
 		JR NZ,XB
-		LD B,0X80
+		LD B,0x80
 		JR XOR_ALL
 
 XB		LD A,(GETVTSH)
-		XOR 0X80
+		XOR 0x80
 		LD (GETVTSH),A
 
 CP_XB		LD A,(GETVTSH)
 		BIT 7,A
 		JR Z,XB1
 		LD DE,(VSTBL)
-XB2		LD HL,0X0202
+XB2		LD HL,0x0202
 		JR XB3
 
-XB1		LD HL,0X0302
+XB1		LD HL,0x0302
 		LD A,Com_mp3
 		CALL COM__SD
 		LD (VSTBL),DE
@@ -565,7 +565,7 @@ XB1		LD HL,0X0302
 
 ;----FUNC0B----
 ;‹“—’ ‚… ƒ›‚€
-GETTIME		LD HL,0X0304
+GETTIME		LD HL,0x0304
 		LD A,Com_mp3
 		CALL COM__SD
 		EX DE,HL
@@ -581,7 +581,7 @@ GETTIME		LD HL,0X0304
 		CALL SUB_BC
 		LD BC,10
 		CALL SUB_BC
-		LD A,0X30
+		LD A,0x30
 		ADD A,L
 		LD (DE),A
 		LD E,6
@@ -593,56 +593,56 @@ GETTIME		LD HL,0X0304
 RUSTTBL		LD A,(GETVTSH)
 		BIT 3,A
 		RET Z
-		LD HL,0X0302
+		LD HL,0x0302
 		LD A,Com_mp3
 		CALL COM__SD
 		LD A,D
 		EXX
 		LD DE,BUFTIME
-		AND 0X0F
+		AND 0x0F
 		LD L,A
 		LD H,0
 		LD BC,10
 		CALL SUB_BC
-		LD A,0X30
+		LD A,0x30
 		ADD A,L
 		LD (DE),A			;‹†‹ —€‘’’“ TREBLE
 		INC DE
 		EXX
 		LD A,D
 		EXX
-		AND 0XF0
+		AND 0xF0
 		RRCA
 		RRCA
 		RRCA
 		RRCA
 		LD L,A
 		BIT 3,A
-		LD A,0X2B
+		LD A,0x2B
 		JR Z,$+4
-		LD A,0X2D
+		LD A,0x2D
 		LD (DE),A
 		INC DE
 		LD A,L
 		AND 7
-		ADD A,0X30
+		ADD A,0x30
 		LD (DE),A			;‹†‹ “‚… TREBLE
 		INC DE
 		EXX
 		LD A,E
 		EXX
-		AND 0X0F
+		AND 0x0F
 		LD L,A
 		LD BC,10
 		CALL SUB_BC
-		LD A,0X30
+		LD A,0x30
 		ADD A,L
 		LD (DE),A			;‹†‹ —€‘’’“ BASS
 		INC DE
 		EXX
 		LD A,E
 		EXX
-		AND 0XF0
+		AND 0xF0
 		RRCA
 		RRCA
 		RRCA
@@ -650,25 +650,25 @@ RUSTTBL		LD A,(GETVTSH)
 		LD L,A
 		LD BC,10
 		CALL SUB_BC
-		LD A,0X30
+		LD A,0x30
 		ADD A,L
 		LD (DE),A			;‹†‹ “‚… BASS
 		EXX
 		LD E,8
 		LD HL,BUFTIME
-		LD A,0X30
+		LD A,0x30
 		CP (HL)
 		JR NZ,$+4
-		LD (HL),0X20
+		LD (HL),0x20
 		JP OUTDATA
 
-SUB_BC		LD A,0XFF
+SUB_BC		LD A,0xFF
 		AND A
 		INC A
 		SBC HL,BC
 		JR NC,$-3
 		ADD HL,BC
-		ADD A,0X30
+		ADD A,0x30
 		LD (DE),A
 		INC DE
 		RET
@@ -688,14 +688,14 @@ GETDCHR		LD DE,BUFTIME
 		CALL SUB_BC
 		LD BC,10
 		CALL SUB_BC
-		LD A,0X30
+		LD A,0x30
 		ADD A,L
 		LD (DE),A
 		POP HL
 		PUSH HL
-		LD BC,0X0420
+		LD BC,0x0420
 		LD A,(HL)
-		CP 0X30
+		CP 0x30
 		JR NZ,GO_OUTD
 		LD (HL),C
 		INC HL
@@ -719,13 +719,13 @@ GETOPIS		CALL RDINBC
 		LD BC,(NUMFILE)
 		LD A,Getfzap
 		CALL COM_FAT
-		CP 0X80
+		CP 0x80
 		JP Z,SD_LOST
-		LD BC,0X20
+		LD BC,0x20
 		ADD HL,BC
 		LD (HL),E
 		SBC HL,BC
-		LD E,0X21
+		LD E,0x21
 
 ;’„€… €‰’, ‘—…’— €‰’€ ‚ E
 OUTDATA		LD A,(HL)
@@ -806,7 +806,7 @@ PLAYMP3		LD A,(FLAGS)
 		LD H,A
 		EX AF,AF'
 		LD A,H
-		CP 0X80
+		CP 0x80
 		JP Z,SD_LOST
 		EX AF,AF'
 		RET NZ				;”€‰‹ … —‹‘, ‚›•„
@@ -834,7 +834,7 @@ INIPLA1		SET 5,H				;‚‹—€… ’ 5, ‹ ‚›‰ ”€‰‹
 		PUSH HL
 		LD A,Openfil
 		CALL COM_FAT			;’›‚€… ‚›‰ ”€‰‹
-		CP 0X80
+		CP 0x80
 		JP Z,SD_LOST
 		AND 2
 		LD E,A
@@ -853,7 +853,7 @@ INIPLA2		LD A,Freqnc
 		LD HL,FLAGS
 		RES 2,(HL)
 		SET 1,(HL)
-		LD HL,0X0400
+		LD HL,0x0400
 		LD (TIMEOUT),HL
 		POP BC
 		LD HL,BUF_LNG
@@ -895,10 +895,10 @@ SET7XOR		PUSH HL
 		LD HL,0
 		ADD HL,SP
 		EXX
-		LD A,0X10
-		LD SP,0X7F00
-		LD BC,0XA97E
-		LD DE,0X2C77
+		LD A,0x10
+		LD SP,0x7F00
+		LD BC,0xA97E
+		LD DE,0x2C77
 SPEDI1		REPT 16
 		PUSH DE
 		PUSH BC
@@ -906,7 +906,7 @@ SPEDI1		REPT 16
 		DEC A
 		JP NZ,SPEDI1
 		LD HL,SPEDI2
-		LD DE,0X7F00
+		LD DE,0x7F00
 		LD BC,ESPEDI2-SPEDI2
 		LDIR
 		EXX
@@ -916,7 +916,7 @@ SPEDI1		REPT 16
 		EXX
 		LD L,A
 		LD H,0
-		LD BC,0X7B00
+		LD BC,0x7B00
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,BC
@@ -924,17 +924,17 @@ SPEDI1		REPT 16
 		EXX
 		LD A,(SIZ_MOD)
 		LD B,A
-		LD C,0X80
+		LD C,0x80
 		RET
 
 SPEDI2		INC H
-		JP NZ,0X7B00
+		JP NZ,0x7B00
 		INC E
 		LD A,(DE)
-		LD H,0X80
+		LD H,0x80
 		OUT (MPAG),A
 		DEC B
-		JP NZ,0X7B00
+		JP NZ,0x7B00
 		LD A,(PG_PLAYER)
 		OUT (MPAG),A
 		JP END7XOR
@@ -953,9 +953,9 @@ SPEDI3		LD A,(PG_PLAYER)
 END7XOR		EXX
 		LD HL,0
 		ADD HL,SP
-		LD SP,0X8000
-		LD DE,0X8080
-		LD B,0X40
+		LD SP,0x8000
+		LD DE,0x8080
+		LD B,0x40
 E7X1		REPT 64
 		PUSH DE
 		ENDM
@@ -965,33 +965,33 @@ E7X1		REPT 64
 		JP ESPEED
 
 PATCH		LD A,(NUMPG)
-		OR 0X3F
+		OR 0x3F
 		LD (PG_PLAYER),A	;‘’€–€ €‘‹†… ‹……€
 		IN A,(GSCFG0)
 		RES B_RAMRO,A
 		SET B_EXPAG,A
 		OUT (GSCFG0),A
-		LD A,0X80
+		LD A,0x80
 		OUT (MPAGEX),A
 		LD HL,SPEDI3
 		LD DE,ADDA80
 		LD BC,END7XOR-SPEDI3
 		LDIR
 		LD HL,FXB01
-		LD (HL),0XCD
+		LD (HL),0xCD
 		INC HL
 		LD (HL),LOW (NXTMOD)
 		INC HL
 		LD (HL),HIGH (NXTMOD)
-		LD HL,0X11D6
-		LD (HL),0XCD
+		LD HL,0x11D6
+		LD (HL),0xCD
 		INC HL
 		LD (HL),LOW (NXTMODR)
 		INC HL
 		LD (HL),HIGH (NXTMODR)
 		INC HL
 		EX DE,HL
-		LD HL,0X11E3
+		LD HL,0x11E3
 		AND A
 		SBC HL,DE
 		LD B,H
@@ -1011,7 +1011,7 @@ PATCH		LD A,(NUMPG)
 		LD BC,P__END-P_00
 		LDIR				;……‘ “€‚‹… MP3 ‹…… ‚ ‡“
 		LD HL,(NUMPG)
-		LD H,0X40
+		LD H,0x40
 		DEC L
 		LD (HL),1
 		INC L
@@ -1020,9 +1020,9 @@ PATCH		LD A,(NUMPG)
 		LD HL,NUMPG
 		DEC (HL)
 		LD HL,P_00
-		LD (0X0300+(0X1F*2)),HL		;€’— €„› 1F
+		LD (0x0300+(0x1F*2)),HL		;€’— €„› 1F
 		LD HL,COMMFF
-		LD (0X0300+(0X2F*2)),HL		;€’— €„› FF
+		LD (0x0300+(0x2F*2)),HL		;€’— €„› FF
 		IN A,(GSCFG0)
 		SET B_RAMRO,A
 		RES B_EXPAG,A
@@ -1031,7 +1031,7 @@ PATCH		LD A,(NUMPG)
 		OUT (MPAG),A
 
 ;‘‡„€… ‘‘€ €‹›• ‘’€– „‹ ‡€ƒ“‡—€ ”€‰‹€ ‚ €’
-LISTPAG		LD HL,0X4000
+LISTPAG		LD HL,0x4000
 		LD DE,BUF_PAG
 LSTPAG1		LD A,(HL)
 		ADD A,A
@@ -1054,14 +1054,14 @@ TEKADR1
 
 ;ƒ“‡‹€ ”€‰‹€ ‚ €’ NEOGS
 LD_MOD		IN A,(GSCFG0)
-		AND 0XCF
+		AND 0xCF
 		OUT (GSCFG0),A
 		LD HL,FLAGS
 		SET 2,(HL)
 		CALL MOD_OFF
 		LD A,Loadfil
 		CALL COM_FAT
-		CP 0X80
+		CP 0x80
 		JP Z,SD_LOST
 		LD (SIZ_MOD),A
 		LD A,(CPAGE)
@@ -1072,10 +1072,10 @@ LD_MOD		IN A,(GSCFG0)
 		CALL LDMOD
 		LD A,(MTSNGSZ)
 		LD (SIZ_PAT),A
-		LD BC,0X0100
+		LD BC,0x0100
 		CALL PLAYMOD
 		IN A,(GSCFG0)
-		OR 0X10
+		OR 0x10
 		OUT (GSCFG0),A
 		RET
 
@@ -1141,7 +1141,7 @@ OPROS		IN A,(ZXSTAT)
 		JR OPROS
 
 OPROS1		IN A,(ZXCMD)
-		CP 0X1F
+		CP 0x1F
 		JR NZ,CONROM
 OPROS3		IN A,(ZXDATRD)
 		OUT (CLRCBIT),A
@@ -1149,7 +1149,7 @@ OPROS3		IN A,(ZXDATRD)
 		JR Z,OPROS2
 		LD H,A
 		LD A,(REJIMGS)
-		CP 0X78
+		CP 0x78
 		JR NC,OPROS
 		LD A,H
 OPROS2		CP LOW (END_TAB-TABFUNC)/2+1
@@ -1172,9 +1172,9 @@ OPROS2		CP LOW (END_TAB-TABFUNC)/2+1
 P__END
 		DEPHASE
 
-		DUPL 0X100-LOW ($),0
+		DUPL 0x100-LOW ($),0
 
-BUF_LNG		EQU $				;0X100 “”… „‹ ……„. „‹ƒ …
-BUFTDIR		EQU BUF_LNG+0X100		;0X100 “”… … ’…“™…‰ DIR
-BUF_PAG		EQU BUFTDIR+0X100		;0X80 ’€‹–€ €‘…›• ‘’€–
-B512BAS		EQU BUF_PAG+0X100
+BUF_LNG		EQU $				;0x100 “”… „‹ ……„. „‹ƒ …
+BUFTDIR		EQU BUF_LNG+0x100		;0x100 “”… … ’…“™…‰ DIR
+BUF_PAG		EQU BUFTDIR+0x100		;0x80 ’€‹–€ €‘…›• ‘’€–
+B512BAS		EQU BUF_PAG+0x100
