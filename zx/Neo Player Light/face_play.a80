@@ -1,8 +1,9 @@
 
-; LAST UPDATE 22.04.2023 savelij
+; LAST UPDATE 15.01.2024 savelij
 
 		include macros.a80
 		include ports_ngs.a80
+		include local_define.a80
 
 		include local_macros.a80
 		include vers.a80
@@ -14,8 +15,6 @@
 		include ports_sp.a80
 
 GSCOD		EQU 0x8000			; адрес куда закидывать код на нгс
-
-SIZ_PAT		EQU 0x14
 
 		ORG ADR_START
 START		DI
@@ -169,9 +168,9 @@ LOOP13		LD A,7
 	IN_GSDAT				; читаем ответ
 		CP 0x8B	
 		JP Z,RST_NGS_CODE		; если 0x8B то ответила стандартная прошивка
-		CP 0x77
+		CP PLAYER_OK
 		JP Z,Warm			; если ответ 0x77, то ответил внутренний плеер
-		CP 0xEE
+		CP SD_NOT_FOUND
 		JP NZ,LOOP17			; SD карта найдена?
 		LD A,7
 		CALL CLS
@@ -186,7 +185,7 @@ LOOP20		CALL PRINT
 		CALL PRINT
 		JR LOOP16
 
-LOOP17		CP 0xDD
+LOOP17		CP FAT_NOT_FOUND
 		JR NZ,LOOP26			; на SD карте FAT не обнаружен
 		LD A,7
 		CALL CLS
@@ -194,7 +193,7 @@ LOOP17		CP 0xDD
 	DE_ADR_SCR 0,16
 		JR LOOP20
 
-LOOP26		CP 0xBB
+LOOP26		CP FILES_NOT_FOUND
 		JR NZ,LOOP27
 		LD A,7
 		CALL CLS
@@ -202,7 +201,7 @@ LOOP26		CP 0xBB
 	DE_ADR_SCR 0,16
 		JR LOOP20
 
-LOOP27		CP 0xCC
+LOOP27		CP NEOGS_ERROR
 		JP NZ,RST_NGS_CODE		; плата GS стараго типав
 		JP NO_NGS
 
@@ -228,15 +227,18 @@ LOOP16
 
 Warm		LD A,7
 		CALL CLS			; очистка экрана
+		LD A,VARP_CHIP_TYPE
+		CALL GET_VTS
 		CALL MORDALL			; вывод основных надписей
-		LD A,0x15
+		LD A,__TXT_COUNT_FILES
 	DE_ADR_SCR 13,0
 		CALL READ5BT			; вывод кол-ва найденного
 		CALL NAMELNG			; вывод имени текущего файла
 LOOP_3		CALL DAT_VTS			; вывод инфы текущего файла
-LOOP		XOR A
+NO_PRESS_KEY
+	LD_A VARP_FLAGS
 		CALL GET_VTS
-		BIT 7,A
+		BIT B_SD_LOST,A
 		JP NZ,EJECT
 ;		AND 5
 ;		CP 5
@@ -244,42 +246,46 @@ LOOP		XOR A
 		CALL FGETVTS
 		LD A,H
 		PUSH AF
-		BIT 5,A
+		BIT B_NEW_FILE,A
 		CALL NZ,NAMELNG
 		POP AF
-		BIT 1,A
+		LD A,VARP_FILE_TYPE
+		CALL GET_VTS
+		CP FILE_MP3
 		JR NZ,LOOPM
+; продолжаем для MP3
 	DE_ADR_SCR 11,11
 		CALL READSEC			; время играния
 		CALL BITRATE
 		JR LOOP14
 
+; продолжаем для MOD
 LOOPM		CALL POSMOD
 LOOP14
 	IFDEF _SPRINTER
 		EI
 	SPDSS DSSF.SCANKEY
-		JR Z,LOOP
+		JR Z,NO_PRESS_KEY
 	ELSE
 		EI
 		HALT
 		DI
 		BIT 5,(IY+1)
-		JR Z,LOOP
+		JR Z,NO_PRESS_KEY
 		RES 5,(IY+1)
 		LD A,(IY-0x32)
 	ENDIF
 		LD B,A
-		CALL FGETVTS
-		LD A,H
-		BIT 1,A
+		LD A,VARP_FILE_TYPE
+		CALL GET_VTS
+		CP FILE_MP3
 		LD HL,MODCOM
 		JR NZ,LOOP14_1
 		LD HL,MP3COM
 LOOP14_1	LD DE,4
 LOOP14_2	LD A,(HL)
 		AND A
-		JR Z,LOOP
+		JR Z,NO_PRESS_KEY
 		CP B
 		JR Z,RDCOMM
 		ADD HL,DE
@@ -363,13 +369,13 @@ EXE3		PUSH AF
 		POP AF
 	OUT_GSDAT_A
 		CALL PRTTBL
-		JP LOOP
+		JP NO_PRESS_KEY
 
 EXE4
 	OUT_GSDAT_A
 	OUT_GSCOM 0x1F
 		CALL WC
-		JP LOOP
+		JP NO_PRESS_KEY
 
 ; ожидание отпускания кнопки и сброс
 RESCOMP		CALL NANYKEY
@@ -405,7 +411,7 @@ WAITGS		LD E,B
 		JR WAITGS
 
 ; распечатка номера трека и имени играемого файла
-NAMELNG		LD A,0x16
+NAMELNG		LD A,__TXT_CURRENT_FILE
 	DE_ADR_SCR 13,10
 		CALL READ5BT			; текущий номер трека
 		LD HL,0x8000
@@ -468,24 +474,26 @@ NAMELNG		LD A,0x16
 
 DAT_VTS		CALL FGETVTS		; запрос флагового байта
 	DE_ADR_SCR 16,13
-		BIT 1,H
+		LD A,VARP_FILE_TYPE
+		CALL GET_VTS
+		CP FILE_MP3
 		RET NZ			; это MOD
-		BIT 7,H
-		LD A,0x2B
+		BIT B_ENABLE_TEMBR,H
+		LD A,'+'
 		JR NZ,.L1
-		LD A,"-"
+		LD A,'-'
 .L1		CALL PRISYM		; вывод положения TREBLE/BASS
-		BIT 0,H
-		LD A,"+"
+		BIT B_SURROUND,H
+		LD A,'+'
 		JR NZ,.L2
-		LD A,"-"
+		LD A,'-'
 .L2
 	DE_ADR_SCR 16,12
 		CALL PRISYM		; вывод положения VIRTUAL SURROUND
-		BIT 6,H
-		LD A,"+"
+		BIT B_MUTE,H
+		LD A,'+'
 		JR NZ,.L3
-		LD A,"-"
+		LD A,'-'
 .L3
 	DE_ADR_SCR 31,14
 		CALL PRISYM		; вывод положения MUTE ON/OFF
@@ -493,8 +501,8 @@ DAT_VTS		CALL FGETVTS		; запрос флагового байта
 	DE_ADR_SCR 16,14
 		CALL PRIHEX
 ; вывод индикатора SOFT/HARD RESET
-		BIT 4,H
-		LD HL,MESS16+2
+		BIT B_TYPE_RESET,H
+		LD HL,MESS16 + 2
 		JR Z,DATVTS1
 		RES 5,(HL)
 		INC HL
@@ -686,7 +694,7 @@ READ5BT
 ; получение времени проигрывания в
 ; текстовом виде и распечатка
 READSEC
-	OUT_GSDAT 0x0B
+	OUT_GSDAT __GET_TIME
 	OUT_GSCOM 0x1F
 		CALL WC
 		CALL WN
@@ -816,9 +824,8 @@ MORDALL		LD HL,MESS1
 		LD HL,MESS24
 	DE_ADR_SCR ((32-(EMESS24-MESS24))/2),15
 		CALL PRINT
-		LD A,3
+		LD A,VARP_CHIP_TYPE
 		CALL GET_VTS
-		AND %00001100
 		LD C,A
 	IFDEF _SPRINTER
 		PUSH BC
@@ -826,33 +833,41 @@ MORDALL		LD HL,MESS1
 		POP BC
 		PUSH BC
 		LD A,C
-		RLCA
-		RLCA
-		XOR %00110000
-		OR %01000000 + BLUE
+		XOR %00000111
+		ADD A,A
+		ADD A,A
+		ADD A,A
+		ADD A,A
+		OR BLUE
 		LD E,A
 	SPBIOS BIOSF.LP_PRINT_ATR,32
 		POP BC		
-	ELSE
-		XOR 0x0C
+	ELSE ; SPRINTER
+		XOR %00000111
 		ADD A,A
-		OR 0x21				; INK = BLUE, PAPER = GREEN + !номер чипа MP3 (0..3)
+		ADD A,A
+		ADD A,A
+		OR BLUE
 		LD HL,0x59E0
 		LD B,32
 .L1		LD (HL),A
 		INC L
 		DJNZ .L1
-	ENDIF
+	ENDIF ; SPRINTER
 		LD A,C
-		RRCA
-		RRCA
-		ADD A,"0"			; номер версии MP3 чипа
+		ADD A,'0'			; номер версии MP3 чипа
+		CP '9' + 1
+		JR C,.L2
+		ADD A,7
+.L2
 	DE_ADR_SCR 31,15
 		CALL PRISYM
-MORDAR		LD A,3
+MORDAR
+	LD_A VARP_FILE_TYPE
 		CALL GET_VTS
-		BIT 1,A
-		JR NZ,MORDMOD
+		CP FILE_MOD
+		JR Z,MORDMOD
+; обновление морды для MP3
 		LD HL,MESS9
 	DE_ADR_SCR 0,11
 		CALL PRINT
@@ -876,7 +891,8 @@ MORDAR		LD A,3
 		CALL PRINT
 		JP PRTTBL
 
-MORDMOD		LD HL,EMPT16+3
+; обновление морды плеера для MOD
+MORDMOD		LD HL,EMPT16 + 3
 	DE_ADR_SCR 19,10
 		CALL PRINT
 		LD HL,EMPT16
@@ -907,18 +923,21 @@ MORDMOD		LD HL,EMPT16+3
 	DE_ADR_SCR 0,14
 		JP PRINT
 
-POSMOD		LD A,SIZ_PAT
+; обновление инфы проигрывания MOD
+POSMOD		LD A,VARP_SIZE_PATTERN_MOD
 		CALL GET_VTS
 	DE_ADR_SCR 14,11
 		CALL PRIHEX
 	DE_ADR_SCR 14,12
 	OUT_GSCOM 0x60
 		CALL WC
+		CALL WN
 	IN_GSDAT
 		CALL PRIHEX
 	DE_ADR_SCR 14,13
 	OUT_GSCOM 0x61
 		CALL WC
+		CALL WN
 	IN_GSDAT
 		JP PRIHEX
 
@@ -927,12 +946,13 @@ GET_VTS
 	OUT_GSDAT_A
 	OUT_GSCOM 0xFF
 		CALL WC
+		CALL WN
 	IN_GSDAT
 		RET
 
 ; получение 16 битного состояния
 FGETVTS
-	OUT_GSDAT 0x0C
+	OUT_GSDAT __GET_VTS
 	OUT_GSCOM 0x1F
 		CALL WC
 		CALL WN
@@ -943,51 +963,51 @@ FGETVTS
 		LD L,A
 		RET
 
-MOD00		DB "Length:        ",0
-MOD02		DB "Position:      ",0
-MOD03		DB "Note:          ",0
+MOD00		DZ "Length:        "
+MOD02		DZ "Position:      "
+MOD03		DZ "Note:          "
 
 VENTIL		DB 0xC4,0x5C,0x7C,0x2F
 
-MESS1		DB "Found files:",0
-MESS16		DB "\"Space\" Exit",0
-MESS2		DB "1 Prev. File  SS+1 Prev. DIR",0
-MESS3		DB "2 Play File",0
-MESS4		DB "3 Pause",0
-MESS5		DB "4 Stop",0
-MESS6		DB "5 Next File   SS+5 Next DIR",0
-MESS7		DB "0 Eject SD Card",0
-MESS8		DB "Play Number:",0
-MESS9		DB "Time Play:      ",0
-MESS10		DB "9 Treble/Bass:  ",0
-MESS11		DB "8 Surround:     ",0
-MESS12		DB "<6-7> Volume:   ",0
-MESSEM		DB "\"Enter\" Mute",0
-MESS13		DB "SD-Card Not Found",0
-MESS14		DB "FAT not Found",0
-MESS15		DB "Press \"ENTER\" 4 Restart Init SD",0
+MESS1		DZ "Found files:"
+MESS16		DZ "\"Space\" Exit"
+MESS2		DZ "1 Prev. File  SS+1 Prev. DIR"
+MESS3		DZ "2 Play File"
+MESS4		DZ "3 Pause"
+MESS5		DZ "4 Stop"
+MESS6		DZ "5 Next File   SS+5 Next DIR"
+MESS7		DZ "0 Eject SD Card"
+MESS8		DZ "Play Number:"
+MESS9		DZ "Time Play:      "
+MESS10		DZ "9 Treble/Bass:  "
+MESS11		DZ "8 Surround:     "
+MESS12		DZ "<6-7> Volume:   "
+MESSEM		DZ "\"Enter\" Mute"
+MESS13		DZ "SD-Card Not Found"
+MESS14		DZ "FAT not Found"
+MESS15		DZ "Press \"ENTER\" 4 Restart Init SD"
 MESS17		DB "Neo"
-MESS18		DB "GS not found",0
+MESS18		DZ "GS not found"
 MESS19		DB "Press any key for "
 	IFDEF _SPRINTER
-		DB "exit",0
+		DZ "exit"
 	ELSE
-		DB "reset",0
+		DZ "reset"
 	ENDIF
-MESS20		DB "Please wait, search files",0
-MESS21		DB "Eject SD card or insert new card",0
-MESS22		DB "Press any key",0
-MESS23		DB "File(s) not found",0
+MESS20		DZ "Please wait, search files"
+MESS21		DZ "Eject SD card or insert new card"
+MESS22		DZ "Press any key"
+MESS23		DZ "File(s) not found"
 MESS24		DB "Neo Player Light v",VERS_PLAYER,0
 EMESS24		EQU $-1
 EMPT32		DB "                "
-EMPT16		DB "                ",0
-MESS26		DB "Hz",0
-MESS27		DB "kbps",0
-MESS28		DB "Please wait, detect NeoGS",0
+EMPT16		DZ "                "
+MESS26		DZ "Hz"
+MESS27		DZ "kbps"
+MESS28		DZ "Please wait, detect NeoGS"
 
 	IFDEF _SPRINTER
-NOT_FOUND_ISA	DB "ISA Slot not found. Emulator?",0
+NOT_FOUND_ISA	DZ "ISA Slot not found. Emulator?"
 	ENDIF
 
 REJCHAN		DB "      stereo"
@@ -1009,7 +1029,7 @@ L1ID0		DB "  - 32 48 56 64 80 96112128144160176192224256   "
 		DB "  - 32 64 96128160192224256288320352384416448"
 
 EJECT
-	OUT_GSDAT 4
+	OUT_GSDAT __STOP
 	OUT_GSCOM 0x1F
 		CALL WC
 		LD A,7
@@ -1023,7 +1043,7 @@ EJECT
 		CALL NANYKEY
 		CALL ANYKEY
 		CALL NANYKEY
-	OUT_GSDAT 0
+	OUT_GSDAT __INIT_SD
 	OUT_GSCOM 0x1F
 		JP LOOP21
 
@@ -1117,9 +1137,10 @@ INI_E2		DEC D
 		JR NZ,INI_E1
 		RET
 
-INI_E3		XOR A
+INI_E3
+	LD_A VARP_FLAGS
 		CALL GET_VTS
-		BIT 7,A
+		BIT B_SD_LOST,A
 		JR Z,INI_E1
 		LD SP,(OLD_STACK)
 		JP EJECT
@@ -1215,7 +1236,7 @@ CHECK_ISA	ld a,(0xC000)
 		ret
 	ENDIF
 
-GO_YES		binclude tmp/play4ngs.rom
+GO_YES		binclude tmp/play_on_ngs.rom
 FAT_END
 
 	IFNDEF _SPRINTER

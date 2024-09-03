@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 21.04.2023 savelij
+; LAST UPDATE: 13.01.2024 savelij
 
 OUT_GSDAT	MACRO NUM
 	IF NUM = 0
@@ -73,5 +73,13 @@ DE_ADR_SCR	MACRO x,y
 		CALL SET_DE_ADR_SCR
 	ELSE
 		LD DE,(((y & 0x18) | 0x40) << 8) + (((y & 7) << 5) + x)
+	ENDIF
+		ENDM
+
+LD_A		MACRO NUM
+	IF NUM = 0
+		XOR A
+	ELSE
+		LD A,NUM
 	ENDIF
 		ENDM

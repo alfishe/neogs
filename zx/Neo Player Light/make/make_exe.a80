@@ -1,8 +1,8 @@
 
-; LAST UPDATE: 03.04.2023 savelij
+; LAST UPDATE: 10.01.2024 savelij
 
 		include macros.a80
-		include vers.a80
+		include ../vers.a80
 
 		ORG ADR_START - 0x200
 
@@ -40,5 +40,5 @@ START0		LD HL,ADR_START
 		RET
 
 DEPACK		include dec40.a80
-BINFLASHER	binclude tmp/nplsp_pack.rom
+BINFLASHER	binclude ../tmp/nplsp.pack
 EBINFLASHER

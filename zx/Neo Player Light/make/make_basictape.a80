@@ -1,11 +1,11 @@
 
-; LAST UPDATE: 02.04.2023 savelij
+; LAST UPDATE: 13.01.2024 savelij
 
 		include macros.a80
 		include basic_tokens.a80
 
 		ORG 0x0100 - 0x11
-		SUM_HOB "ngsplay B", BASIC_FULL, BASIC_FULL, 1
+		SUM_HOB "npl     B", BASIC_FULL, BASIC_FULL, 1
 
 BASIC_START	DW 0x100,BASIC_END-STROKA1 + 1
 STROKA1		DB __CLEAR,__VAL,"\"24575\":"		;CLEAR VAL "ADDRESS":

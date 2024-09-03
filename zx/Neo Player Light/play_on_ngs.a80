@@ -1,0 +1,1197 @@
+
+; LAST UPDATE 15.01.2024 savelij
+
+; код для нгс
+
+		include macros.a80
+		include ports_ngs.a80
+		include sdcomand.a80
+		include bootsecfat.a80
+		include fat_dir.a80
+		include define_vs10xx.a80
+		include local_define.a80
+
+; патч прошивки для плеерения MOD
+; плеерение, проверка и прочее
+COMINT		EQU 0x026B
+COMINT_		EQU 0x026E
+COMINT0		EQU 0x0273
+COMINT1		EQU 0x0295
+WTDTL		EQU 0x02BC
+EMPTY1		EQU 0x0942
+ADDA80		EQU 0x0EF8
+EMPTY2		EQU 0x3D5F
+NUMPG		EQU 0x4080				; всего страниц
+CPAGE		EQU 0x4081
+CNTMOD		EQU 0x4090
+CURMOD		EQU 0x4096
+CONVERT		EQU 0x40B7
+MTSTAT		EQU 0x4151
+MTSNGPS		EQU 0x415B
+MTSNGSZ		EQU 0x415C
+PlMode		EQU 0x41A0
+MODLLEN		EQU 0x41A1
+ISTACK		EQU 0x4400
+LDMOD		EQU 0xC3F8
+PLAYMOD		EQU 0xC426
+FXB01		EQU 0xD2B2
+
+ BITMASK MOD_STOP_PLAY,		7			; 1-MOD STOP, 0-PLAY
+
+ INIT_VAR 0x4168
+ SETVAR FLAGS,			BYTE
+ SETVAR STATUS,			BYTE			; 1 статус плеера
+ SETVAR GETVTSL,		BYTE			; 1 громкость MP3 чипа
+ SETVAR GETVTSH,		BYTE			; 1 биты режимов
+ SETVAR VSTBL,			WORD			; 2 текущие настройки тембров
+ SETVAR COUNT_MP3,		WORD			; 2 количество MP3
+ SETVAR NUMFILE,		WORD			; 2 номер текущего файла
+ SETVAR TYPE_RESET,		BYTE			; 1 тип сброса
+ SETVAR TYPE_FAT,		BYTE			; 1 калибр FAT
+ SETVAR BUF_TEXT,		8			; 8 буфер для текста
+ SETVAR SIZE_PATTERN_MOD,	BYTE			; 1 кол-во патернов в загруженном MOD
+ SETVAR SIZE_PAGES_MOD,		BYTE			; 1 кол-во страниц MOD
+ SETVAR TIMEOUT,		WORD			; 2 TIMEOUT на работу с новым файлом
+ SETVAR KUDAXOR,		WORD			; 2 адрес перехода на XOR BIT 7
+ SETVAR PAGE_PLAYER,		BYTE			; 1 номер страницы расположения плеера
+ SETVAR INT_MODE,		BYTE			; 1 флаг разрешенности прерываний
+ SETVAR CHIP_TYPE,		BYTE			; 1 тип чина на плате
+ SETVAR FILE_TYPE,		BYTE			; 1 тип файла
+ SETVAR SIZE_VARS,		0			; количество переменных
+
+; маски изменения тембров (требует проверки, на VS1011 работает только BASS
+ BITMASK UBASS_DIR,		7			; направление изменения UBASS
+ BITMASK UBASS,			6			; UBASS
+ BITMASK FBASS_DIR,		5			; направление изменения FBASS
+ BITMASK FBASS,			4			; FBASS
+ BITMASK UTREBLE_DIR,		3			; направление изменения UTREBLE
+ BITMASK UTREBLE,		2			; UTREBLE
+ BITMASK FTREBLE_DIR,		1			; направление изменения FTREBLE
+ BITMASK FTREBLE,		0			; FTREBLE
+
+FREQ10		EQU 0
+FREQ12		EQU 1
+FREQ20		EQU 2
+FREQ24		EQU 3
+
+		ORG 0x8000
+START		DI
+		LD SP,ISTACK
+		CALL ALLRES				; сброс всех настроек
+		OUT (ZXDATWR),A
+		OUT (CLRCBIT),A				; сообщили спеку о результатах инита
+		LD A,1
+		LD (PlMode),A
+		LD HL,0x0200
+		LD (MODLLEN),HL
+		JP CONTINUE_MOD
+
+TABFUNC		DW INIT_SD				; 00 перезапуск SD
+		DW PREV_TRACK				; 01 предыдущий трек
+		DW PLAY					; 02 плей
+		DW PAUSE				; 03 пауза
+		DW STOP					; 04 стоп
+		DW NEXT_TRACK				; 05 следующий трек
+		DW XORBASS				; 06 XOR TREBLE/BASS
+		DW XORSURR				; 07 XOR SURROUND
+		DW VOL_UP				; 08 громкость +
+		DW VOL_DOWN				; 09 громкость -
+		DW MUTE					; 0A вкл/выкл громкости
+		DW GET_TIME				; 0B отдать время
+		DW GET_VTS				; 0C отдать парам 6-10
+		DW GET_CURRENT				; 0D отдать тек номер
+		DW SET_NUM				; 0E установка текущего номера
+		DW RESET_MP3				; 0F сброс MP3 декодера
+		DW FAT_TYPE				; 10 тип FAT
+		DW GET_LNG				; 11 отдать имя файла
+		DW GET_FILE_DESCR			; 12 отдать описатель
+		DW GET_COUNT_FILES			; 13 отдать колво *.EXT
+		DW SEND_MP3				; 14 прд на MP3
+		DW TXT_COUNT_FILES			; 15 DEC число файлов
+		DW TXT_CURRENT_FILE			; 16 DEC число текущ+1
+		DW XOR_RESET				; 17 переключения типа сброса
+		DW PREV_DIR				; 18 следующий DIR
+		DW NEXT_DIR				; 19 предыдущий DIR
+		DW SET_TEMBR				; 1A уст. тембров
+		DW TXT_TEMBR_STATUS			; 1B чтение тембров
+		DW BITRATE				; 1C RD битрейт и проч
+		DW TEST_MODE				; 1D тест режима
+		DW GET_CHIP_TYPE			; 1E номер чипа MP3
+END_TAB
+
+ALLRES		CALL PATCH				; патч основной прошивки
+		LD HL,FLAGS
+		LD D,H
+		LD E,L
+		LD BC,SIZE_PAGES_MOD - FLAGS		; количество переменных для зануления
+		INC DE
+		LD (HL),0
+		LDIR					; зачистка области переменных
+		LD A,Softmp3
+		LD (TYPE_RESET),A			; установка сброса MP3 чипа
+		LD A,Avtodet
+		CALL COM__SD
+		AND A					; определяем GS/NeoGS
+		JR Z,INI_MP3
+		LD A,NEOGS_ERROR
+		JR INIT_SD.L4				; код ошибки =GS
+
+INI_MP3		LD A,Hardmp3
+		CALL COM__SD				; полная инициализация MP3 чипа
+
+;----FUNC00----
+INIT_SD		CALL RTYPEVS				; получение номера чипа MP3
+		LD HL,0
+		LD (NUMFILE),HL
+		LD A,Sd_init
+		CALL COM__SD
+		AND A					; инициализация SD карты
+		JR Z,.L1
+		LD A,SD_NOT_FOUND
+		LD (TYPE_FAT),A
+		JR .L4					; код ошибки =SD карта не найдена
+
+.L1		LD HL,FLAGS
+		RES B_SD_LOST,(HL)
+		LD A,Init_Fatvars
+		CALL COM_FAT				; инициализация FAT
+		CP 0x80
+		JR Z,.L11
+		LD (TYPE_FAT),A
+		INC A
+		JR NZ,.L3
+.L11		LD A,FAT_NOT_FOUND
+		JR .L4					; код ошибки =FAT не найден
+
+.L3		CALL XORBASS.L2
+		LD A,Finddir
+		CALL COM_FAT				; поиск всех директорий
+		CP 0x80
+		JR Z,.L11
+		LD A,Findfil
+		CALL COM_FAT				; поиск всех файлов по маске
+		CP 0x80
+		JR Z,.L11
+		LD (COUNT_MP3),HL
+		OUT (CLRCBIT),A
+		CALL PAUSE				; постановка на паузу
+		LD A,H
+		OR L
+		LD A,FILES_NOT_FOUND
+		JR Z,.L4				; код ошибки =файлов не найдено
+		LD BC,0
+		CALL INIPLAY
+		LD A,PLAYER_OK				; код ошибки =все замечательно
+.L4		LD (STATUS),A
+		RET
+
+;----FUNC1C----
+; конверсия HDAT1,HDAT0
+; после чтения BC=HDAT1, DE=HDAT0
+BITRATE		LD HL,VS10XX_READ << 8 + SCI_HDAT1;0x0309
+		LD A,Com_mp3
+		CALL COM__SD
+		PUSH DE
+		LD HL,VS10XX_READ << 8 + SCI_HDAT0;0x0308
+		LD A,Com_mp3
+		CALL COM__SD
+		POP BC
+		LD A,C
+		AND A
+		LD HL,0xA000
+		JP Z,GET_RZN				; переход если ничего не играется
+		AND %00011000
+		RRCA
+		RRCA
+		RRCA					; биты ID
+		LD L,A
+		LD A,D
+		AND %00001100				; биты SAMPLE RATE
+		OR L
+		LD L,A
+		LD A,C
+		AND %00000110				; биты LAYER
+		RLCA
+		RLCA
+		RLCA
+		OR L
+		LD L,A
+		LD A,E
+		AND %11000000				; биты MODE
+		OR L
+		LD L,A
+		LD A,D
+		AND %11110000				; биты BITRATE
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		LD H,A
+		JP GET_RZN				; сброс на спек содержимого HL
+
+;----FUNC1A----
+; изменение тембров
+SET_TEMBR	OUT (CLRCBIT),A
+		CALL WDY
+		IN A,(ZXDATRD)				; чтение параметра
+		LD B,A					; сохраняем
+		LD A,(CHIP_TYPE)
+		CP VS1001				; проверяем тип чипа
+		RET Z					; для VS1001 выходим
+; для VS1011 продолжаем
+		LD A,(GETVTSH)
+		BIT B_ENABLE_TEMBR,A			; проверяем можно ли
+		RET Z					; крутить тембры
+		PUSH BC					; сохраняем "B"
+		LD HL,VS10XX_READ << 8 + SCI_BASS;0x0302
+		LD A,Com_mp3				; читаем текущее значение
+		CALL COM__SD				; тембров
+		POP BC					; восстанавливаем "B"
+		LD C,0x10				; шаг изменения
+; меняем уровень UBASS ?
+		BIT B_UBASS,B				; крутим UBASS?
+		JR Z,.L1
+		LD A,E
+		AND %00001111
+		LD L,A					; сохраняем биты 3-0
+		LD A,E
+		AND %11110000
+		BIT B_UBASS_DIR,B			; куда крутим?
+		JR Z,.L01				; увеличение
+; увеличение UBASS
+		ADD A,C					; увеличиваем на 1
+		JR C,.L1				; максимум!
+		JR .L02
+
+; уменьшение UBASS
+.L01		SUB C					; уменьшаем на 1
+		JR C,.L1				; минимум!
+.L02		ADD A,L
+		LD E,A					; вернули биты 3-0
+
+; меняем уровень UTREBLE ?
+.L1		BIT B_UTREBLE,B				; крутим UTREBLE?
+		JR Z,.L2
+		LD A,D
+		AND %00001111
+		LD L,A					; сохраняем биты 3-0
+		LD A,D
+		AND %11110000
+		BIT B_UTREBLE_DIR,B			; куда крутим?
+		JR Z,.L03
+; увеличение UTREBLE
+		ADD A,C
+		JR C,.L2				; максимум!
+		JR .L04
+
+; уменьшение UTREBLE
+.L03		SUB C
+		JR C,.L3				; минимум!
+.L04		ADD A,L
+		LD D,A					; вернули биты 3-0
+; меняем уровень FBASS ?
+.L2		BIT B_FBASS,B				; крутим FBASS?
+		JR Z,.L3
+		LD A,E
+		AND %11110000
+		LD L,A					; сохраняем биты 7-4
+		LD A,E
+		AND %00001111
+		BIT B_FBASS_DIR,B			; куда крутим?
+		JR Z,.L05
+; увеличение FBASS
+		INC A
+		CP 0x10
+		JR NC,.L3				; максимум!
+		JR .L06
+
+; уменьшение FBASS
+.L05		AND A
+		JR Z,.L3				; минимум!
+		DEC A
+.L06		ADD A,L
+		LD E,A					; вернули биты 7-4
+; меняем уровень FTREBLE ?
+.L3		BIT B_FTREBLE,B				; крутим FTREBLE?
+		JR Z,WR_TEMBR
+		LD A,D
+		AND %11110000
+		LD L,A					; сохраняем биты 7-4
+		LD A,D
+		AND %00001111
+		BIT B_FTREBLE_DIR,B			; куда крутим?
+		JR Z,.L07
+; увеличение FTREBLE
+		INC A
+		CP 0x10
+		JR NC,WR_TEMBR				; максимум!
+		JR .L08
+
+; уменьшение FTREBLE
+.L07		AND A
+		JR Z,.L08				; минимум!
+		DEC A
+.L08		ADD A,L
+		LD D,A					; вернули биты 7-4
+; записываем изменение в чип
+WR_TEMBR	LD HL,VS10XX_WRITE << 8 + SCI_BASS;0x0202
+		LD A,Com_mp3
+		JP COM__SD				; записали установки взад
+
+;----FUNC10----
+; отдача байта типа FAT
+FAT_TYPE	LD A,(TYPE_FAT)
+		JP GET_BYT
+
+; определение установленного чипа
+RTYPEVS		LD HL,VS10XX_READ << 8 + SCI_STATUS;0x0301
+		LD A,Com_mp3
+		CALL COM__SD
+		LD A,E					; нас интересуют биты 7-4 из регистра статуса
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		AND %00001111				; сдвинули в младшие биты
+		LD (CHIP_TYPE),A			; тип установленного MP3 чипа
+		RET
+
+;----FUNC1D----
+; ответ на запрос какой код работает
+TEST_MODE	IN A,(ZXDATRD)
+		OUT (CLRCBIT),A
+		LD A,(STATUS)
+		OUT (ZXDATWR),A
+		RET
+
+;----FUNC1E-----
+; получение номера чипа MP3
+GET_CHIP_TYPE	IN A,(ZXDATRD)
+		OUT (CLRCBIT),A
+		LD A,(CHIP_TYPE)
+		OUT (ZXDATWR),A
+		RET
+
+;----FUNC17----
+; переключение типа сброса
+XOR_RESET	LD HL,GETVTSH
+		LD A,M_TYPE_RESET
+		XOR (HL)
+		LD (HL),A
+		LD A,Hardmp3
+		BIT B_TYPE_RESET,(HL)
+		JR NZ,.L1
+		LD A,Softmp3
+.L1		LD (TYPE_RESET),A
+		RET
+
+;----FUNC0F----
+; сброс MP3 чипа
+RESET_MP3	LD A,(TYPE_RESET)
+		JP COM__SD
+
+;----FUNC04----
+; остановка проигрывания
+STOP		CALL PAUSE
+		LD BC,(NUMFILE)
+		JP INIPLAY
+
+;----FUNC03----
+; пауза воспроизведения
+PAUSE		LD HL,MTSTAT
+		SET B_MOD_STOP_PLAY,(HL)
+		LD HL,FLAGS
+		RES B_PLAY_STOP,(HL)
+		RET
+
+;----FUNC02----
+; запуск воспроизведения
+PLAY		LD HL,(COUNT_MP3)
+		LD A,H
+		OR L
+		RET Z
+		LD HL,MTSTAT
+		RES B_MOD_STOP_PLAY,(HL)
+		LD HL,FLAGS
+		SET B_PLAY_STOP,(HL)
+		RET
+
+;----FUNC05----
+; переход на следущий песняк
+NEXT_TRACK	LD BC,(NUMFILE)
+		INC BC
+		LD HL,(COUNT_MP3)
+		LD A,H
+		OR L
+		RET Z
+		AND A
+		SBC HL,BC
+		JR NZ,.L1
+		LD BC,0
+
+; общее для переходов по файлам
+.L1		LD (NUMFILE),BC
+		JP INIPLAY
+
+;----FUNC01----
+; переход на предыдущий песняк
+PREV_TRACK	LD BC,(NUMFILE)
+		LD A,B
+		OR C
+		JR NZ,.L1
+		LD BC,(COUNT_MP3)
+		LD A,B
+		OR C
+		RET Z
+.L1		DEC BC
+		JR NEXT_TRACK.L1
+
+;----FUNC19----
+; переход на первый файл следущей DIR
+NEXT_DIR	LD A,Nxtdir
+		JR P_DIR
+
+;----FUNC18----
+; переход на первый файл предыдущей DIR
+PREV_DIR	LD A,Prvdir
+P_DIR		LD BC,(NUMFILE)
+		PUSH BC
+		CALL COM_FAT
+		POP HL
+		CP 0x80
+		JP Z,SD_LOST
+		AND A
+		SBC HL,BC
+		JR NZ,NEXT_TRACK.L1
+		RET
+
+;----FUNC15----
+; перегонка 512 байт снаружи на MP3
+SEND_MP3	LD A,Dat2mp3
+		JP COM__SD
+
+;----FUNC11----
+; отдать спеку длинное имя
+GET_LNG		CALL RDINBC
+		BIT 7,B
+		JR Z,.L1
+		LD BC,(NUMFILE)
+.L1		LD HL,GETVTSH
+		RES B_NEW_FILE,(HL)
+		LD HL,BUF_LNG
+;		LD A,Getlong
+;		CALL COM_FAT
+;		CP 0x80
+;		JP Z,SD_LOST
+		LD E,0
+		JP OUTDATA
+
+;----FUNC0A----
+; выкл/вкл звука
+MUTE		LD HL,VS10XX_READ << 8 + SCI_VOL;0x030B
+		LD A,Com_mp3
+		CALL COM__SD
+		LD A,E
+		CP 0xFE
+		JR NC,MUTEOFF
+		LD (MUTEOFF.L1),A
+		LD HL,GETVTSH
+		SET B_MUTE,(HL)
+		LD E,0xFE
+		JR VOL_ALL
+
+MUTEOFF		LD E,0
+.L1		EQU $-1
+		LD HL,GETVTSH
+		RES B_MUTE,(HL)
+		JR VOL_ALL
+
+;----FUNC08----
+; увеличение громкости на единицу
+VOL_UP		LD HL,VS10XX_READ << 8 + SCI_VOL;0x030B
+		LD A,Com_mp3
+		CALL COM__SD
+		LD A,E
+		AND A
+		RET Z
+		CP 0x80
+		RET NC
+		DEC E
+		JR VOL_ALL
+
+;----FUNC09----
+; уменьшение громкости на единицу
+VOL_DOWN	LD HL,VS10XX_READ << 8 + SCI_VOL;0x030B
+		LD A,Com_mp3
+		CALL COM__SD
+		LD A,E
+		CP 0x7F
+		RET NC
+		INC E
+VOL_ALL		LD D,E
+		LD HL,VS10XX_WRITE << 8 + SCI_VOL;0x020B
+		LD A,E
+		LD (GETVTSL),A
+		JR XOR_ALL.L1
+
+;----FUNC07----
+; переключение VIRTUAL SURROUND
+XORSURR		LD B,M_SURROUND
+XOR_ALL		PUSH BC
+		LD HL,VS10XX_READ << 8 + SCI_MODE;0x0300
+		LD A,Com_mp3
+		CALL COM__SD
+		POP BC
+		LD A,E
+		XOR B
+		LD E,A
+		LD A,(GETVTSH)
+		XOR B
+		LD (GETVTSH),A
+		LD A,(CHIP_TYPE)
+		CP VS1001
+		JR Z,.L2
+		RES 7,E
+.L2		LD HL,VS10XX_WRITE << 8 + SCI_MODE;0x0200
+.L1		LD A,Com_mp3
+		JP COM__SD
+
+;----FUNC06----
+; переключение тембров
+XORBASS		LD A,(CHIP_TYPE)
+		CP VS1001
+		JR Z,.L1
+		LD B,M_ENABLE_TEMBR
+		JR XOR_ALL
+
+.L1		LD A,(GETVTSH)
+		XOR M_ENABLE_TEMBR
+		LD (GETVTSH),A
+.L2		LD A,(GETVTSH)
+		BIT B_ENABLE_TEMBR,A
+		JR Z,.L4
+		LD DE,(VSTBL)
+.L3		LD HL,VS10XX_WRITE << 8 + SCI_BASS;0x0202
+		JR XOR_ALL.L1
+
+.L4		LD HL,VS10XX_READ << 8 + SCI_BASS;0x0302
+		LD A,Com_mp3
+		CALL COM__SD
+		LD (VSTBL),DE
+		LD DE,0
+		JR .L3
+
+;----FUNC0B----
+; получить время проигрывания
+GET_TIME	LD HL,VS10XX_READ << 8 + SCI_DECODE_TIME;0x0304
+		LD A,Com_mp3
+		CALL COM__SD
+		EX DE,HL
+		LD DE,BUF_TEXT
+		PUSH DE
+		LD BC,36000
+		CALL SUB_BC
+		LD BC,3600
+		CALL SUB_BC
+		LD BC,600
+		CALL SUB_BC
+		LD BC,60
+		CALL SUB_BC
+		LD BC,10
+		CALL SUB_BC
+		LD A,'0'
+		ADD A,L
+		LD (DE),A
+		LD E,6
+		POP HL
+		JP OUTDATA
+
+;----FUNC1B----
+; сброс на спек состояние тембров в текстовом виде
+TXT_TEMBR_STATUS
+		LD A,(CHIP_TYPE)
+		CP VS1001
+		RET Z
+		LD HL,VS10XX_READ << 8 + SCI_BASS;0x0302
+		LD A,Com_mp3
+		CALL COM__SD
+		LD A,D
+		EXX
+		LD DE,BUF_TEXT
+		AND 0x0F
+		LD L,A
+		LD H,0
+		LD BC,10
+		CALL SUB_BC
+		LD A,'0'
+		ADD A,L
+		LD (DE),A				; положили частоту TREBLE
+		INC DE
+		EXX
+		LD A,D
+		EXX
+		AND 0xF0
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		LD L,A
+		BIT 3,A
+		LD A,'+'
+		JR Z,.L2
+		LD A,'-'
+.L2		LD (DE),A
+		INC DE
+		LD A,L
+		AND 7
+		ADD A,'0'
+		LD (DE),A				; положили уровень TREBLE
+		INC DE
+		EXX
+		LD A,E
+		EXX
+		AND 0x0F
+		LD L,A
+		LD BC,10
+		CALL SUB_BC
+		LD A,'0'
+		ADD A,L
+		LD (DE),A				; положили частоту BASS
+		INC DE
+		EXX
+		LD A,E
+		EXX
+		AND 0xF0
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		LD L,A
+		LD BC,10
+		CALL SUB_BC
+		LD A,'0'
+		ADD A,L
+		LD (DE),A				; положили уровень BASS
+		EXX
+		LD E,8
+		LD HL,BUF_TEXT
+		LD A,'0'
+		CP (HL)
+		JR NZ,.L1
+		LD (HL),0x20
+.L1		JP OUTDATA
+
+SUB_BC		LD A,0xFF
+		AND A
+.L1		INC A
+		SBC HL,BC
+		JR NC,.L1
+		ADD HL,BC
+		ADD A,'0'
+		LD (DE),A
+		INC DE
+		RET
+
+;----FUNC15----
+; сброс на спек количество найденных файлов
+TXT_COUNT_FILES	LD HL,(COUNT_MP3)
+
+; перегоняем HL в TXT и сбрасываем
+GETDCHR		LD DE,BUF_TEXT
+		PUSH DE
+		LD BC,10000
+		CALL SUB_BC
+		LD BC,1000
+		CALL SUB_BC
+		LD BC,100
+		CALL SUB_BC
+		LD BC,10
+		CALL SUB_BC
+		LD A,'0'
+		ADD A,L
+		LD (DE),A
+		POP HL
+		PUSH HL
+		LD BC,4 << 8 + ' '
+.L1		LD A,(HL)
+		CP '0'
+		JR NZ,GO_OUTD
+		LD (HL),C
+		INC HL
+		DJNZ .L1
+GO_OUTD		POP HL
+		LD E,5
+		JR OUTDATA
+
+;----FUNC16----
+; сброс на спек номера играемого файла + 1
+; с перегонкой в текстовый вид
+TXT_CURRENT_FILE
+		LD HL,(NUMFILE)
+		INC HL
+		JR GETDCHR
+
+;----FUNC12----
+; отдать спеку 33 байта описателя файла
+GET_FILE_DESCR	CALL RDINBC
+		BIT 7,B
+		JR Z,.L1
+		LD BC,(NUMFILE)
+.L1		LD A,Getfzap
+		CALL COM_FAT
+		CP 0x80
+		JP Z,SD_LOST
+		LD BC,0x20
+		ADD HL,BC
+		LD (HL),E
+		SBC HL,BC
+		LD E,0x21
+
+; отдаем байтики, счетчик байта в E
+OUTDATA		LD A,(HL)
+		INC HL
+		OUT (ZXDATWR),A
+		CALL WDN
+		DEC E
+		JR NZ,OUTDATA
+		RET
+
+;----FUNC0E----
+; установка номера файла для играния
+; если не превышает количество найденного - 1
+SET_NUM		CALL RDINBC
+		LD HL,(COUNT_MP3)
+		AND A
+		SBC HL,BC
+		RET C
+		LD (NUMFILE),BC
+		RET
+
+; читаем в BC
+RDINBC		CALL WDY
+		IN A,(ZXDATRD)
+		LD B,A
+		CALL WDY
+		IN A,(ZXDATRD)
+		LD C,A
+		RET
+
+;----FUNC13----
+; отдать спеку количество найденного
+GET_COUNT_FILES	LD HL,(COUNT_MP3)
+		JR GET_RZN
+
+;----FUNC0D----
+; отдать спеку номер текущего файла
+GET_CURRENT	LD HL,(NUMFILE)
+		JR GET_RZN
+
+;----FUNC0C----
+; в HL содержимое битов установок
+GET_VTS		LD HL,(GETVTSL)
+
+; сбрасываем содержимое HL на спек
+GET_RZN		LD A,H
+		OUT (ZXDATWR),A
+		CALL WDN
+		LD A,L
+
+; сбросить на спек байт A
+GET_BYT		OUT (ZXDATWR),A
+
+; ждем пока спек заберет байт из порта
+WDN		LD B,0
+.L1		DEC B
+		RET Z
+		IN A,(ZXSTAT)
+		RLA
+		JR C,.L1
+		RET
+
+; ждем пока спек даст байт в порт
+WDY		IN A,(ZXSTAT)
+		RLA
+		JR NC,WDY
+		RET
+
+; играть на MP3-декодер 1 сектор
+PLAYMP3		LD A,(FLAGS)
+		BIT B_PLAY_STOP,A
+		RET Z
+		LD A,(FILE_TYPE)
+		CP FILE_MP3
+		RET NZ
+; только MP3
+		LD A,Nextsec
+		CALL COM_FAT
+		LD H,A
+		EX AF,AF'
+		LD A,H
+		CP 0x80
+		JP Z,SD_LOST
+		EX AF,AF'
+		RET NZ					; файло не кончилось, выходим
+		LD A,Zer2mp3
+		CALL COM__SD
+		JP NEXT_TRACK				; файл кончился, завершаем нулями
+							; и переходим на следующий файл
+
+; открытие файла и инит декодера
+INIPLAY		PUSH BC
+		CALL MOD_OFF
+		CALL RESET_MP3				; сброс чипа в зависимости от установок
+		LD HL,(GETVTSL)
+		BIT B_TYPE_RESET,H			; если сброс =HARD, то обнуляем все
+							; кроме типа сброса этого чипа
+		JR Z,.L1
+		LD L,0
+		LD A,H
+		AND M_TYPE_RESET
+		LD H,A
+.L1		SET B_NEW_FILE,H			; включаем бит 5, пошол новый файл
+		POP BC
+		PUSH BC
+		PUSH HL
+		LD A,Openfil
+		CALL COM_FAT				; открываем новый файл
+		CP 0x80
+		JP Z,SD_LOST
+		POP HL
+		LD (GETVTSL),HL
+		LD (FILE_TYPE),A
+		CP FILE_MP3
+		LD E,FREQ20				; 20 Мгц для играния MOD
+		JR NZ,.L2
+		LD E,FREQ12				; 12 Мгц для играния MP3
+.L2		LD A,Freqnc
+		CALL COM__SD
+		LD HL,FLAGS
+		RES B_FILE_LOAD,(HL)
+		LD HL,0x0400
+		LD (TIMEOUT),HL
+		POP BC
+		LD HL,BUF_LNG
+		LD A,Getlong
+		CALL COM_FAT				; чтение в буфер длинного имени файла
+MOD_OFF		XOR A
+		OUT (VOL1),A
+		OUT (VOL2),A
+		OUT (VOL3),A
+		OUT (VOL4),A
+		OUT (VOL5),A
+		OUT (VOL6),A
+		OUT (VOL7),A
+		OUT (VOL8),A
+		OUT (VOL8),A
+		RET
+
+SD_LOST		LD SP,ISTACK
+		LD HL,FLAGS
+		SET B_SD_LOST,(HL)
+		CALL PAUSE
+		JP CONTINUE_MOD
+
+CMP_INT		PUSH AF
+		LD A,R
+		JP PE,CMP_INT1
+		LD A,R
+CMP_INT1	LD A,0
+		JP PO,CMP_INT2
+		LD A,1
+CMP_INT2	LD (INT_MODE),A
+		POP AF
+		RET
+
+COM__SD		include "sd_on_ngs.a80"			; драйвер SD карты
+COM_FAT		include "fat_on_ngs.a80"		; драйвер FAT
+
+SET7XOR		PUSH HL
+		LD HL,0
+		ADD HL,SP
+		EXX
+		LD A,0x10
+		LD SP,0x7F00
+		LD BC,0xA97E				; LD A,(HL):XOR C
+		LD DE,0x2C77				; LD (HL),A:INC L
+SPEDI1
+	REPT 16
+		PUSH DE
+		PUSH BC
+	ENDM
+		DEC A
+		JP NZ,SPEDI1
+		LD HL,SPEDI2
+		LD DE,0x7F00
+		LD BC,ESPEDI2 - SPEDI2
+		LDIR
+		EXX
+		LD SP,HL
+		POP HL
+		LD A,L
+		EXX
+		LD L,A
+		LD H,0
+		LD BC,0x7B00
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,BC
+		LD (KUDAXOR),HL
+		EXX
+		LD A,(SIZE_PAGES_MOD)
+		LD B,A
+		LD C,0x80
+		RET
+
+SPEDI2		INC H
+		JP NZ,0x7B00
+		INC E
+		LD A,(DE)
+		LD H,0x80
+		OUT (MPAG),A
+		DEC B
+		JP NZ,0x7B00
+		LD A,(PAGE_PLAYER)
+		OUT (MPAG),A
+		JP END7XOR
+ESPEDI2
+
+SPEDI3		LD A,(PAGE_PLAYER)
+		OUT (MPAG),A
+		CALL SET7XOR
+		LD A,(DE)
+		PUSH HL
+		OUT (MPAG),A
+		LD HL,(KUDAXOR)
+		EX (SP),HL
+		RET
+
+END7XOR		EXX
+		LD HL,0
+		ADD HL,SP
+		LD SP,0x8000
+		LD DE,0x8080
+		LD B,0x40
+E7X1
+	REPT 64
+		PUSH DE
+	ENDM
+		DJNZ E7X1
+		LD SP,HL
+		EXX
+		JP ESPEED
+
+PATCH		LD A,(NUMPG)
+		OR %00111111
+		LD (PAGE_PLAYER),A			; страница расположения плеера
+		IN A,(GSCFG0)
+		RES B_RAMRO,A
+		SET B_EXPAG,A
+		OUT (GSCFG0),A
+		LD A,0x80
+		OUT (MPAGEX),A
+		LD HL,SPEDI3
+		LD DE,ADDA80
+		LD BC,END7XOR - SPEDI3
+		LDIR
+		LD HL,FXB01
+		LD (HL),0xCD
+		INC HL
+		LD (HL),LOW (NXTMOD)
+		INC HL
+		LD (HL),HIGH (NXTMOD)
+		LD HL,0x11D6
+		LD (HL),0xCD
+		INC HL
+		LD (HL),LOW (NXTMODR)
+		INC HL
+		LD (HL),HIGH (NXTMODR)
+		INC HL
+		EX DE,HL
+		LD HL,0x11E3
+		AND A
+		SBC HL,DE
+		LD B,H
+		LD C,L
+		LD H,D
+		LD L,E
+		LD (HL),B
+		INC DE
+		LDIR					; зачистка хвостов в ПЗУ
+		LD HL,TEKADR1
+		LD DE,EMPTY2
+		LD BC,P_END - LD_MOD
+		LDIR					; перенос загрузчика и обработчика
+							; окончания проигрываемого файла
+		LD HL,P_START
+		LD DE,EMPTY1
+		LD BC,P__END - P_00
+		LDIR					; перенос управления MP3 плеером в ПЗУ
+		LD HL,(NUMPG)
+		LD H,0x40
+		DEC L
+		LD (HL),1
+		INC L
+		LD (HL),0				; отрубание последней страницы ОЗУ
+							; от основного списка страниц
+		LD HL,NUMPG
+		DEC (HL)
+		LD HL,P_00
+		LD (0x0300 + (0x1F * 2)),HL		; патч команды 1F
+		LD HL,COMMFF
+		LD (0x0300 + (0x2F * 2)),HL		; патч команды FF
+		IN A,(GSCFG0)
+		SET B_RAMRO,A
+		RES B_EXPAG,A
+		OUT (GSCFG0),A
+		LD A,(PAGE_PLAYER)
+		OUT (MPAG),A
+
+; создание списка малых страниц для загрузчика файла в память
+LISTPAG		LD HL,0x4000
+		LD DE,BUF_PAG
+.L1		LD A,(HL)
+		ADD A,A
+		RRCA
+		LD (DE),A
+		RLCA
+		INC DE
+		INC A
+		RRCA
+		LD (DE),A
+		INC DE
+		INC HL
+		LD A,(HL)
+		DEC A
+		JR NZ,.L1
+		RET
+
+TEKADR1
+	        PHASE EMPTY2
+
+; грузилка файла в память NEOGS
+LD_MOD		IN A,(GSCFG0)
+		AND %11001111
+		OUT (GSCFG0),A
+		LD HL,FLAGS
+		SET B_FILE_LOAD,(HL)
+		CALL MOD_OFF
+		LD A,Loadfil
+		CALL COM_FAT
+		CP 0x80
+		JP Z,SD_LOST
+		LD (SIZE_PAGES_MOD),A
+		LD A,(CPAGE)
+		OUT (MPAG),A
+		LD A,1
+		LD (CNTMOD),A
+		LD (CURMOD),A
+		CALL LDMOD
+		LD A,(MTSNGSZ)
+		LD (SIZE_PATTERN_MOD),A
+		LD BC,0x0100
+		CALL PLAYMOD
+		IN A,(GSCFG0)
+		OR %00010000
+		OUT (GSCFG0),A
+		RET
+
+ESPEED		XOR A
+		LD (CPAGE),A
+		OUT (MPAG),A
+		RET
+
+NXTMOD		LD HL,MTSNGPS
+		INC (HL)
+		CP (HL)
+		JP C,NXTMOD1
+		LD (MTSNGPS),A
+		RET
+
+NXTMODR		LD A,(PAGE_PLAYER)
+		OUT (MPAG),A
+		CALL NEXT_TRACK
+		LD A,(FILE_TYPE)
+		CP FILE_MP3
+		JP NZ,LD_MOD
+		POP HL
+		JP OPROS
+
+COMMFF		IN A,(ZXDATRD)
+		OUT (CLRCBIT),A
+		ADD A,LOW (FLAGS)
+		LD IYL,A
+		LD A,HIGH (FLAGS)
+		ADC A,0
+		LD IYH,A
+		LD A,(IY+0)
+		OUT (ZXDATWR),A
+		JP COMINT_
+P_END
+		DEPHASE
+P_START
+		PHASE EMPTY1
+
+; основной цикл общения со спеком
+P_00		JP OPROS.L3
+
+NXTMOD1		LD A,(PAGE_PLAYER)
+		OUT (MPAG),A
+		CALL NEXT_TRACK
+; продолжить играть MOD
+CONTINUE_MOD	LD A,(FILE_TYPE)
+		CP FILE_MP3
+		JR Z,OPROS
+		LD A,(FLAGS)
+		BIT B_PLAY_STOP,A
+		JR Z,CONROM
+		BIT B_FILE_LOAD,A
+		CALL Z,LD_MOD
+CONROM		LD A,(CPAGE)
+		OUT (MPAG),A
+		JP COMINT
+
+OPROS		IN A,(ZXSTAT)
+		RRA
+		JR C,.L1
+		CALL PLAYMP3
+		JR OPROS
+
+.L1		IN A,(ZXCMD)
+		CP 0x1F
+		JR NZ,CONROM
+.L3		IN A,(ZXDATRD)
+		OUT (CLRCBIT),A
+		AND A
+		JR Z,.L2
+		LD H,A
+		LD A,(STATUS)
+		CP 0x78
+		JR NC,OPROS
+		LD A,H
+.L2		CP LOW (END_TAB-TABFUNC) / 2 + 1
+		JR NC,OPROS
+		LD HL,CONTINUE_MOD
+		PUSH HL
+		ADD A,A
+		ADD A,LOW (TABFUNC)
+		LD L,A
+		LD A,HIGH (TABFUNC)
+		ADC A,0
+		LD H,A
+		LD A,(PAGE_PLAYER)
+		OUT (MPAG),A
+		LD A,(HL)
+		INC HL
+		LD H,(HL)
+		LD L,A
+		JP (HL)
+P__END
+		DEPHASE
+
+		DUPL 0x100-LOW ($),0
+
+ INIT_VAR $
+ SETVAR BUF_LNG,		0x100			; буфер для перекод. длинного имени
+ SETVAR BUFTDIR,		0x100			; буфер имени текущей DIR
+ SETVAR BUF_PAG,		0x100			; таблица расширенных страниц
+ SETVAR B512BAS,		0

@@ -1,0 +1,544 @@
+
+; LAST UPDATE 16.01.2024 savelij
+
+; SD & MP3 функции по номерам
+ INIT_VAR
+ SETVAR Sd_init		; инит SD карты
+ SETVAR Sd__off		; снятие выбора
+ SETVAR Rdsingl		; читать 1 сектор
+ SETVAR Rdmulti		; читать "A" сектор
+ SETVAR Wrsingl		; записать 1 сектор - нету
+ SETVAR Wrmulti		; записать "A" секторов - нету
+ SETVAR Avtodet		; автодетект GS/NeoGS
+ SETVAR Freqnc		; установка частоты
+ SETVAR Hardmp3		; полный инит MP3 чипа
+ SETVAR Ldi_mp3		; передача сектора с SD -> MP3
+ SETVAR Com_mp3		; RD/WR MP3 чипа
+ SETVAR Softmp3		; soft инит MP3 чипа
+ SETVAR Dat2mp3		; передача сек. GSDAT -> MP3
+ SETVAR Zer2mp3		; передача 2048 нулей -> MP3
+
+; драйвер SD-CARD для NeoGS
+; +драйвер для MP3-декодера
+
+; Входные параметры общие:
+; HL-адрес загрузки в память
+; BCDE-32-х битный номер сектора
+; A-количество блоков (блок=512 байт)
+; только для многоблочной записи/чтении
+
+; Ошибки выдаваемые на выходе:
+; A=0-инициализация прошла успешно
+; A=1-карта не найдена или не ответила
+; A=2-карта защищена от записи
+; A=3-попытка записи в сектор 0 карты
+; A=0x80-карта перестала отвечать
+
+; общая точка входа для работы с SD картой
+		CALL CMP_INT
+		DI
+		EXX
+		PUSH HL				; сохранили HL'
+		PUSH DE				; сохранили DE'
+		LD HL,OK_SD
+		PUSH HL				; возврат на все OK
+		LD HL,0
+		ADD HL,SP			; сохранили стек
+		EX DE,HL
+		LD HL,ERR_SD			; адрес перехода при ошибке
+		EXX
+		PUSH HL
+		PUSH DE
+		ADD A,A
+		LD L,A
+		LD H,0
+		LD DE,TABL_SD
+		ADD HL,DE
+		EX AF,AF'
+		LD E,(HL)
+		INC HL
+		LD D,(HL)
+		EX DE,HL
+		POP DE
+		EX (SP),HL
+		RET
+
+OK_SD		EXX
+ERR_SD		EX DE,HL
+		LD SP,HL
+		POP DE
+		POP DE
+		POP HL
+		EXX
+		PUSH AF
+		LD A,(INT_MODE)
+		AND A
+		JR Z,ERR_SD1
+		EI
+ERR_SD1		POP AF
+		RET
+
+TABL_SD		DW SD_INIT		; 00 параметров не требует, на выходе A смотри выше первые 2 значения
+		DW SD__OFF		; 01 просто снятие выбора SD карты
+		DW RDSINGL		; 02 читать 1 сектор
+		DW RDMULTI		; 03 читать "A" секторов
+		DW EMPTY		; 04 писать 1 сектор
+		DW EMPTY		; 05 писать "A" секторов
+		DW AVTODET		; 06-автодетект
+		DW FREQNC		; 07-установка частоты
+		DW HARDMP3		; 08 инициализация MP3-декодера
+		DW LDI_MP3		; 09 гон с SD на MP3
+		DW COM_MP3		; 0A RD&WR в MP3-декодер
+		DW SOFTMP3		; 0B SOFT RESET MP3CHIP
+		DW DAT2MP3		; 0C гон с GSDAT2MP3
+		DW ZER2MP3		; 0D 2048 нулей на MP3
+
+ZAW003		CALL SD__OFF
+		LD A,1
+EMPTY		RET
+
+SD_INIT		CALL CS_HIGH
+		LD BC,SD_SEND
+		LD DE,0x20FF
+		OUT (C),E
+		DEC D
+		JR NZ,$-3
+		LD BC,SD_RSTR
+		XOR A
+		EX AF,AF'
+ZAW001		LD HL,CMD00
+		CALL OUTCOM
+		CALL IN_OOUT
+		EX AF,AF'
+		DEC A
+		JR Z,ZAW003
+		EX AF,AF'
+		DEC A
+		JR NZ,ZAW001
+		LD HL,CMD08
+		CALL OUTCOM
+		CALL IN_OOUT
+		IN H,(C)
+		NOP
+		IN H,(C)
+		NOP
+		IN H,(C)
+		NOP
+		IN H,(C)
+		LD HL,0
+		BIT 2,A
+		JR NZ,ZAW006
+		LD H,0x40
+ZAW006		LD A,CMD_55
+		CALL OUT_COM
+		CALL IN_OOUT
+		in (c) ;in f,(c)
+		in (c) ;in f,(c)
+		LD BC,SD_SEND
+		LD A,ACMD_41
+		OUT (C),A
+		NOP
+		OUT (C),H
+		NOP
+		OUT (C),L
+		NOP
+		OUT (C),L
+		NOP
+		OUT (C),L
+		LD A,0xFF
+		OUT (C),A
+		CALL IN_OOUT
+		AND A
+		JR NZ,ZAW006
+ZAW004		LD A,CMD_59
+		CALL OUT_COM
+		CALL IN_OOUT
+		AND A
+		JR NZ,ZAW004
+ZAW005		LD HL,CMD16
+		CALL OUTCOM
+		CALL IN_OOUT
+		AND A
+		JR NZ,ZAW005
+
+SD__OFF
+CS_HIGH		PUSH AF
+		LD A,M_SDNCS+M_SNCLR		; 0x81
+		OUT (SCTRL),A
+		POP AF
+		RET
+
+CS__LOW		PUSH AF
+		LD A,M_SDNCS			; 1
+		OUT (SCTRL),A
+		POP AF
+		RET
+
+OUTCOM		CALL CS__LOW
+		PUSH BC
+		LD BC,0x0600+SD_SEND
+		OTIR
+		POP BC
+		RET
+
+OUT_COM		PUSH BC
+		CALL CS__LOW
+		LD BC,SD_SEND
+		in (c) ;in f,(c)
+		in (c) ;in f,(c)
+		OUT (C),A
+		XOR A
+		OUT (C),A
+		NOP
+		OUT (C),A
+		NOP
+		OUT (C),A
+		NOP
+		OUT (C),A
+		DEC A
+		OUT (C),A
+		POP BC
+		RET
+
+SECM200		PUSH HL
+		PUSH DE
+		PUSH BC
+		PUSH AF
+		PUSH BC
+		LD A,CMD_58
+		LD BC,SD_RSTR
+		CALL OUT_COM
+		CALL IN_OOUT
+		INC A
+		JR NZ,SCM200
+		EXX
+		LD A,0x80
+		JP (HL)
+
+SCM200		IN A,(C)
+		NOP
+		IN H,(C)
+		NOP
+		IN H,(C)
+		NOP
+		IN H,(C)
+		BIT 6,A
+		POP HL
+		JR NZ,SECN200
+		EX DE,HL
+		ADD HL,HL
+		EX DE,HL
+		ADC HL,HL
+		LD H,L
+		LD L,D
+		LD D,E
+		LD E,0
+SECN200		POP AF
+		in (c) ;in f,(c)
+		in (c) ;in f,(c)
+		LD BC,SD_SEND
+		OUT (C),A
+		NOP
+		OUT (C),H
+		NOP
+		OUT (C),L
+		NOP
+		OUT (C),D
+		NOP
+		OUT (C),E
+		LD A,0xFF
+		OUT (C),A
+		POP BC
+		POP DE
+		POP HL
+		RET
+
+IN_OOUT		PUSH DE
+		LD DE,0x30FF
+IN_WAIT		IN A,(SD_RSTR)
+		CP E
+		JR NZ,IN_EXIT
+		DEC D
+		JR NZ,IN_WAIT
+IN_EXIT		POP DE
+		RET
+
+CMD00		DB 0x40,0x00,0x00,0x00,0x00,0x95	; GO_IDLE_STATE
+CMD08		DB 0x48,0x00,0x00,0x01,0xAA,0x87	; SEND_IF_COND
+CMD16		DB 0x50,0x00,0x00,0x02,0x00,0xFF	; SET_BLOCKEN
+
+; чтение одного сектора в память
+RD_SECT		PUSH BC
+		PUSH DE
+		LD BC,SD_RSTR
+		INIR
+		INIR
+		JR RON_MP3.L3
+
+; чтение одного сектора с побайтовой передачей в MP3 чип
+RON_MP3		PUSH BC
+		PUSH DE
+		LD BC,SD_RSTR
+		LD D,0x10
+.L2		IN A,(SSTAT)
+		RRA
+		JR NC,.L2
+		LD E,0x20
+.L1		IN A,(C)
+		NOP
+		OUT (MD_SEND),A
+		DEC E
+		JR NZ,.L1
+		DEC D
+		JR NZ,.L2
+.L3		IN A,(C)			; снятие CRC16
+		NOP
+		IN A,(C)
+		POP DE
+		POP BC
+		RET
+
+; передача сектора в MP3 чип
+LDI_MP3		LD A,CMD_17
+		CALL SECM200
+.L1		CALL IN_OOUT
+		CP 0xFE
+		JR NZ,.L1
+		CALL RON_MP3
+.L2		CALL IN_OOUT
+		INC A
+		JR NZ,.L2
+		JP CS_HIGH
+
+; загрузка одного сектора в память
+RDSINGL		LD A,CMD_17
+		CALL SECM200
+.L1		CALL IN_OOUT
+		CP 0xFE
+		JR NZ,.L1
+		CALL RD_SECT
+.L2		CALL IN_OOUT
+		INC A
+		JR NZ,.L2
+		JP CS_HIGH
+
+RDMULTI		EX AF,AF'
+		LD A,CMD_18
+		CALL SECM200
+		EX AF,AF'
+.L1		EX AF,AF'
+.L3		CALL IN_OOUT
+		CP 0xFE
+		JR NZ,.L3
+		CALL RD_SECT
+		EX AF,AF'
+		DEC A
+		JR NZ,.L1
+		LD A,CMD_12
+		CALL OUT_COM
+.L2		CALL IN_OOUT
+		INC A
+		JR NZ,.L2
+		JP CS_HIGH
+
+; ожидание готовности SPI MP3 чипа
+NOPER
+	REPT 18
+		NOP
+	ENDM
+		RET
+
+AVTODET		IN A,(GSCFG0)
+		AND %11001111;0xCF
+		OUT (GSCFG0),A
+		LD D,A
+		CALL NOPER
+		IN A,(GSCFG0)
+		CP D
+		LD A,0
+		RET Z
+NO_MP3		LD A,0xFF
+		RET
+
+FREQNC		LD A,E
+		LD D,C_10MHZ			; 0x30
+		AND 3
+		JR Z,.L1
+		LD D,C_12MHZ			; 0x10
+		DEC A
+		JR Z,.L1
+		LD D,C_20MHZ			; 0x20
+		DEC A
+		JR Z,.L1
+		LD D,C_24MHZ			; 0
+.L1		IN A,(GSCFG0)
+		AND %11001111
+		OR D
+		OUT (GSCFG0),A
+		RET
+
+; записываем 2048 нулей как завершение песенки
+ZER2MP3		LD D,0x40
+.L2		IN A,(SSTAT)
+		RRA
+		JR NC,.L2
+		LD E,0x20
+.L1		XOR A
+		OUT (MD_SEND),A
+		DEC E
+		JR NZ,.L1
+		DEC D
+		JR NZ,.L2
+		RET
+
+; установка частоты MP3 чипа
+SET_CLOCKF	LD HL,VS10XX_WRITE << 8 + SCI_CLOCKF;0x0202
+		LD A,(CHIP_TYPE)
+		CP VS1053
+		JR Z,.VS1053
+		CP VS1063
+		JR Z,.VS1063
+; по дефолту установка для VS1001/VS1011
+.L1		LD DE,0x8000 + (14000000 / 2000); 0x9B58 установка делителя частоты для MP3 чипа
+		JP COM_MP3			; установка частоты для декодера
+
+.VS1053
+.VS1063		LD DE,SC_MULT4 | SC_ADD2 | 1000
+		JP COM_MP3			; установка частоты для декодера
+
+; полный сброс
+HARDMP3		CALL VOL_MOD			; заглушили громкость портов GS
+		LD BC,MC_SEND
+		LD A,%10011100			; 0x9C
+		OUT (SCTRL),A
+		LD E,0
+		CALL FREQNC			; выставили частоту на NGS 10 МГц
+		LD HL,VS10XX_READ << 8 + SCI_STATUS;0x0301
+		CALL COM_MP3
+		LD A,M_MPXRS
+		OUT (SCTRL),A
+		CALL NOPER
+		LD A,M_MPXRS + M_SNCLR		; 0x84
+		OUT (SCTRL),A			; выдали сброс на декодер
+.L1		IN A,(SSTAT)
+		RRA
+		JR NC,.L1			; дождались готовности декодера
+		CALL SET_CLOCKF
+		LD A,(CHIP_TYPE)
+		CP VS1001
+		LD HL,VS10XX_WRITE << 8 + SCI_BASS;0x0202
+		LD DE,%1000000000001000		; 0x8008
+		CALL Z,COM_MP3			; для VS1001 запись недокументированного пинка в
+						; недокументированный регистр, если
+						; биты 7-4 регистра статуса в нуле
+		LD E,1
+		JP FREQNC			; выставили частоту на NGS 12 МГц
+
+; программный сброс MP3 декодера, рекомендуется вызывать перед каждым новым файлом, сбрасывает счетчик секунд
+; после программного сброса все установленные режимы декодера не изменяются
+SOFTMP3		LD BC,MC_SEND
+		LD HL,VS10XX_READ << 8 + SCI_VOL;0x030B
+		CALL COM_MP3			; снимаем текущее значение громкости
+		PUSH DE
+		LD DE,0xFEFE			; и сохраняем его до лучших времен
+		LD HL,VS10XX_WRITE << 8 + SCI_VOL;0x020B
+		CALL COM_MP3			; уменьшаем громкость до минимума
+		LD HL,VS10XX_READ << 8 + SCI_STATUS;0x0301
+		CALL COM_MP3
+		LD A,E
+		AND %11110000
+		PUSH AF
+		LD HL,VS10XX_READ << 8 + SCI_MODE;0x0300
+		CALL COM_MP3			; читаем состояние MODE
+		LD A,4
+		XOR E
+		LD E,A
+		LD HL,VS10XX_WRITE << 8 + SCI_MODE;0x0200
+		CALL COM_MP3
+		LD A,4
+		XOR E
+		LD E,A
+		LD HL,VS10XX_WRITE << 8 + SCI_MODE;0x0200
+		CALL COM_MP3			;даем команду софт-сброса
+.L1		IN A,(SSTAT)
+		RRA
+		JR NC,.L1			; ждем освобождения декодера
+		CALL SET_CLOCKF
+		POP AF
+		LD HL,VS10XX_WRITE << 8 + SCI_BASS;0x0202
+		LD DE,%1000000000001000		; 0x8008
+		CALL Z,COM_MP3			; недокументированный пинок MP3 декодера (у Ы1001 INT_FCTLH)
+		POP DE
+		LD HL,VS10XX_WRITE << 8 + SCI_VOL;0x020B
+		JR COM_MP3			; восстанавливаем громкость до сброса
+
+; глушим громкость MOD портов
+VOL_MOD		XOR A
+		OUT (VOL1),A
+		OUT (VOL2),A
+		OUT (VOL3),A
+		OUT (VOL4),A
+		OUT (VOL5),A
+		OUT (VOL6),A
+		OUT (VOL7),A
+		OUT (VOL8),A
+		RET
+
+; процедура чтения/записи адресов MP3 декодера
+; H - команда декодеру 3-READ или 2-WRITE
+; L - адрес в декодере
+; D - старший байт
+; E - младший байт
+; DE по записи подать на вход
+;    по чтению получить на выходе
+COM_MP3		IN A,(SSTAT)
+		RRA
+		JR NC,COM_MP3			; декодер свободен
+		LD A,M_MCNCS
+		OUT (SCTRL),A			; выбираем декодер и объясняем ему, что от него требуется
+		CALL NOPER
+		LD BC,MC_SEND
+		LD A,H
+		OUT (C),H
+		CALL NOPER
+		OUT (C),L
+		CALL NOPER
+		CP VS10XX_READ
+		JR Z,MP3READ			; переходим на чтение (смотри выше)
+		OUT (C),D
+		CALL NOPER
+		OUT (C),E			; записали в адрес декодера
+MP3_END		CALL NOPER
+		LD A,M_MCNCS + M_SNCLR		; 0x82 снимаем выбор декодера
+		OUT (SCTRL),A
+		RET
+
+; читаем что затребовали
+MP3READ		LD BC,MC_READ
+		LD A,0xFF
+		OUT (MC_SEND),A
+		CALL NOPER
+		IN D,(C)
+		CALL NOPER
+		OUT (MC_SEND),A
+		CALL NOPER
+		IN E,(C)
+		JR MP3_END
+
+; процедура пересылки байтов со спека через порты ГС на MP3 декодер
+; пересылается 512 байт
+DAT2MP3		LD D,0x10		; перегнать на декодер 16 порций
+.L1		IN A,(SSTAT)
+		RRA
+		JR NC,.L1		; декодер свободен?
+		LD B,0x20		; одна порция 32 байта
+.L2		IN A,(ZXSTAT)
+		RLA
+		JR NC,.L2		; дождались подачи от спека
+		IN A,(ZXDATRD)		; забрали байт
+		OUT (MD_SEND),A		; отдали декодеру
+		NOP			; выдержали паузу по тактам
+		DJNZ .L2		; порция кончилась
+		DEC D
+		JR NZ,.L1
+		RET			; 512 байт передано!!!

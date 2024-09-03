@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 26.04.2023 savelij
+; LAST UPDATE: 13.01.2024 savelij
 
 STACK_CURR_DIR		EQU 0x6000	; стек номеров дир перед входом в нее
 
@@ -949,7 +949,7 @@ RDFAT04		XOR A
 		POP AF
 		JP INIRTSC
 
-F_EXT		DB "MP3MOD",0
+F_EXT		DZ "MP3MOD"
 
 CP_EXT		PUSH BC
 		PUSH DE
@@ -990,6 +990,9 @@ COMPARF		PUSH DE
 		DJNZ .L1
 		RET
 
+; открытие файла
+; на выходе:
+; A - тип файла (1 и далее)
 OPENFIL		CALL SET_MP3
 		CALL GETFZAP
 		CALL CP_EXT
@@ -1322,7 +1325,7 @@ LD_F9		LD A,0x20
 LD_E		IN A,(GSCFG0)
 		RES B_EXPAG,A
 		OUT (GSCFG0),A
-		LD A,(PG_PLAYER)
+		LD A,(PAGE_PLAYER)
 		OUT (MPAG),A
 		LD A,(BUF_PAG+0xFF)
 		SRL A
@@ -1511,7 +1514,7 @@ FNDMP30		LD HL,(PAGEMP3)
 		RR L
 		LD DE,2
 		LD (KOLVMP3),HL
-		LD (KOLWMP3),HL
+		LD (COUNT_MP3),HL
 		AND A
 		SBC HL,DE
 		EX AF,AF'
