@@ -10,7 +10,7 @@
 
 _Автор фотографий: Алексей Курепин._
 
-[![NGS rev.C front](neogs_c_front_small.jpg)](neogs_c_front.jpg) [![NGS rev.C back](neogs_c_back_small.jpg)](neogs_c_back.jpg)  
+[![NGS rev.C front](neogs_c_front_small.jpg)](http://nedopc.com/gs/neogs_c_front.jpg) [![NGS rev.C back](neogs_c_back_small.jpg)](http://nedopc.com/gs/neogs_c_back.jpg)  
 
 Звуковая плата **NeoGS** предназначена для проигрывания трекерной (MOD) и сжатой (MP3) музыки на Spectrum-совместимом компьютере оснащенным слотом ZXBUS.
 
