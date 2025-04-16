@@ -1,0 +1,11 @@
+Gerber files description:
+
+ZXINET.DRL - drill
+ZXINET.GBL - bottom layer copper
+ZXINET.GBO - bottom layer silk
+ZXINET.GBS - bottom layer mask
+ZXINET.BRD - board outline
+ZXINET.GTL - top layer copper
+ZXINET.GTO - top layer silk
+ZXINET.GTS - top layer mask
+
