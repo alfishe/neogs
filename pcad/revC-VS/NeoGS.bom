@@ -1,0 +1,160 @@
+P-CAD Bill of Materials       D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.pcb
+
+======================================================================
+
+Count  ComponentName   RefDes          PatternName     Value           PDIF_TY         Description     OriginalName    ComponentField7
+------ --------------- --------------- --------------- --------------- --------------- --------------- --------------- ---------------
+
+     1 04              D1              SO14            74ACT04                                                                        
+     1 29F040          D5              PLCC32DIP                                                                                      
+     1 125             D4              SO14            74HCT125                                                                       
+     1 245             D2              SOL20           74HCT245                                                                       
+     1 245             D7              SOL20           74LCX245                                                                       
+     1 BC847           VT1             SOT-23                                                                                         
+    36 CAPCHIP         C1              C-CHIP          0.1uF                                                                          
+                       C2                                                                                                             
+                       C5                                                                                                             
+                       C6                                                                                                             
+                       C7                                                                                                             
+                       C8                                                                                                             
+                       C9                                                                                                             
+                       C11                                                                                                            
+                       C12                                                                                                            
+                       C14                                                                                                            
+                       C16                                                                                                            
+                       C18                                                                                                            
+                       C19                                                                                                            
+                       C20                                                                                                            
+                       C21                                                                                                            
+                       C22                                                                                                            
+                       C23                                                                                                            
+                       C24                                                                                                            
+                       C25                                                                                                            
+                       C27                                                                                                            
+                       C28                                                                                                            
+                       C29                                                                                                            
+                       C30                                                                                                            
+                       C31                                                                                                            
+                       C32                                                                                                            
+                       C33                                                                                                            
+                       C34                                                                                                            
+                       C40                                                                                                            
+                       C42                                                                                                            
+                       C43                                                                                                            
+                       C44                                                                                                            
+                       C45                                                                                                            
+                       C46                                                                                                            
+                       C47                                                                                                            
+                       C50                                                                                                            
+                       C52*                                                                                                           
+     2 CAPCHIP         C53*            C-CHIP          10nF                                                                           
+                       C54*                                                                                                           
+     2 CAPCHIP         C38             C-CHIP          22nF                                                                           
+                       C41                                                                                                            
+     2 CAPCHIP         C48             C-CHIP          33pF                                                                           
+                       C49                                                                                                            
+     1 CAPCHIP         C55*            C-CHIP          47nF                                                                           
+     1 CDR64B          L1              CDR64B          27uH                                                                           
+     1 CKX3.5-001      X2              CKX3.5-001                                                                                     
+    10 ECAPCHIP        C3              EC-CHIP         10uF                                                                           
+                       C4                                                                                                             
+                       C10                                                                                                            
+                       C13                                                                                                            
+                       C15                                                                                                            
+                       C17                                                                                                            
+                       C26                                                                                                            
+                       C36                                                                                                            
+                       C39                                                                                                            
+                       C51*                                                                                                           
+     2 ECAPCHIPB       C35             EC-CHIPB        100uF                                                                          
+                       C37                                                                                                            
+     1 EDGE30ZX        XS1             EDGE30                                                                                         
+     1 EP1K30TC144     D3              QFP20X20-144                                                                                   
+     1 EPM3064ATC100   D9              QFP14X14-100                                                                                   
+     1 IDC10M          X1              IDC10M          JTAG CHAIN CONN                                                                
+                                                       ECTOR                                                                          
+     1 JUMPER          J1              JUMPER                                          ZX reset enable                                
+     1 KR1171SP42      DA4             TO92AM                                                                                         
+     1 L-CHIP          L2              L-CHIP          1R0                                                                            
+     1 LED             VD1             LED100          green                           Light Emitting                                 
+                                                                                       Diode                                          
+     1 LOPEN           J2              LOPEN           3.3V                                                                           
+     1 MA8201          D8              LQFP44X8                                                                                       
+     1 ME6211C         DA1'            SOT-23-5        3.3v                                                                           
+     1 ME6211C         DA7*'           SOT-23-5        CVDD                                                                           
+     1 NE5532          DA5             SO8             NE5532                                                                         
+     1 OSC7X5          QZ1             OSC7X5          20MHz                                                                          
+     1 OSC7X5          QZ2             OSC7X5          24MHz                                                                          
+     1 PLB1-4I         X3              PLB1-4I                                                                                        
+     1 PUSHBUTTONNO    S1              œ Õ             cold reset                      Push Button, No                                
+                                                                                       rmally Open                                    
+     1 QUARTZ          Z1              CRYSTAL         14 MHz                          Crystal                                        
+     1 RESCHIP         R39             R-CHIP          1                                                                              
+    11 RESCHIP         R8              R-CHIP          1K                                                                             
+                       R10                                                                                                            
+                       R13                                                                                                            
+                       R19                                                                                                            
+                       R20                                                                                                            
+                       R21                                                                                                            
+                       R25                                                                                                            
+                       R29                                                                                                            
+                       R41                                                                                                            
+                       R42                                                                                                            
+                       R47                                                                                                            
+     1 RESCHIP         R52             R-CHIP          1M                                                                             
+     1 RESCHIP         R50             R-CHIP          3K3                                                                            
+    27 RESCHIP         R7              R-CHIP          6K8                                                                            
+                       R9                                                                                                             
+                       R11                                                                                                            
+                       R12                                                                                                            
+                       R14                                                                                                            
+                       R15                                                                                                            
+                       R16                                                                                                            
+                       R18                                                                                                            
+                       R22                                                                                                            
+                       R23                                                                                                            
+                       R24                                                                                                            
+                       R26                                                                                                            
+                       R27                                                                                                            
+                       R28                                                                                                            
+                       R30                                                                                                            
+                       R31                                                                                                            
+                       R32                                                                                                            
+                       R33                                                                                                            
+                       R34                                                                                                            
+                       R35                                                                                                            
+                       R36                                                                                                            
+                       R37                                                                                                            
+                       R38                                                                                                            
+                       R40                                                                                                            
+                       R43                                                                                                            
+                       R46                                                                                                            
+                       R53                                                                                                            
+     1 RESCHIP         R57*            R-CHIP          10                                                                             
+     2 RESCHIP         R55*            R-CHIP          20                                                                             
+                       R56*                                                                                                           
+     7 RESCHIP         R1              R-CHIP          51                                                                             
+                       R2                                                                                                             
+                       R3                                                                                                             
+                       R4                                                                                                             
+                       R5                                                                                                             
+                       R6                                                                                                             
+                       R44                                                                                                            
+     3 RESCHIP         R17             R-CHIP          100                                                                            
+                       R45                                                                                                            
+                       R49                                                                                                            
+     1 RESCHIP         R54*            R-CHIP          100K                                                                           
+     2 RESCHIP         R48             R-CHIP          390                                                                            
+                       R51                                                                                                            
+     1 SDC09W4         XSD1            SDC09W4                                                                                        
+     1 SPX1117R        DA3             DPAK            2.5v                                                                           
+     2 SPX1117R        DA1             DPAK            3.3v                                                                           
+                       DA2                                                                                                            
+     1 SPX1117R        DA7*            DPAK            CVDD                                                                           
+     2 TC55V8200FT     RAM1            TSOP54X8                                                                                       
+                       RAM2                                                                                                           
+     1 TDA1543         DA6             DIP8                                                                                           
+     1 TDA1543T        DA6*            SOL16                                                                                          
+     1 TPF09-2-12B     XSD1*           TPF09-2-12B                                                                                    
+     1 VS1033          D8*             LQFP48                                                                                         
+     1 Z84C0020FEC     D6              QFP44X8                                                                                        
