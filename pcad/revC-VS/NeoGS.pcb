@@ -2,7 +2,7 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.pcb"
 
 (asciiHeader 
   (asciiVersion 3 0)
-  (timeStamp 2025 4 23 21 58 39)
+  (timeStamp 2025 4 23 22 23 52)
   (program "P-CAD 2006 PCB" "19.02.9589")
   (copyright "Copyright © 1991-2006 Altium Limited")
   (fileAuthor "")
@@ -27578,14 +27578,17 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.pcb"
   (pcbPrintSettings 
     (printQueueEntry "1"
       (orderedLayerList 
+        (layerNumRef 10)
         (layerNumRef 6)
         (layerNumRef 8)
+        (layerNumRef 4)
         (layerNumRef 3)
       )
       (isThinStrokeText False)
       (isSelected True)
       (drillSymSize 2.032)
       (outputPads True)
+      (outputHoles True)
       (outputRefDes True)
       (outputType True)
       (outputValue True)
@@ -27933,8 +27936,10 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.pcb"
     )
     (printQueueEntry "2"
       (orderedLayerList 
+        (layerNumRef 5)
         (layerNumRef 9)
         (layerNumRef 7)
+        (layerNumRef 11)
         (layerNumRef 3)
       )
       (isThinStrokeText False)
@@ -27944,6 +27949,7 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.pcb"
       (outputDrillSymNonplated True)
       (outputMirror True)
       (outputPads True)
+      (outputHoles True)
       (outputRefDes True)
       (outputType True)
       (outputValue True)
@@ -30568,7 +30574,7 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.pcb"
   )
   (reportSettings 
     (reportStyle reportStyleAccel)
-    (reportDestination DestinationScreen)
+    (reportDestination DestinationFile)
     (pt 0.0 0.0) 
     (reportDefinitions 
       (reportDefinition 
@@ -30761,36 +30767,12 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.pcb"
               (reportFieldColumnWidth 5)
             )
             (reportField 
-              (reportFieldName "PDIF_TY")
-              (reportFieldType PropertyTypeAttribute)
-              (reportFieldSortOrder 0)
-              (reportFieldSortType None)
-              (reportFieldShowFlag True)
-              (reportFieldColumnWidth 7)
-            )
-            (reportField 
               (reportFieldName "Description")
               (reportFieldType PropertyTypeAttribute)
               (reportFieldSortOrder 0)
               (reportFieldSortType None)
               (reportFieldShowFlag True)
               (reportFieldColumnWidth 11)
-            )
-            (reportField 
-              (reportFieldName "OriginalName")
-              (reportFieldType PropertyTypeAttribute)
-              (reportFieldSortOrder 0)
-              (reportFieldSortType None)
-              (reportFieldShowFlag True)
-              (reportFieldColumnWidth 12)
-            )
-            (reportField 
-              (reportFieldName "ComponentField7")
-              (reportFieldType PropertyTypeAttribute)
-              (reportFieldSortOrder 0)
-              (reportFieldSortType None)
-              (reportFieldShowFlag True)
-              (reportFieldColumnWidth 15)
             )
           )
           (reportFields 
@@ -31298,7 +31280,6 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.pcb"
       (reportDefinition 
         (reportName "Variant")
         (reportExtension "var")
-        (reportShowFlag True)
         (reportType ReportTypeVariant)
         (reportLinesPerPage 60)
         (reportColumnWidth 35)

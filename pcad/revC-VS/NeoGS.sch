@@ -9268,7 +9268,7 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.sch"
     (patternName "LQFP48")
   )
   (compInst "C52*"
-    (compRef "CAPCHIP_1")
+    (compRef "CAPCHIP_2")
     (originalName "CAPCHIP")
     (compValue "0.1uF")
     (patternName "C-CHIP")
@@ -11965,7 +11965,7 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.sch"
     (port (pt 15600.0 3000.0) (portType LeftAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "MP3_CLK") (rotation 180.0) )
     (port (pt 15600.0 3300.0) (portType NoAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "VCC33") (rotation 180.0) )
     (port (pt 15600.0 3600.0) (portType LeftAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "MP3_XRESET") (rotation 180.0) )
-    (symbol (symbolRef "CAP_2") (refDesRef "C52*") (partNum 1) (pt 15200.0 4600.0) )
+    (symbol (symbolRef "CAP_1") (refDesRef "C52*") (partNum 1) (pt 15200.0 4600.0) )
     (symbol (symbolRef "LED_1") (refDesRef "VD1") (partNum 1) (pt 14800.0 10600.0) 
       (attr "Description" "Light Emitting Diode" (justify LowerRight) (textStyleRef "(DefaultTTF)") (constraintUnits string) )
     )
