@@ -1,5 +1,5 @@
 
-; LAST UPDATE 11.12.2024 savelij
+; LAST UPDATE 20.05.2025 savelij
 
 		include macros.a80
 		include ports_ngs.a80
@@ -837,21 +837,29 @@ MORDALL		LD HL,MESS1
 		POP BC
 		PUSH BC
 		LD A,C
-		XOR %00000111
+		CP CYAN
+		LD B,BLUE
+		JR C,.L3
+		LD B,YELLOW
+.L3		XOR %00000111
 		ADD A,A
 		ADD A,A
 		ADD A,A
 		ADD A,A
-		OR BLUE
+		OR B
 		LD E,A
 	SPBIOS BIOSF.LP_PRINT_ATR,32
 		POP BC		
 	ELSE ; SPRINTER
-		XOR %00000111
+		CP CYAN
+		LD B,1	; BLUE
+		JR C,.L3
+		LD B,6	; YELLOW
+.L3		XOR %00000111
 		ADD A,A
 		ADD A,A
 		ADD A,A
-		OR BLUE
+		OR B
 		LD HL,0x59E0
 		LD B,32
 .L1		LD (HL),A
