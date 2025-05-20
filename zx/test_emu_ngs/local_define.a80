@@ -1,0 +1,86 @@
+
+; LAST UPDATE: 25.11.2024 savelij
+
+; номера функций плеера
+ INIT_VAR
+ SETVAR __INIT_SD				; 00 перезапуск SD
+ SETVAR __PREV_TRACK				; 01 предыдущий трек
+ SETVAR __PLAY					; 02 плей
+ SETVAR __PAUSE					; 03 пауза
+ SETVAR __STOP					; 04 стоп
+ SETVAR __NEXT_TRACK				; 05 следующий трек
+ SETVAR __XORBASS				; 06 XOR TREBLE/BASS
+ SETVAR __XORSURR				; 07 XOR SURROUND
+ SETVAR __VOL_UP				; 08 громкость +
+ SETVAR __VOL_DOWN				; 09 громкость -
+ SETVAR __MUTE					; 0A вкл/выкл громкости
+ SETVAR __GET_TIME				; 0B отдать время
+ SETVAR __GET_VTS				; 0C отдать парам 6-10
+ SETVAR __GET_CURRENT				; 0D отдать тек номер
+ SETVAR __SET_NUM				; 0E установка текущего номера
+ SETVAR __RESET_MP3				; 0F сброс MP3 декодера
+ SETVAR __FAT_TYPE				; 10 тип FAT
+ SETVAR __GET_LNG				; 11 отдать имя файла
+ SETVAR __GET_FILE_DESCR			; 12 отдать описатель
+ SETVAR __GET_COUNT_FILES			; 13 отдать колво *.EXT
+ SETVAR __SEND_MP3				; 14 прд на MP3
+ SETVAR __TXT_COUNT_FILES			; 15 DEC число файлов
+ SETVAR __TXT_CURRENT_FILE			; 16 DEC число текущ+1
+ SETVAR __XOR_RESET				; 17 переключения типа сброса
+ SETVAR __PREV_DIR				; 18 следующий DIR
+ SETVAR __NEXT_DIR				; 19 предыдущий DIR
+ SETVAR __SET_TEMBR				; 1A уст. тембров
+ SETVAR __TXT_TEMBR_STATUS			; 1B чтение тембров
+ SETVAR __BITRATE				; 1C RD битрейт и проч
+ SETVAR __TEST_MODE				; 1D тест режима
+ SETVAR __GET_CHIP_TYPE				; 1E номер чипа MP3
+ SETVAR __GET_COUNT_PATTERN			; 1F количество паттернов MOD
+
+; смещения переменных плеера
+ INIT_VAR
+ SETVAR VARP_FLAGS,		BYTE
+ SETVAR VARP_STATUS,		BYTE		; статус плеера
+ SETVAR VARP_GETVTSL,		BYTE		; громкость MP3 чипа
+ SETVAR VARP_GETVTSH,		BYTE		; биты режимов
+ SETVAR VARP_VSTBL,		WORD		; текущие настройки тембров
+ SETVAR VARP_COUNT_MP3,		WORD		; количество MP3
+ SETVAR VARP_NUMFILE,		WORD		; номер текущего файла
+ SETVAR VARP_TYPE_RESET,	BYTE		; тип сброса
+ SETVAR VARP_TYPE_FAT,		BYTE		; калибр FAT
+ SETVAR VARP_BUF_TEXT,		8		; буфер для текста
+ SETVAR VARP_SIZE_PATTERN_MOD,	BYTE		; кол-во патернов в загруженном MOD
+ SETVAR VARP_SIZE_PAGES_MOD,	BYTE		; кол-во страниц MOD
+ SETVAR VARP_TIMEOUT,		WORD		; TIMEOUT на работу с новым файлом
+ SETVAR VARP_KUDAXOR,		WORD		; адрес перехода на XOR BIT 7
+ SETVAR VARP_PAGE_PLAYER,	BYTE		; номер страницы расположения плеера
+ SETVAR VARP_INT_MODE,		BYTE		; флаг разрешенности прерываний
+ SETVAR VARP_CHIP_TYPE,		BYTE		; тип чина на плате
+ SETVAR VARP_FILE_TYPE,		BYTE		; тип файла
+ SETVAR VARP_SIZE_VARS,		0		; количество переменных
+
+; VARP_FLAGS
+  BITMASK SD_LOST,		7		; 1-карточка потеряна
+  BITMASK FILE_LOAD,		2		; 1-файл загружен, 0-нет
+  BITMASK PLAY_STOP,		0		; 0-1-разрешение PLAY,0-стоп/пауза
+
+; VARP_GETVTSH
+  BITMASK ENABLE_TEMBR,		7		; включение/выключение тембров
+  BITMASK MUTE,			6		; 0-звук включен, 1-выключен
+  BITMASK NEW_FILE,		5		; новый файл
+  BITMASK TYPE_RESET,		4		; тип сброса чипа MP3 0-SOFT RESET, 1-HARD
+;  BITMASK CHIP_TYPE,		3		; тип чипа MP3
+;  BITMASK FILE_TYPE,		1		; тип файла
+  BITMASK SURROUND,		0		; включение/выключение объемного звука
+
+; ошибки
+SD_NOT_FOUND		EQU 0xEE		; SD карта не найдена
+FAT_NOT_FOUND		EQU 0xDD		; FAT не найден
+NEOGS_ERROR		EQU 0xCC		; NeoGS не найден, это GS
+FILES_NOT_FOUND		EQU 0xBB		; файлы не найдены
+FILES_SEARCH		EQU 0x88		; нгс ищет файлы, ждать окончание поиска
+PLAYER_OK		EQU 0x77		; плеер готов к работе
+
+; типы файлов
+ INIT_VAR 1
+ SETVAR FILE_MP3
+ SETVAR FILE_MOD

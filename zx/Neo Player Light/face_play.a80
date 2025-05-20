@@ -1,5 +1,5 @@
 
-; LAST UPDATE 15.01.2024 savelij
+; LAST UPDATE 11.12.2024 savelij
 
 		include macros.a80
 		include ports_ngs.a80
@@ -202,7 +202,7 @@ LOOP26		CP FILES_NOT_FOUND
 		JR LOOP20
 
 LOOP27		CP NEOGS_ERROR
-		JP NZ,RST_NGS_CODE		; плата GS стараго типав
+		JP NZ,RST_NGS_CODE		; плата GS старого типа
 		JP NO_NGS
 
 LOOP16
@@ -225,7 +225,11 @@ LOOP16
 		JP Z,RESCOMP
 		JR LOOP16
 
-Warm		LD A,7
+Warm
+	IFDEF _SPRINTER
+	SPBIOS BIOSF.FN_TURBO,,2
+	ENDIF
+		LD A,7
 		CALL CLS			; очистка экрана
 		LD A,VARP_CHIP_TYPE
 		CALL GET_VTS

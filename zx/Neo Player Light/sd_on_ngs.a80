@@ -1,5 +1,5 @@
 
-; LAST UPDATE 16.01.2024 savelij
+; LAST UPDATE 17.05.2025 savelij
 
 ; SD & MP3 функции по номерам
  INIT_VAR
@@ -71,7 +71,7 @@ ERR_SD		EX DE,HL
 		POP HL
 		EXX
 		PUSH AF
-		LD A,(INT_MODE)
+		LD A,(VAR_INT_MODE)
 		AND A
 		JR Z,ERR_SD1
 		EI
@@ -280,9 +280,7 @@ RON_MP3		PUSH BC
 		PUSH DE
 		LD BC,SD_RSTR
 		LD D,0x10
-.L2		IN A,(SSTAT)
-		RRA
-		JR NC,.L2
+.L2		CALL DRQVS
 		LD E,0x20
 .L1		IN A,(C)
 		NOP
@@ -349,7 +347,7 @@ NOPER
 		RET
 
 AVTODET		IN A,(GSCFG0)
-		AND %11001111;0xCF
+		AND %11001111
 		OUT (GSCFG0),A
 		LD D,A
 		CALL NOPER
@@ -379,9 +377,7 @@ FREQNC		LD A,E
 
 ; записываем 2048 нулей как завершение песенки
 ZER2MP3		LD D,0x40
-.L2		IN A,(SSTAT)
-		RRA
-		JR NC,.L2
+.L2		CALL DRQVS
 		LD E,0x20
 .L1		XOR A
 		OUT (MD_SEND),A
@@ -391,20 +387,35 @@ ZER2MP3		LD D,0x40
 		JR NZ,.L2
 		RET
 
+; SS_VER is 
+TABL_CLOCK	DW 0x8000 + (14000000 / 2000)	; 0 for VS1001	(MA8201)	9B58
+		DW 0x8000 + (14000000 / 2000)	; 1 for VS1011	(MA8201A)	9B58
+		DW 0	; 2 for VS1002	; не поддерживается, не проверялся
+		DW SC_MULT4 | SC_ADD3 | 1500	; 3 for VS1003
+		DW SC_MULT4 | SC_ADD1 | 1500	; 4 for VS1053 and VS8053	; пока не доделан
+		DW 0	; 5 for VS1033	; не поддерживается, не проверялся
+		DW SC_MULT4 | SC_ADD1 | 1500	; 6 for VS1063	; пока не доделан
+		DW 0	; 7 for VS1103	; не поддерживается, не проверялся
+
 ; установка частоты MP3 чипа
-SET_CLOCKF	LD HL,VS10XX_WRITE << 8 + SCI_CLOCKF;0x0202
-		LD A,(CHIP_TYPE)
-		CP VS1053
-		JR Z,.VS1053
-		CP VS1063
-		JR Z,.VS1063
-; по дефолту установка для VS1001/VS1011
-.L1		LD DE,0x8000 + (14000000 / 2000); 0x9B58 установка делителя частоты для MP3 чипа
+SET_CLOCKF	LD A,(VAR_CHIP_TYPE)
+		ADD A,A
+		ADD A,LOW (TABL_CLOCK)
+		LD L,A
+		ADC A,HIGH (TABL_CLOCK)
+		SUB L
+		LD H,A
+		LD E,(HL)
+		INC HL
+		LD D,(HL)
+		LD HL,VS10XX_WRITE << 8 + SCI_CLOCKF;0x0202
 		JP COM_MP3			; установка частоты для декодера
 
-.VS1053
-.VS1063		LD DE,SC_MULT4 | SC_ADD2 | 1000
-		JP COM_MP3			; установка частоты для декодера
+; ожидание готовности MP3 декодера
+DRQVS		IN A,(SSTAT)
+		RRA
+		JR NC,DRQVS			; дождались готовности декодера
+		RET
 
 ; полный сброс
 HARDMP3		CALL VOL_MOD			; заглушили громкость портов GS
@@ -420,11 +431,9 @@ HARDMP3		CALL VOL_MOD			; заглушили громкость портов GS
 		CALL NOPER
 		LD A,M_MPXRS + M_SNCLR		; 0x84
 		OUT (SCTRL),A			; выдали сброс на декодер
-.L1		IN A,(SSTAT)
-		RRA
-		JR NC,.L1			; дождались готовности декодера
+		CALL DRQVS
 		CALL SET_CLOCKF
-		LD A,(CHIP_TYPE)
+		LD A,(VAR_CHIP_TYPE)
 		CP VS1001
 		LD HL,VS10XX_WRITE << 8 + SCI_BASS;0x0202
 		LD DE,%1000000000001000		; 0x8008
@@ -446,28 +455,30 @@ SOFTMP3		LD BC,MC_SEND
 		LD HL,VS10XX_READ << 8 + SCI_STATUS;0x0301
 		CALL COM_MP3
 		LD A,E
-		AND %11110000
+		AND SCISTATUS.M_SS_VER
 		PUSH AF
 		LD HL,VS10XX_READ << 8 + SCI_MODE;0x0300
 		CALL COM_MP3			; читаем состояние MODE
-		LD A,4
+		LD A,SCIMODE.M_SM_RESET
 		XOR E
 		LD E,A
 		LD HL,VS10XX_WRITE << 8 + SCI_MODE;0x0200
 		CALL COM_MP3
-		LD A,4
+		LD A,SCIMODE.M_SM_RESET
 		XOR E
 		LD E,A
-		LD HL,VS10XX_WRITE << 8 + SCI_MODE;0x0200
+		LD A,(VAR_CHIP_TYPE)
+		CP VS1001
+		JR Z,.L1
+		RES SCIMODE.B_SM_SDINEW,D	; отмена SPI modes
+.L1		LD HL,VS10XX_WRITE << 8 + SCI_MODE;0x0200
 		CALL COM_MP3			;даем команду софт-сброса
-.L1		IN A,(SSTAT)
-		RRA
-		JR NC,.L1			; ждем освобождения декодера
+		CALL DRQVS
 		CALL SET_CLOCKF
 		POP AF
 		LD HL,VS10XX_WRITE << 8 + SCI_BASS;0x0202
 		LD DE,%1000000000001000		; 0x8008
-		CALL Z,COM_MP3			; недокументированный пинок MP3 декодера (у Ы1001 INT_FCTLH)
+		CALL Z,COM_MP3			; недокументированный пинок MP3 декодера (у VS1001 INT_FCTLH)
 		POP DE
 		LD HL,VS10XX_WRITE << 8 + SCI_VOL;0x020B
 		JR COM_MP3			; восстанавливаем громкость до сброса
@@ -491,9 +502,7 @@ VOL_MOD		XOR A
 ; E - младший байт
 ; DE по записи подать на вход
 ;    по чтению получить на выходе
-COM_MP3		IN A,(SSTAT)
-		RRA
-		JR NC,COM_MP3			; декодер свободен
+COM_MP3		CALL DRQVS
 		LD A,M_MCNCS
 		OUT (SCTRL),A			; выбираем декодер и объясняем ему, что от него требуется
 		CALL NOPER
@@ -528,9 +537,7 @@ MP3READ		LD BC,MC_READ
 ; процедура пересылки байтов со спека через порты ГС на MP3 декодер
 ; пересылается 512 байт
 DAT2MP3		LD D,0x10		; перегнать на декодер 16 порций
-.L1		IN A,(SSTAT)
-		RRA
-		JR NC,.L1		; декодер свободен?
+.L1		CALL DRQVS
 		LD B,0x20		; одна порция 32 байта
 .L2		IN A,(ZXSTAT)
 		RLA

@@ -1,7 +1,5 @@
 
-;1720708
-
-;LAST UPDATE: 28.05.2021 savelij
+; LAST UPDATE: 11.12.2024 savelij
 
 		include ../macros.a80
 		include ../ports_ngs.a80
@@ -9,31 +7,31 @@
 		include ../sdcomand.a80
 		include version.a80
 
-;GSRomBaseL equ 0X0000
-;GSRomBaseH equ 0Xc000
+;GSRomBaseL equ 0x0000
+;GSRomBaseH equ 0xc000
 
 ;		ORG GSRomBaseL			;clear low ROM
-;		DEFS 0X4000,0XFF
+;		DEFS 0x4000,0xFF
 
 ;		ORG GSRomBaseH			;clear high ROM
-;		DEFS 0X4000,0XFF
+;		DEFS 0x4000,0xFF
 
 		ORG GSRomBaseL
 		DI
 		JP INIT
 
 ;---patched
-;		DEFB 0X0A			;LOW	(in BCD!)
-;		DEFB 0X01			;HIGH	(in BCD!)
+;		DEFB 0x0A			;LOW	(in BCD!)
+;		DEFB 0x01			;HIGH	(in BCD!)
 		DW VERS_BIN
 ;---
 
-ROMCRC		DW 0XE428			;CRC from original rom, corrupted!?
+ROMCRC		DW 0xE428			;CRC from original rom, corrupted!?
 
-		ORG GSRomBaseL+0X0030
-		JP SGEN				;0X2030
+	DUPL 0x0030 - $,0xFF
+		JP SGEN				;0x2030
 
-	        ORG GSRomBaseL+0X0038
+	DUPL 0x0038 - $,0xFF
 
 INT8		EX AF,AF'
 		PUSH DE
@@ -56,7 +54,7 @@ INT8		EX AF,AF'
 
 INT8_		JP QTDONE
 
-		ORG GSRomBaseL+0X0066
+	DUPL 0x0066 - $,0xFF
 NMILP		POP HL
 		LD A,L
 		OUT (ZXDATWR),A
@@ -70,11 +68,11 @@ NMILP3		IN A,(ZXSTAT)
 		JR C,NMILP3
 		JP NMILP
 
-		ORG GSRomBaseL+0X0080
+	DUPL 0x0080 - $,0xFF
 		DB "This is improved ROM Version 1.04 Beta. "
 		DB "Bugfixes by psb & Evgeny Muchkin, 2007.",0
 
-		ORG GSRomBaseL+0X0100
+	DUPL 0x0100 - $,0xFF
 		DB "General  Sound (tm)  ROM"
 		DB "Copyright   1997 Stinger"
 		DB "Version ",VERS_TXT,"            "
@@ -88,14 +86,14 @@ INIT_		XOR A
 		OUT (ZXDATWR),A
 ;		LD L,A
 ;		LD H,A
-;		LD BC,0X0004
-;		LD SP,0X0008
+;		LD BC,0x0004
+;		LD SP,0x0008
 ;		JR INIT02
 
 ;INIT00		
 		OUT (MPAG),A
-;		LD SP,0XC000
-;		LD C,0X04
+;		LD SP,0xC000
+;		LD C,0x04
 ;		DEC A
 ;INIT01		POP DE
 ;		ADD HL,DE
@@ -127,26 +125,35 @@ INIT_		XOR A
 ;		LD (HL),A
 ;		INC HL
 ;		INC A 
-;		CP 0X40
+;		CP 0x40
 ;		JR NZ,CREATE_LIST_PAGE
 ;		LD (HL),1
 ;		INC HL
 ;		LD (HL),0
-		LD HL,0X8000
-		LD A,0X7F
+		LD HL,0x8000
+		LD A,0x7F
 		OUT (MPAG),A
-		LD (HL),0XAA
-		LD A,0X3F
+		LD (HL),A			; для 4МБ
+		LD A,0x3F
 		OUT (MPAG),A
-		LD (HL),0X55
-		LD A,0X7F
+		LD (HL),A			; для 2МБ
+		LD A,0x0F
 		OUT (MPAG),A
-		LD A,(HL)
-		CP 0XAA
-		LD A,0X7E			;КОЛИЧЕСТВО СТРАНИЦ ДЛЯ 4 МЕГАБАЙТНОЙ NEOGS
-		JR Z,CP_RAMPAGES
-		LD A,0X3E			;КОЛИЧЕСТВО СТРАНИЦ ДЛЯ 2 МЕГАБАЙТНОЙ NEOGS
-CP_RAMPAGES	LD (NUMPG),A
+		LD (HL),A			; для 512К
+
+		LD A,0x7F
+		OUT (MPAG),A
+		CP (HL)
+		JR Z,.L1
+		LD A,0x3F
+		OUT (MPAG),A
+		CP (HL)
+		JR Z,.L1
+		LD A,0x0F
+		OUT (MPAG),A
+.L1		LD A,(HL)
+		DEC A
+		LD (NUMPG),A			; количество страниц памяти
 		OUT (ZXDATWR),A
 		ADD A,2
 		LD B,A
@@ -162,7 +169,7 @@ CREATE_TABL	LD (HL),A
 		LD (HL),1
 		INC HL
 		LD (HL),A
-		LD SP,0X8000
+		LD SP,0x8000
 		JP Patch5i3
 
 SET_SIZE_MOD	LD A,E
@@ -184,10 +191,10 @@ SET7XOR		XOR A
 		LD HL,0
 		ADD HL,SP
 		EXX
-		LD A,0X10
-		LD SP,0X7F00
-		LD BC,0XA97E
-		LD DE,0X2C77
+		LD A,0x10
+		LD SP,0x7F00
+		LD BC,0xA97E
+		LD DE,0x2C77
 SPEDI1		REPT 16
 		PUSH DE
 		PUSH BC
@@ -195,7 +202,7 @@ SPEDI1		REPT 16
 		DEC A
 		JP NZ,SPEDI1
 		LD HL,SPEDI2
-		LD DE,0X7F00
+		LD DE,0x7F00
 		LD BC,ESPEDI2-SPEDI2
 		LDIR
 		EXX
@@ -205,7 +212,7 @@ SPEDI1		REPT 16
 		EXX
 		LD L,A
 		LD H,0
-		LD BC,0X7B00
+		LD BC,0x7B00
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,BC
@@ -213,26 +220,26 @@ SPEDI1		REPT 16
 		EXX
 		LD A,(SIZE_MOD)
 		LD B,A
-		LD C,0X80
+		LD C,0x80
 		RET
 
 SPEDI2		INC H
-		JP NZ,0X7B00
+		JP NZ,0x7B00
 		INC E
 		LD A,(DE)
-		LD H,0X80
+		LD H,0x80
 		OUT (MPAG),A
 		DEC B
-		JP NZ,0X7B00
+		JP NZ,0x7B00
 		JP END7XOR
 ESPEDI2
 
 END7XOR		EXX
 		LD HL,0
 		ADD HL,SP
-		LD SP,0X8000
-		LD DE,0X8080
-		LD B,0X28
+		LD SP,0x8000
+		LD DE,0x8080
+		LD B,0x28
 E7X1		REPT 16
 		PUSH DE
 		ENDM
@@ -241,16 +248,16 @@ E7X1		REPT 16
 		EXX
 		JP NOCONV
 
-		DUPL GSRomBaseL+0X269-$,0
-;		ORG GSRomBaseL+0X269
+		DUPL GSRomBaseL+0x269-$,0
+;		ORG GSRomBaseL+0x269
 
 ;INCLUDE "COM_L.a80"
 COMHZ		OUT (CLRCBIT),A
-COMINT		LD SP,ISTACK		;0X026B
+COMINT		LD SP,ISTACK		;0x026B
 COMINT_		IN A,(ZXSTAT)
 		RRCA
 		JR C,COMINT1
- 		LD A,(PROCESS)		;0X0273
+ 		LD A,(PROCESS)		;0x0273
 		OR A
 		JR Z,COMINT_
 		LD A,(BUSY)
@@ -259,7 +266,7 @@ COMINT_		IN A,(ZXSTAT)
 		IN A,(ZXSTAT)
 		RRCA
 		JR C,COMINT1
-		LD A,0XFF
+		LD A,0xFF
 		LD (INGEN),A
 		PUSH DE
 		CALL ENGINE
@@ -269,11 +276,11 @@ COMINT_		IN A,(ZXSTAT)
 		JP COMINT_
 
 COMINT1		IN A,(ZXCMD)
-		CP 0X20
+		CP 0x20
 		JR C,COMLOW
-COMINT2		CP 0XF0
+COMINT2		CP 0xF0
 		JR C,COMHIGH
-		SUB 0XD0
+		SUB 0xD0
 COMLOW		ADD A,A
 		LD H,HIGH (COMTAB)
 		LD L,A
@@ -297,7 +304,7 @@ COMHIGH		LD HL,COMINT_
 		JP (HL)
 
 WTDTL		IN A,(ZXSTAT)
-		AND 0X81
+		AND 0x81
 		JR Z,WTDTL
 		IN A,(ZXDATRD)
 		JP P,COMINT1
@@ -352,9 +359,9 @@ COM00		IN A,(ZXDATRD)
 		JP COMINT_
 
 ;Set silence (*)
-;Выводит в ЦАПы всех каналов 0X80. По сути устанавливает тишину.
+;Выводит в ЦАПы всех каналов 0x80. По сути устанавливает тишину.
 COM01		OUT (CLRCBIT),A
-		LD A,0X80
+		LD A,0x80
 		LD HL,DAC0
 		LD (HL),A
 		LD B,(HL)
@@ -372,7 +379,7 @@ COM01		OUT (CLRCBIT),A
 ;Set low volume (*)
 ;Устанавливает громкостx ЦАПов всех каналов в ноль.
 COM02   OUT (CLRCBIT),A
-        LD A,0X3F
+        LD A,0x3F
         OUT (VOL1),A
         OUT (VOL2),A
         OUT (VOL3),A
@@ -392,22 +399,22 @@ COM03   OUT (CLRCBIT),A
 ;Set 'E' 3bits (*)
 ;Устанавливает в 'E' регистре GS 3 младших бита в соответствии с  задан-
 ;ным значением (2  младших  бита  в  сущности  являются  номером  канала
-;0X00-0X03).
+;0x00-0x03).
 COM04   IN A,(ZXDATRD)
         OUT (CLRCBIT),A
-        AND 0X07
+        AND 0x07
         LD E,A
         JP COMINT_
 
 ;Out volume port (*)
 ;Устанавливает громкость канала, номер которого содержится в 'E', в ука-
 ;занное значение. (Команда срабатывает при условии,  что 'E' находится в
-;пределах 0X00-0X03)
+;пределах 0x00-0x03)
 COM05   IN A,(ZXDATRD)
         OUT (CLRCBIT),A
         LD B,A
         LD A,E
-        CP 0X04
+        CP 0x04
         JP NC,COMINT_
         ADD A,VOL1
         LD C,A
@@ -420,11 +427,11 @@ COM06   IN A,(ZXDATRD)
         OUT (CLRCBIT),A
         LD B,A
         LD A,E
-        CP 0X04
+        CP 0x04
         JP NC,COMINT_
         ADD A,HIGH (DAC0)
         LD H,A
-        LD L,0X00
+        LD L,0x00
         LD (HL),B
         LD A,(HL)
         JP COMINT_
@@ -435,11 +442,11 @@ COM07   IN A,(ZXDATRD)
         OUT (CLRCBIT),A
         LD B,A
         LD A,E
-        CP 0X04
+        CP 0x04
         JP NC,COMINT_
         ADD A,HIGH (DAC0)
         LD H,A
-        LD L,0X00
+        LD L,0x00
         LD (HL),B
         SUB HIGH (DAC0)
         ADD A,VOL1
@@ -451,7 +458,7 @@ COM07_1 OUT (C),A
         LD A,(HL)
         JP COMINT_
 
-;то же что и команда 0X00
+;то же что и команда 0x00
 ;Reset flags
 ;Сбрасывает флаги Data bit и Command bit.
 COM08   EQU COMZ
@@ -463,11 +470,11 @@ COM09   IN A,(ZXDATRD)
         LD B,A
         RLCA
         RLCA
-        AND 0X03
+        AND 0x03
         ADD A,VOL1
         LD C,A
         LD A,B
-        AND 0X3F
+        AND 0x3F
         OUT (C),A
         JP COMINT_
 
@@ -479,10 +486,10 @@ COM0A   IN A,(ZXDATRD)
         LD IY,COM0A_1
         JP WTDTL
         
-COM0A_1 AND 0X03
+COM0A_1 AND 0x03
         ADD A,HIGH (DAC0)
         LD H,A
-        LD L,0X00
+        LD L,0x00
         LD (HL),B
         LD A,(HL)
         JP COMINT_
@@ -498,16 +505,16 @@ COM0B   IN A,(ZXDATRD)
 COM0B_1 LD B,A
         RLCA
         RLCA
-        AND 0X03
+        AND 0x03
         ADD A,HIGH (DAC0)
         LD H,A
-        LD L,0X00
+        LD L,0x00
         LD (HL),C
         SUB HIGH (DAC0)
         ADD A,VOL1
         LD C,A
         LD A,B
-        AND 0X3F
+        AND 0x3F
         OUT (C),A
         LD A,(HL)
         JP COMINT_
@@ -548,7 +555,7 @@ COM0C_3 LD (HL),A
 ;водится автоматически по записи последнего байта.
 COM0D   IN A,(ZXDATRD)
         OUT (CLRCBIT),A
-        AND 0X0F
+        AND 0x0F
         JP Z,COMINT_
         RLCA
         RLCA
@@ -573,7 +580,7 @@ COM0D_2 SLA B
 ;Go to LPT Covox mode
 ;Переходит в режим одноканального Ковокса,   напрямую  копирует  регистр
 ;данных в ЦАПы двух (правого и левого) каналов.  Выход из этого режима -
-;запись 0X00 в регистр команд.
+;запись 0x00 в регистр команд.
 COM0E   OUT (CLRCBIT),A
         LD HL,DAC0
         LD BC,DAC2
@@ -590,8 +597,8 @@ COM0E_1 IN A,(ZXDATRD)
 ;Go in Profi Covox mode (*)
 ;Переходит в режим двухканального Ковокса,   напрямую  копирует  регистр
 ;данных в ЦАПы одного канала,  а регистр каманд в ЦАПы  второго  канала.
-;Выход из этого режима - запись 0X4Е в регистр данных,  затем  последова-
-;тельно 0X0F и 0XAA в регистр команд.
+;Выход из этого режима - запись 0x4Е в регистр данных,  затем  последова-
+;тельно 0x0F и 0xAA в регистр команд.
 COM0F   IN A,(ZXDATRD)
         OUT (CLRCBIT),A
         CP "Y"
@@ -607,42 +614,42 @@ COM0F_1 IN A,(ZXDATRD)
         IN A,(ZXSTAT)
         OR A
         JP M,COM0F_1
-        LD B,0X00
+        LD B,0x00
         OUT (CLRCBIT),A
 COM0F_2 IN A,(ZXSTAT)
-        AND 0X81
+        AND 0x81
         JR NZ,COM0F_1
         DJNZ COM0F_2
 COM0F_3 IN A,(ZXSTAT)
-        AND 0X81
+        AND 0x81
         JR Z,COM0F_3
-        CP 0X80
+        CP 0x80
         JR NZ,COM0F_1
         IN A,(ZXDATRD)
         CP "N"
         JP NZ,COM0F_1
 COM0F_4 IN A,(ZXSTAT)
-        AND 0X81
+        AND 0x81
         JR Z,COM0F_4
-        CP 0X01
+        CP 0x01
         JR NZ,COM0F_1
         IN A,(ZXCMD)
-        CP 0X0F
+        CP 0x0F
         JP NZ,COM0F_1
         OUT (CLRCBIT),A
 COM0F_5 IN A,(ZXSTAT)
-        AND 0X81
+        AND 0x81
         JR Z,COM0F_5
-        CP 0X01
+        CP 0x01
         JR NZ,COM0F_1
         IN A,(ZXCMD)
-        CP 0XAA
+        CP 0xAA
         JP NZ,COM0F_1
         OUT (CLRCBIT),A
         JP COMINT_
 
 ;Out to any port (*)
-;Выводит байт вo внутренний порт GS (0X00-0X09).
+;Выводит байт вo внутренний порт GS (0x00-0x09).
 COM10   IN A,(ZXDATRD)
         OUT (CLRCBIT),A
         LD C,A
@@ -653,7 +660,7 @@ COM10_1 OUT (C),A
         JP COMINT_
 
 ;In from any port (*)
-;читает байт из внутреннего порта GS (0X00-0X09).
+;читает байт из внутреннего порта GS (0x00-0x09).
 COM11   IN A,(ZXDATRD)
         LD C,A
         IN A,(C)
@@ -662,7 +669,7 @@ COM11   IN A,(ZXDATRD)
         JP COMINT_
 
 ;OUT to 0 port (*)
-;Выводит байт в порт кофигурации GS (0X00).
+;Выводит байт в порт кофигурации GS (0x00).
 COM12   IN A,(ZXDATRD)
         OUT (CLRCBIT),A
         OUT (MPAG),A
@@ -705,7 +712,7 @@ COM14_3 LD D,A
         OR C
         JP Z,COMINT_
         LD IXL,B
-        LD B,0X81
+        LD B,0x81
         BIT 0,C
         JR NZ,COM14_7
 COM14_6 IN A,(ZXSTAT)
@@ -752,7 +759,7 @@ COM15_3 LD D,A
         OR C
         JP Z,COMINT_
         LD IXL,B
-        LD B,0X81
+        LD B,0x81
         LD A,(DE)
         INC DE
         OUT (ZXDATWR),A
@@ -850,23 +857,23 @@ COM1B   OUT (CLRCBIT),A
         INC DE
         JP COMINT_
 
-;Poke to (0X20XX) address (*)
-;Записывает байт по адресу, старший байт которого равен 0X20.
+;Poke to (0x20xX) address (*)
+;Записывает байт по адресу, старший байт которого равен 0x20.
 COM1C   IN A,(ZXDATRD)
         OUT (CLRCBIT),A
         LD L,A
         LD IY,COM1C_1
         JP WTDTL
         
-COM1C_1 LD H,0X20
+COM1C_1 LD H,0x20
         LD (HL),A
         JP COMINT_
 
-;Peek from (0X20XX) address (*)
-;читает байт с адреса, старший байт которого равен 0X20.
+;Peek from (0x20xX) address (*)
+;читает байт с адреса, старший байт которого равен 0x20.
 COM1D   IN A,(ZXDATRD)
         LD L,A
-        LD H,0X20
+        LD H,0x20
         LD A,(HL)
         OUT (ZXDATWR),A
         OUT (CLRCBIT),A
@@ -885,29 +892,29 @@ COMF3   OUT (CLRCBIT),A
         JP INITVAR
 
 ;Cold restart
-;Полный перезапуск GS со всеми проверками. По сути, JP 0X0000.
+;Полный перезапуск GS со всеми проверками. По сути, JP 0x0000.
 COMF4   OUT (CLRCBIT),A
-        JP 0X0000
+        JP 0x0000
 
 ;Busy on
-;Устанавливает флаг занятости в 0XFF
+;Устанавливает флаг занятости в 0xFF
 COMF5   OUT (CLRCBIT),A
         LD A,IXH
-        AND 0X80
+        AND 0x80
         JP NZ,COMF5_1
-        LD A,0XFF
+        LD A,0xFF
         LD (BUSY),A
         JP COMINT_
         
-COMF5_1 OR 0X40
+COMF5_1 OR 0x40
         LD IXH,A
         JP COMINT_
 
 ;Busy off
-;Устанавливает флаг занятости в 0X00
+;Устанавливает флаг занятости в 0x00
 COMF6   OUT (CLRCBIT),A
         LD A,IXH
-        AND 0X80
+        AND 0x80
         JP NZ,COMF6_1
         XOR A
         LD (BUSY),A
@@ -938,8 +945,8 @@ COMFA   OUT (CLRCBIT),A
 
 	align 256
 
-LDITAB  REPT 0X100
-	DB 0XED,0XA0
+LDITAB  REPT 0x100
+	DB 0xED,0xA0
 	ENDM
         RET C
         LD A,(SYSTEM)
@@ -951,7 +958,7 @@ MLDI    NEG
         ADD A,A
         LD IYL,A
         LD A,HIGH (LDITAB)
-        ADC A,0X00
+        ADC A,0x00
         LD IYH,A
         LD A,(SDPAGE)
         LD (CPAGE),A
@@ -962,7 +969,7 @@ TLDI    NEG
         ADD A,A
         LD IYL,A
         LD A,HIGH (LDITAB)
-        ADC A,0X00
+        ADC A,0x00
         LD IYH,A
         SCF
         JP (IY)
@@ -971,7 +978,7 @@ MLDD    NEG
         ADD A,A
         LD IYL,A
         LD A,HIGH (LDDTAB)
-        ADC A,0X00
+        ADC A,0x00
         LD IYH,A
         LD A,(SDPAGE)
         LD (CPAGE),A
@@ -980,8 +987,8 @@ MLDD    NEG
 
 	align 256
 
-LDDTAB  REPT 0X100
-	DB 0XED,0XA8
+LDDTAB  REPT 0x100
+	DB 0xED,0xA8
 	ENDM
         LD A,(SYSTEM)
         LD (CPAGE),A
@@ -991,9 +998,9 @@ LDDTAB  REPT 0X100
 ;INCLUDE "LOAD_L.a80"
 
 ; RET B,DE - OLD CURADR
-;0X0C09
+;0x0C09
 
-LOAD    LD B,0X81
+LOAD    LD B,0x81
         LD HL,(CURADR)
         LD A,(CURADR+2)
         SCF
@@ -1011,7 +1018,7 @@ LOAD_   LD A,(DE)
         CP E
         JR NZ,LOADWT
         LD A,H
-        CP 0XC0
+        CP 0xC0
         JR C,LOADWT2
         JP LOADWT3
 
@@ -1028,16 +1035,16 @@ LOADWT  IN A,(ZXSTAT)
         INC H
         JP NZ,LOADWT
         INC E
-        LD HL,0X8000
+        LD HL,0x8000
         JP LOAD_
 
 LOADCM  IN A,(ZXCMD)
-        CP 0XF3
+        CP 0xF3
         JP Z,COMF3
-        CP 0XF4
+        CP 0xF4
         JP Z,COMF4
         OUT (CLRCBIT),A
-        CP 0XD2
+        CP 0xD2
         JP Z,LOAD3
         JP LOADWT
 
@@ -1060,22 +1067,22 @@ LOADWT3 IN A,(ZXSTAT)
         IN A,(ZXDATRD)
         JP NC,LOADWT3
         IN A,(ZXCMD)
-        CP 0XF3
+        CP 0xF3
         JP Z,COMF3
-        CP 0XF4
+        CP 0xF4
         JP Z,COMF4
         OUT (CLRCBIT),A
-        CP 0XD2
+        CP 0xD2
         JR Z,LOAD3
         JP LOADWT3
 
 LOADCM2 IN A,(ZXCMD)
-        CP 0XF3
+        CP 0xF3
         JP Z,COMF3
-        CP 0XF4
+        CP 0xF4
         JP Z,COMF4
         OUT (CLRCBIT),A
-        CP 0XD2
+        CP 0xD2
         JR Z,LOAD3
         JP LOADWT2
 
@@ -1095,45 +1102,45 @@ LOAD3   LD A,E
         RET
 
 ;INCLUDE "PLAY.a80"
-PLAYMD  LD A,(RAMPG)		;0X0CC9
+PLAYMD  LD A,(RAMPG)		;0x0CC9
         OUT (MPAG),A
         LD IY,CHANS
         LD DE,CHANLEN
-        LD B,0X04
+        LD B,0x04
 RDLP1   
 ;---patched
         CALL Patch4
         NOP
 ;---
-        LD (IY+CHCNTH),0X00
-        LD (IY+CHOLDV),0X80
-        LD (IY+CHSTAT),0X01
-        LD (IY+CHLPCNT),0X00
-        LD (IY+CHPATPS),0X00
-        LD (IY+CHTRMPS),0X00
-        LD (IY+CHVIBPS),0X00
-        LD (IY+CHVOL),0X40
-        LD (IY+CHMVOL),0X40
-        LD (IY+CHINS),0X00
-        LD (IY+CHSMP),0X00
-        LD (IY+CHPAN),0X80
-        LD (IY+CHEPAN),0X20
-        LD (IY+CHEVOL),0X40
-        LD (IY+CHFADVL),0XFF
-        LD (IY+CHFADVH),0XFF
+        LD (IY+CHCNTH),0x00
+        LD (IY+CHOLDV),0x80
+        LD (IY+CHSTAT),0x01
+        LD (IY+CHLPCNT),0x00
+        LD (IY+CHPATPS),0x00
+        LD (IY+CHTRMPS),0x00
+        LD (IY+CHVIBPS),0x00
+        LD (IY+CHVOL),0x40
+        LD (IY+CHMVOL),0x40
+        LD (IY+CHINS),0x00
+        LD (IY+CHSMP),0x00
+        LD (IY+CHPAN),0x80
+        LD (IY+CHEPAN),0x20
+        LD (IY+CHEVOL),0x40
+        LD (IY+CHFADVL),0xFF
+        LD (IY+CHFADVH),0xFF
         ADD IY,DE
         DJNZ RDLP1
-        LD IXL,0XFF
-        LD A,(0X8000+1080)	;определение сигнатуры заголовка
+        LD IXL,0xFF
+        LD A,(0x8000+1080)	;определение сигнатуры заголовка
         CP "M"
         JR Z,TTY1
         CP "4"
         JR Z,TTY1
         CP "F"
         JR Z,TTY1
-        LD IXL,0X00
+        LD IXL,0x00
         JP TTY0
-TTY1    LD A,(0X8000+1081)
+TTY1    LD A,(0x8000+1081)
         CP "."
         JR Z,TTY2
         CP "L"
@@ -1142,26 +1149,26 @@ TTY1    LD A,(0X8000+1081)
         JR Z,TTY2
         CP "C"
         JR Z,TTY2
-        LD IXL,0X00
+        LD IXL,0x00
         JP TTY0
-TTY2    LD A,(0X8000+1082)
+TTY2    LD A,(0x8000+1082)
         CP "K"
         JR Z,TTY0
         CP "T"
         JR Z,TTY0
         CP "H"
         JR Z,TTY0
-        LD IXL,0X00
+        LD IXL,0x00
 TTY0    LD A,IXL
         LD (MODTP),A
-        LD HL,0X8000+952
+        LD HL,0x8000+952
         OR A
 ;---patched
-        LD DE,0X0000+1084
+        LD DE,0x0000+1084
         JR NZ,TTY10
-        LD DE,0X0000+600		;размер заголовка файла
-        LD HL,0X8000+472		;смещение до таблицы патернов
-TTY10   LD B,0X80		;сканирование таблицы патернов
+        LD DE,0x0000+600		;размер заголовка файла
+        LD HL,0x8000+472		;смещение до таблицы патернов
+TTY10   LD B,0x80		;сканирование таблицы патернов
         SUB A
 FDF2    CP (HL)
         JR NC,FDF
@@ -1179,7 +1186,7 @@ FDF     INC HL
         LD L,B
         ADD HL,DE
         ADC A,B
-        DB 0XCB,0X34;SLI H
+        DB 0xCB,0x34;SLI H
         RLA
         RRC H
         LD E,A
@@ -1189,17 +1196,17 @@ FDF     INC HL
 ;---
         LD A,IXL
         OR A
-        LD BC,0X8000+950
+        LD BC,0x8000+950
         JR NZ,TTT11
-        LD BC,0X8000+470
+        LD BC,0x8000+470
 TTT11   LD A,(BC)
 	DEC A
         LD (MTSNGSZ),A
         INC BC
         LD A,(BC)
         LD (MTSNGLP),A
-        LD IX,0X5400
-        LD IY,0X8000+20		;начало сэмплов
+        LD IX,0x5400
+        LD IY,0x8000+20		;начало сэмплов
         LD B,31
         LD C,E
 RDLP3   PUSH BC
@@ -1210,7 +1217,7 @@ RDLP3   PUSH BC
         OR A
         JR NZ,LPL
         LD A,(IY+29)
-        CP 0X02
+        CP 0x02
         JP C,NLPL
 LPL     PUSH HL
         PUSH BC
@@ -1238,7 +1245,7 @@ LPL     PUSH HL
         LD A,C
         ADC A,B
         LD C,A
-        DB 0XCB,0X34;SLI H
+        DB 0xCB,0x34;SLI H
         RL C
         RRC H
         LD (IX+SMPLPB),C
@@ -1258,7 +1265,7 @@ LPL     PUSH HL
         LD A,C
         ADC A,B
         LD C,A
-        DB 0XCB,0X34;SLI H
+        DB 0xCB,0x34;SLI H
         RL C
         RRC H
         LD (IX+SMPLPE),C
@@ -1271,7 +1278,7 @@ LPL     PUSH HL
         EX DE,HL
         ADD HL,HL
         EX DE,HL
-        LD B,0X00
+        LD B,0x00
         RL B
         SRL C
         RL H
@@ -1280,7 +1287,7 @@ LPL     PUSH HL
         LD A,C
         ADC A,B
         LD C,A
-        DB 0XCB,0X34;SLI H
+        DB 0xCB,0x34;SLI H
         RL C
         RRC H
         JP LPL2
@@ -1312,13 +1319,13 @@ LPL2    LD A,(IX+SMPLPE)
         LD (IX+SMPEND+2),A
         JP LPCNT
 
-NLPL    LD (IX+SMPLPB),0XFF
+NLPL    LD (IX+SMPLPB),0xFF
         LD E,(IY+23)
         LD D,(IY+22)
         EX DE,HL
         ADD HL,HL
         EX DE,HL
-        LD B,0X00
+        LD B,0x00
         RL B
         SRL C
         RL H
@@ -1327,7 +1334,7 @@ NLPL    LD (IX+SMPLPB),0XFF
         LD A,C
         ADC A,B
         LD C,A
-        DB 0XCB,0X34;SLI H
+        DB 0xCB,0x34;SLI H
         RL C
         RRC H
 RDLP2   LD (IX+SMPEND+1),L
@@ -1338,7 +1345,7 @@ LPCNT   LD A,(IY+24)
         LD (IX+SMPFT),A
         LD A,(IY+25)
         LD (IX+SMPVOL),A
-        LD DE,0X0010
+        LD DE,0x0010
         ADD IX,DE
         LD DE,30
         ADD IY,DE
@@ -1351,7 +1358,7 @@ LPCNT   LD A,(IY+24)
         LD A,(HL)
         OR A
         JR NZ,NOCONV
-        LD (HL),0XFF
+        LD (HL),0xFF
         LD HL,(SMPS)
         LD A,(SMPS+2)
         LD E,A
@@ -1364,14 +1371,14 @@ SMPMD2  LD A,(DE)
 		CALL SET7XOR	;КОНВЕРСИЯ ЗАГРУЖЕННОГО MOD ФАЙЛА
 		JR SMPMD4
 
-;SMPMD1  LD A,(HL)		;начало ADD A,0X80
-;        ADD A,0X80
+;SMPMD1  LD A,(HL)		;начало ADD A,0x80
+;        ADD A,0x80
 ;        LD (HL),A
 ;        INC L
 ;        JP NZ,SMPMD1
 ;        INC H
 ;        JP NZ,SMPMD1
-;        LD H,0X80
+;        LD H,0x80
 ;        INC E
 ;        DJNZ SMPMD2
 ;        LD A,(DE)
@@ -1379,7 +1386,7 @@ SMPMD2  LD A,(DE)
 ;        OR A
 ;        JR Z,SMPMD4
 ;SMPMD3  LD A,(HL)
-;        ADD A,0X80
+;        ADD A,0x80
 ;        LD (HL),A
 ;        INC L
 ;        JP NZ,SMPMD3
@@ -1387,7 +1394,7 @@ SMPMD2  LD A,(DE)
 ;        BIT 6,H
 ;        JP Z,SMPMD3
 
-		DUPL 0XF20-$,0XFF
+		DUPL 0xF20-$,0xFF
 SMPMD4
 NOCONV  XOR A
         LD (CPAGE),A
@@ -1399,9 +1406,9 @@ INITPAT LD A,(MTSNGPS)
         LD D,0
         LD A,(MODTP)
         INC A
-        LD HL,0X8000+952
+        LD HL,0x8000+952
         JR Z,TTT13
-        LD HL,0X8000+472
+        LD HL,0x8000+472
 TTT13   ADD HL,DE
         LD A,(RAMPG)
         OUT (MPAG),A
@@ -1412,15 +1419,15 @@ TTT13   ADD HL,DE
         LD D,A
         LD A,(MODTP)
         INC A
-        LD HL,0X0000+1084
+        LD HL,0x0000+1084
         JR Z,TTT15
-        LD HL,0X0000+600
+        LD HL,0x0000+600
 TTT15   XOR A
         LD (CPAGE),A
         OUT (MPAG),A
         ADD HL,DE
-        LD DE,0X5000
-        LD BC,0X400
+        LD DE,0x5000
+        LD BC,0x400
         CALL LDMEM
         XOR A
         OUT (MPAG),A
@@ -1440,7 +1447,7 @@ QUANTUM LD A,(FXCHNS)
         LD C,A
         LD IY,CHANS     ;CHANNELS
         LD A,(MTSTAT)
-        AND 0XC0
+        AND 0xC0
         JR NZ,L221
 L204    LD A,C
         AND (IY+CHRDR)
@@ -1451,7 +1458,7 @@ L204    LD A,C
         CALL GEN
         POP BC
 L205    LD A,IYL
-        ADD A,0X40
+        ADD A,0x40
         LD IYL,A
         JP NC,L204
         JP L221
@@ -1474,27 +1481,27 @@ L221    XOR A
         PUSH BC
         PUSH HL
         LD A,(CHANNEL)
-        AND 0X0F
+        AND 0x0F
         LD HL,INTTB
         ADD A,A
         ADD A,L
         LD L,A
         LD A,H
-        ADC A,0X00
+        ADC A,0x00
         LD H,A
         LD C,(HL)
         INC HL
         LD B,(HL)
         LD A,(CHANNEL)
-        AND 0X0F
+        AND 0x0F
         LD HL,INTOFF
         ADD A,L
         LD L,A
         LD A,H
-        ADC A,0X00
+        ADC A,0x00
         LD H,A
         LD A,(QTFREE)
-        ADD A,0X60
+        ADD A,0x60
         ADD A,(HL)
         POP HL
         LD (HL),A
@@ -1519,7 +1526,7 @@ L224    LD A,(SGENOFF)
         LD C,A
         LD B,0
         LD A,(MTSTAT)
-        AND 0XC0
+        AND 0xC0
         RET NZ
         LD HL,(TCKLEFT)
         OR A
@@ -1537,7 +1544,7 @@ EFXINT  LD A,(MODULE)
         LD (CPAGE),A
         OUT (MPAG),A
         LD IY,CHANS
-        LD B,0X04
+        LD B,0x04
         LD A,(MTCOUNT)
         INC A
         LD (MTCOUNT),A
@@ -1553,7 +1560,7 @@ EFXINT  LD A,(MODULE)
         JP EFXSKIP
 
 EFXNONT LD IY,CHANS
-        LD B,0X04
+        LD B,0x04
 EFXNON1 PUSH BC
         LD A,(IY+CHCOM)
         OR (IY+CHPARM)
@@ -1579,7 +1586,7 @@ EFXGTNT
 ;LD IY,CHANS
 ;---patched
         JP Patch3
-        DB 0X46
+        DB 0x46
 ;---
         XOR A
         LD (CPAGE),A
@@ -1601,27 +1608,27 @@ COMM1   XOR A
         POP BC
         POP DE
 COMM2   LD A,D
-        CP 0X7F
+        CP 0x7F
         JP Z,COMM5
         LD A,B
-        CP 0X03
+        CP 0x03
         JP Z,COMM4
-        CP 0X05
+        CP 0x05
         JP Z,COMM4
-        CP 0X0E
+        CP 0x0E
         JR NZ,COMM3
         LD A,C
-        AND 0XF0
-        CP 0X50
+        AND 0xF0
+        CP 0x50
         JR Z,COMM5_
         LD (IY+CHNOTE),D
         LD (IY+CHREAL),D
-        CP 0XD0
+        CP 0xD0
         JR Z,COMM3__
         JP COMM3
         
 COMM5_  LD A,C
-        AND 0X0F
+        AND 0x0F
         SLA A
         LD (IY+CHFINE),A
 COMM3   LD (IY+CHNOTE),D
@@ -1636,7 +1643,7 @@ COMM3__ LD E,(IY+CHNOTE)
         LD (IY+CHFRQL),L
         LD (IY+CHFRQH),H
         LD A,(IY+CHCOM)
-        CP 0X09
+        CP 0x09
         JP NZ,COMM5
         LD A,(IY+CHPARM)
         OR A
@@ -1644,7 +1651,7 @@ COMM3__ LD E,(IY+CHNOTE)
         LD A,(IY+CHOFFST)
 FX9_    LD (IY+CHOFFST),A
         LD H,A
-        LD L,0X00
+        LD L,0x00
         XOR A
         ADC A,A
         EX DE,HL
@@ -1656,7 +1663,7 @@ FX9_    LD (IY+CHOFFST),A
         RR H
         ADD HL,DE
         ADC A,B
-        DB 0XCB,0X34;SLI H
+        DB 0xCB,0x34;SLI H
         RLA
         RRC H
         LD (IY+CHCURL),L
@@ -1685,7 +1692,7 @@ COMM6   LD BC,CHANLEN
         LD A,(CURCHN)
         INC A
         LD (CURCHN),A
-        CP 0X04
+        CP 0x04
         JP NZ,COMM1
 EFXSKIP LD HL,MTPATPS
         INC (HL)
@@ -1735,7 +1742,7 @@ EFXSKP6 LD A,(MTBRKPS)
 EFXSKP7 LD A,(MTSNGSZ)
         LD HL,MTSNGLP
         CP (HL)
-        LD A,0X00
+        LD A,0x00
         JR C,EFXSKP8
         LD A,(HL)
 EFXSKP8 LD (MTSNGPS),A
@@ -1770,8 +1777,8 @@ GETSMP  SET 7,(IY+CHSTAT)
         ADD A,A
         ADD A,A
         LD E,A
-        LD A,0X54
-        ADC A,0X00
+        LD A,0x54
+        ADC A,0x00
         LD D,A
         LD A,(DE)
         LD (IY+CHCURP),A
@@ -1814,8 +1821,8 @@ GETSMP  SET 7,(IY+CHSTAT)
         INC DE
         LD A,(DE)
         LD (IY+CHLPEH),A
-        LD (IY+CHCNTL),0X00
-        LD (IY+CHCNTH),0X07
+        LD (IY+CHCNTL),0x00
+        LD (IY+CHCNTH),0x07
         LD A,(IY+CHCURP)
         CP (IY+CHENDP)
         RET C
@@ -1831,7 +1838,7 @@ GETSMP2 RES 7,(IY+CHSTAT)
         RET
 GETSMP3 INC (IY+CHCURH)
         RET NZ
-        LD (IY+CHCURH),0X80
+        LD (IY+CHCURH),0x80
         INC (IY+CHCURP)
         RET
 
@@ -1842,8 +1849,8 @@ EFXNEWI LD A,(IY+CHINS)
         ADD A,A
         ADD A,A
         LD E,A
-        LD A,0X54
-        ADC A,0X00
+        LD A,0x54
+        ADC A,0x00
         LD D,A
         INC DE
         INC DE
@@ -1855,9 +1862,9 @@ EFXNEWI LD A,(IY+CHINS)
         LD (IY+CHFINE),A
         INC DE
         LD A,(DE)
-        CP 0X40
+        CP 0x40
         JR C,GETSMP1
-        LD A,0X40
+        LD A,0x40
 GETSMP1 LD (IY+CHVOL),A
         CP (IY+CHMVOL)
         LD (IY+CHMVOL),A
@@ -1866,11 +1873,11 @@ GETSMP1 LD (IY+CHVOL),A
         RET
 
 GETROWS LD A,(MTPATPS)
-        AND 0X3F
+        AND 0x3F
         ADD A,A
         ADD A,A
         LD L,A
-        LD H,0X00
+        LD H,0x00
         ADD HL,HL
         ADD HL,HL
         LD A,(CURCHN)
@@ -1879,18 +1886,18 @@ GETROWS LD A,(MTPATPS)
         ADD A,L
         LD L,A
         LD A,H
-        ADC A,0X50
+        ADC A,0x50
         LD H,A
         LD A,(HL)
-        AND 0X10
+        AND 0x10
         PUSH AF
         LD A,(HL)
-        AND 0X0F
+        AND 0x0F
         LD D,A
         INC HL
         LD E,(HL)
         OR E
-        LD A,0X7F
+        LD A,0x7F
         JR Z,GETRWS2
         PUSH HL
         CALL NOTEID
@@ -1899,7 +1906,7 @@ GETRWS2 INC HL
         POP BC
         LD D,A
         LD A,(HL)
-        AND 0XF0
+        AND 0xF0
         RRCA
         RRCA
         RRCA
@@ -1907,7 +1914,7 @@ GETRWS2 INC HL
         OR B
         LD E,A
         LD A,(HL)
-        AND 0X0F
+        AND 0x0F
         LD B,A
         INC HL
         LD C,(HL)
@@ -2094,8 +2101,8 @@ INT_IM1 IM 1
         LD HL,(QTBUSY)
         LD (HL),A
         LD A,L
-        ADD A,0X04
-        AND 0X1C
+        ADD A,0x04
+        AND 0x1C
         LD L,A
         LD (QTBUSY),HL
         SET 5,L
@@ -2116,8 +2123,8 @@ INT_IM1 IM 1
         RET
 
 QTDONE  LD A,(QTBUSY)
-        ADD A,0X04
-        AND 0X1C
+        ADD A,0x04
+        AND 0x1C
         LD E,A
         LD D,HIGH (QTMAP)
         LD A,(DE)
@@ -2134,16 +2141,16 @@ QTDONE  LD A,(QTBUSY)
         JR Z,INT_IM1
         IM 2
         EX DE,HL
-        LD HL,INTAREA+0X18
+        LD HL,INTAREA+0x18
         CP (HL)
         JR Z,INT_I1
         LD (HL),A
-        LD HL,0X1518
+        LD HL,0x1518
         LD (INTAREA),HL
         EI
         DEC A
         JR Z,INT_I0
-        ADD A,0X03
+        ADD A,0x03
         LD L,A
         LD H,HIGH (INT0)
         PUSH DE
@@ -2165,15 +2172,15 @@ QTDONE  LD A,(QTBUSY)
         LDI
         LDI
         LDI
-        LD HL,0XD508
+        LD HL,0xD508
         LD (INTAREA),HL
         POP BC
         POP DE
         LD HL,(QTBUSY)
-        LD (HL),0X00
+        LD (HL),0x00
         LD A,L
-        ADD A,0X04
-        AND 0X1C
+        ADD A,0x04
+        AND 0x1C
         LD L,A
         LD (QTBUSY),HL
         SET 5,L
@@ -2194,11 +2201,11 @@ QTDONE  LD A,(QTBUSY)
         RET
 
 INT_I1  EI
-        LD A,0X04
+        LD A,0x04
         LD HL,(QTBUSY)
-        LD (HL),0X00
+        LD (HL),0x00
         ADD A,L
-        AND 0X1C
+        AND 0x1C
         LD L,A
         LD (QTBUSY),HL
         SET 5,L
@@ -2227,15 +2234,15 @@ INT_I0  LD HL,INT0+2
         LDI
         LDI
         LDI
-        LD HL,0X3C08
+        LD HL,0x3C08
         LD (INTAREA),HL
         POP BC
         POP DE
         LD HL,(QTBUSY)
         LD (HL),A
         LD A,L
-        ADD A,0X04
-        AND 0X1C
+        ADD A,0x04
+        AND 0x1C
         LD L,A
         LD (QTBUSY),HL
         SET 5,L
@@ -2256,7 +2263,7 @@ INT_I0  LD HL,INT0+2
         RET
 
 QTPLAY  DI
-        LD A,0XFF
+        LD A,0xFF
         LD (PLAYING),A
         LD HL,(QTBUSY)
         LD A,(HL)
@@ -2270,14 +2277,14 @@ QTPLAY  DI
         OR A
         JR Z,QTPLAY_
         IM 2
-        LD HL,INTAREA+0X18
+        LD HL,INTAREA+0x18
         CP (HL)
         JR Z,QTPLAY_
         LD (HL),A
         LD L,A
         LD H,HIGH (INT0)
         LD DE,INTAREA
-        LD BC,0X0012
+        LD BC,0x0012
         LDIR
 QTPLAY_ LD HL,(QTBUSY)
         SET 5,L
@@ -2300,15 +2307,15 @@ WTCM    IN A,(ZXSTAT)
         RRCA
         JR NC,WTCM
         IN A,(ZXCMD)
-        CP 0X12
+        CP 0x12
         JR Z,CM12
-        CP 0X18
+        CP 0x18
         JR Z,CM18
-        CP 0X1A
+        CP 0x1A
         JR Z,CM1A
-        CP 0X1B
+        CP 0x1B
         JR Z,CM1B
-        CP 0X20
+        CP 0x20
         JR Z,CM20
         OUT (CLRCBIT),A
         JP WTCM
@@ -2380,7 +2387,7 @@ GENLP   EXX
         JR C,GENCHK
         OR A
         JR Z,GENENT
-        LD IXL,0XFF
+        LD IXL,0xFF
         JP GENENT
 
 GENCHK  RES 7,(IY+CHSTAT)
@@ -2400,13 +2407,13 @@ GENCHK  RES 7,(IY+CHSTAT)
         SET 7,(IY+CHSTAT)
         JP GENLP
 
-GENCHK2 LD (IY+CHREAL),0X7F
+GENCHK2 LD (IY+CHREAL),0x7F
         BIT 6,(IY+CHSTAT)
         JP Z,GENZERO
         PUSH IY
         PUSH DE
         LD IY,CHANS
-        LD B,0X08
+        LD B,0x08
         LD DE,CHANLEN
 GENCHK3 SET 0,(IY+CHSTAT)
         ADD IY,DE
@@ -2415,7 +2422,7 @@ GENCHK3 SET 0,(IY+CHSTAT)
         POP IY
         JP GENZERO
 
-GENTP   LD IXL,0XFF
+GENTP   LD IXL,0xFF
         LD A,H
         INC A
         JP M,GENENT
@@ -2426,14 +2433,14 @@ GENTP   LD IXL,0XFF
 GENENT  LD C,(IY+CHFRQL)
         LD A,(IY+CHOLDV)
         PUSH IY
-        CALL 0X2030
+        CALL 0x2030
         POP  IY
         LD (IY+CHOLDV),A
         LD (IY+CHCNTH),C
         LD A,H
         OR A
         JP M,GENJ2
-        LD H,0X80
+        LD H,0x80
         INC (IY+CHCURP)
 GENJ2   LD A,E
         OR A
@@ -2448,13 +2455,13 @@ GENRET  LD (IY+CHCURL),L
         JP  GENEXT
 
 GENZERO LD A,E
-        CP 0XFF
+        CP 0xFF
         JR NC,GENZENT
         LD B,(IY+CHOLDV)
-        LD C,0X80
-        CP 0XFD
+        LD C,0x80
+        CP 0xFD
         JR NC,GENZ_1
-        CP 0XF9
+        CP 0xF9
         JR NC,GENZ_2
         LD A,C
         ADD A,B
@@ -2515,7 +2522,7 @@ GENZ_1  LD A,B
         RRA
         LD (DE),A
         INC E
-GENZENT LD A,0X80
+GENZENT LD A,0x80
         BIT 0,E
         JR Z,GENZJP1
         LD (DE),A
@@ -2560,8 +2567,8 @@ GENZEXT LD A,(QTFREE)
         ADD A,HIGH (DAC0)
         ADD A,(IY+CHRDN)
         LD D,A
-        LD E,0XFF
-        LD A,0X80
+        LD E,0xFF
+        LD A,0x80
         LD (DE),A
 GENEXT  XOR A
         LD (CPAGE),A
@@ -2574,51 +2581,51 @@ GENEXT  XOR A
 
 	align 256
 
-INTTAB  DUPL 0X101,HIGH (INTAREA)
+INTTAB  DUPL 0x101,HIGH (INTAREA)
 
 INTTB   DW INT0,INT1,INT1,INT2,INT1,INT3,INT2,INT4,INT1,INT5
-        DW INT3,INT6,INT2,INT7,INT4,0X0000
+        DW INT3,INT6,INT2,INT7,INT4,0x0000
 INTOFF  DB 0,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0
 
 ;INCLUDE "_BPM.a80"
 BPMTAB
-	dw 0X0B72,0X0B19,0X0AC5,0X0A77,0X0A2C,0X09E6,0X09A3,0X0964
-	dw 0X0928,0X08EF,0X08B8,0X0884,0X0853,0X0823,0X07F6,0X07CB
-	dw 0X07A1,0X0779,0X0753,0X072E,0X070B,0X06E9,0X06C8,0X06A9
-	dw 0X068A,0X066D,0X0650,0X0635,0X061B,0X0601,0X05E8,0X05D0
-	dw 0X05B9,0X05A2,0X058C,0X0577,0X0563,0X054F,0X053B,0X0528
-	dw 0X0516,0X0504,0X04F3,0X04E2,0X04D2,0X04C2,0X04B2,0X04A3
-	dw 0X0494,0X0485,0X0477,0X046A,0X045C,0X044F,0X0442,0X0436
-	dw 0X0429,0X041D,0X0412,0X0406,0X03FB,0X03F0,0X03E5,0X03DB
-	dw 0X03D1,0X03C6,0X03BD,0X03B3,0X03AA,0X03A0,0X0397,0X038E
-	dw 0X0385,0X037D,0X0374,0X036C,0X0364,0X035C,0X0354,0X034D
-	dw 0X0345,0X033E,0X0336,0X032F,0X0328,0X0321,0X031A,0X0314
-	dw 0X030D,0X0307,0X0300,0X02FA,0X02F4,0X02EE,0X02E8,0X02E2
-	dw 0X02DC,0X02D7,0X02D1,0X02CC,0X02C6,0X02C1,0X02BC,0X02B6
-	dw 0X02B1,0X02AC,0X02A7,0X02A2,0X029E,0X0299,0X0294,0X0290
-	dw 0X028B,0X0287,0X0282,0X027E,0X0279,0X0275,0X0271,0X026D
-	dw 0X0269,0X0265,0X0261,0X025D,0X0259,0X0255,0X0251,0X024E
-	dw 0X024A,0X0246,0X0243,0X023F,0X023C,0X0238,0X0235,0X0231
-	dw 0X022E,0X022B,0X0227,0X0224,0X0221,0X021E,0X021B,0X0218
-	dw 0X0215,0X0212,0X020F,0X020C,0X0209,0X0206,0X0203,0X0200
-	dw 0X01FE,0X01FB,0X01F8,0X01F5,0X01F3,0X01F0,0X01ED,0X01EB
-	dw 0X01E8,0X01E6,0X01E3,0X01E1,0X01DE,0X01DC,0X01D9,0X01D7
-	dw 0X01D5,0X01D2,0X01D0,0X01CE,0X01CC,0X01C9,0X01C7,0X01C5
-	dw 0X01C3,0X01C1,0X01BE,0X01BC,0X01BA,0X01B8,0X01B6,0X01B4
-	dw 0X01B2,0X01B0,0X01AE,0X01AC,0X01AA,0X01A8,0X01A6,0X01A4
-	dw 0X01A3,0X01A1,0X019F,0X019D,0X019B,0X0199,0X0198,0X0196
-	dw 0X0194,0X0192,0X0191,0X018F,0X018D,0X018C,0X018A,0X0188
-	dw 0X0187,0X0185,0X0183,0X0182,0X0180,0X017F,0X017D,0X017C
-	dw 0X017A,0X0179,0X0177,0X0176,0X0174,0X0173,0X0171,0X0170
+	dw 0x0B72,0x0B19,0x0AC5,0x0A77,0x0A2C,0x09E6,0x09A3,0x0964
+	dw 0x0928,0x08EF,0x08B8,0x0884,0x0853,0x0823,0x07F6,0x07CB
+	dw 0x07A1,0x0779,0x0753,0x072E,0x070B,0x06E9,0x06C8,0x06A9
+	dw 0x068A,0x066D,0x0650,0x0635,0x061B,0x0601,0x05E8,0x05D0
+	dw 0x05B9,0x05A2,0x058C,0x0577,0x0563,0x054F,0x053B,0x0528
+	dw 0x0516,0x0504,0x04F3,0x04E2,0x04D2,0x04C2,0x04B2,0x04A3
+	dw 0x0494,0x0485,0x0477,0x046A,0x045C,0x044F,0x0442,0x0436
+	dw 0x0429,0x041D,0x0412,0x0406,0x03FB,0x03F0,0x03E5,0x03DB
+	dw 0x03D1,0x03C6,0x03BD,0x03B3,0x03AA,0x03A0,0x0397,0x038E
+	dw 0x0385,0x037D,0x0374,0x036C,0x0364,0x035C,0x0354,0x034D
+	dw 0x0345,0x033E,0x0336,0x032F,0x0328,0x0321,0x031A,0x0314
+	dw 0x030D,0x0307,0x0300,0x02FA,0x02F4,0x02EE,0x02E8,0x02E2
+	dw 0x02DC,0x02D7,0x02D1,0x02CC,0x02C6,0x02C1,0x02BC,0x02B6
+	dw 0x02B1,0x02AC,0x02A7,0x02A2,0x029E,0x0299,0x0294,0x0290
+	dw 0x028B,0x0287,0x0282,0x027E,0x0279,0x0275,0x0271,0x026D
+	dw 0x0269,0x0265,0x0261,0x025D,0x0259,0x0255,0x0251,0x024E
+	dw 0x024A,0x0246,0x0243,0x023F,0x023C,0x0238,0x0235,0x0231
+	dw 0x022E,0x022B,0x0227,0x0224,0x0221,0x021E,0x021B,0x0218
+	dw 0x0215,0x0212,0x020F,0x020C,0x0209,0x0206,0x0203,0x0200
+	dw 0x01FE,0x01FB,0x01F8,0x01F5,0x01F3,0x01F0,0x01ED,0x01EB
+	dw 0x01E8,0x01E6,0x01E3,0x01E1,0x01DE,0x01DC,0x01D9,0x01D7
+	dw 0x01D5,0x01D2,0x01D0,0x01CE,0x01CC,0x01C9,0x01C7,0x01C5
+	dw 0x01C3,0x01C1,0x01BE,0x01BC,0x01BA,0x01B8,0x01B6,0x01B4
+	dw 0x01B2,0x01B0,0x01AE,0x01AC,0x01AA,0x01A8,0x01A6,0x01A4
+	dw 0x01A3,0x01A1,0x019F,0x019D,0x019B,0x0199,0x0198,0x0196
+	dw 0x0194,0x0192,0x0191,0x018F,0x018D,0x018C,0x018A,0x0188
+	dw 0x0187,0x0185,0x0183,0x0182,0x0180,0x017F,0x017D,0x017C
+	dw 0x017A,0x0179,0x0177,0x0176,0x0174,0x0173,0x0171,0x0170
 
 ;INCLUDE "_trash.a80"	;comes from original ROM!
 ;strange block, comes from original ROM.
 ;real garbage;)
 
-	DB 0X56,0X43,0X56,0X49,0X45,0X57,0X20,0X20,0X45,0X58,0X54,0X20,0X00,0X00,0X00,0X00
-	DB 0X00,0X00,0X00,0X00,0X00,0X00,0XC4,0X08,0X43,0X21,0X28,0X09,0XDA,0X02,0X00,0X00
-	DB 0X00,0X43,0X56,0X49,0X45,0X57,0X20,0X20,0X45,0X58,0X54,0X20,0X00,0X00,0X00,0X00
-	DB 0X00,0X00,0X00,0X00,0X00,0X00,0XC4,0X08,0X43,0X21,0X28,0X09,0XDA,0X02,0X00,0X00
+	DB 0x56,0x43,0x56,0x49,0x45,0x57,0x20,0x20,0x45,0x58,0x54,0x20,0x00,0x00,0x00,0x00
+	DB 0x00,0x00,0x00,0x00,0x00,0x00,0xC4,0x08,0x43,0x21,0x28,0x09,0xDA,0x02,0x00,0x00
+	DB 0x00,0x43,0x56,0x49,0x45,0x57,0x20,0x20,0x45,0x58,0x54,0x20,0x00,0x00,0x00,0x00
+	DB 0x00,0x00,0x00,0x00,0x00,0x00,0xC4,0x08,0x43,0x21,0x28,0x09,0xDA,0x02,0x00,0x00
 
 Free1
 ;---patched
@@ -2631,9 +2638,9 @@ Patch11
 	INC D
         LD A,(MODTP)
         INC A
-        LD BC,0X0000+1084
+        LD BC,0x0000+1084
         JR Z,TTT15x
-        LD BC,0X0000+600
+        LD BC,0x0000+600
 TTT15x  ADD HL,BC
 	JR NC,$+3
 	INC D
@@ -2641,14 +2648,14 @@ TTT15x  ADD HL,BC
         LD (CPAGE),A
         OUT (MPAG),A
 	LD A,D
-        LD DE,0X5000
-        LD BC,0X400
+        LD DE,0x5000
+        LD BC,0x400
         CALL LDMEM
         XOR A
-        OUT (0X00),A
+        OUT (0x00),A
         RET
         
-; new cmd 0X6A - Set player mode
+; new cmd 0x6A - Set player mode
 COM6A	LD A,(PlMode)	;command
 	OUT (ZXDATWR),A
 	IN A,(ZXDATRD)
@@ -2679,18 +2686,18 @@ Patch3e	LD IY,CHANS
 	JP EFXGTNT+4
 	
 ; initial note
-Patch4	LD (IY+CHCNTL),0X00
-	LD (IY+CHREAL),0X7F
+Patch4	LD (IY+CHCNTL),0x00
+	LD (IY+CHREAL),0x7F
 	RET
 	
 ;MOD relooper
-; new cmd 0X6B - Set minimal loop length (turn on relooper)
+; new cmd 0x6B - Set minimal loop length (turn on relooper)
 
 COM6B	IN A,(ZXDATRD)
 		LD L,A
 	OUT (CLRCBIT),A
 	IN A,(ZXSTAT)
-	AND 0X81
+	AND 0x81
 	JR Z,$-4
 	JP P,Patch5s
 	IN A,(ZXDATRD)
@@ -2700,7 +2707,7 @@ COM6B	IN A,(ZXDATRD)
 	SBC HL,DE
 	ADD HL,DE
 	JR C,Patch5s+3
-Patch5s	LD HL,0X0200
+Patch5s	LD HL,0x0200
 	LD (MODLLEN),HL
 	RET
 
@@ -2726,16 +2733,16 @@ Patch5x	CALL SET_SIZE_MOD		;CALL PLAYMD		;init MOD
 
 ;-----(c)Evgeny Muchkin
 
-;MODSMPS	equ 0X5000
-;MODPTST	equ 0X5001
-;ChipSP_	equ 0X5005
-;CHIP246 equ 0X5007
-;TOcip_	equ 0X5009
-;CHIPLN  equ 0X5010	; НА4АЛО СЕМПЛОВ (pointer)
-;CHIPPP  equ 0X5013	; ДЛИНА МОДУЛЯ
-;CIP1    equ 0X5016	; ОТКУДА ПЕРЕНОСИТЬ
-;CIP2    equ 0X5019	; КУДА ПЕРЕНОСИТЬ
-;CIP3    equ 0X501c	; КОНЕЦ БЛОКА
+;MODSMPS	equ 0x5000
+;MODPTST	equ 0x5001
+;ChipSP_	equ 0x5005
+;CHIP246 equ 0x5007
+;TOcip_	equ 0x5009
+;CHIPLN  equ 0x5010	; НА4АЛО СЕМПЛОВ (pointer)
+;CHIPPP  equ 0x5013	; ДЛИНА МОДУЛЯ
+;CIP1    equ 0x5016	; ОТКУДА ПЕРЕНОСИТЬ
+;CIP2    equ 0x5019	; КУДА ПЕРЕНОСИТЬ
+;CIP3    equ 0x501c	; КОНЕЦ БЛОКА
 
 CHIP    DI
         LD A,(RAMPG)
@@ -2764,13 +2771,13 @@ CHIP    DI
 	LD A,(MODSMPS)
         LD B,A		;smps!
         LD DE,30
-        LD IX,0X8014
+        LD IX,0x8014
 ChIp    LD H,(IX+22)	;len
         LD L,(IX+23)
         CALL TOCip
         ADD IX,DE
         DJNZ ChIp
-        LD IX,0X802A
+        LD IX,0x802A
 	LD A,(MODSMPS)
         LD B,A		;smps!
 CHIP1   LD A,(RAMPG)
@@ -3022,11 +3029,11 @@ CP_END_MOD
 ;---
 ;emptyobl1
 
-;	ORG GSRomBaseL+0X1D00
+;	ORG GSRomBaseL+0x1D00
 
 ;	IN A,(ZXDATRD)
 ;	OUT (CLRCBIT),A
-;	LD A,0X7F
+;	LD A,0x7F
 ;	OUT (ZXDATWR),A
 ;	JP COMINT_
 	
@@ -3040,7 +3047,7 @@ CP_END_MOD
 ;	JR C,$-3
 ;	RET
 
-        ORG GSRomBaseL+0X2000
+        ORG GSRomBaseL+0x2000
 ;SGEN    
 ;INCLUDE "SGEN_ASM.a80"
 ;	MODULE SGEN
@@ -3059,7 +3066,7 @@ SGEN	EXX
         LD C,A
         LD A,D
         DEC A
-        CP 0X09
+        CP 0x09
         JP NC,SGEN__
         ADD A,A
         ADD A,LOW (SGENTBF)
@@ -3358,7 +3365,7 @@ SGEN9   EXX
 SGEN__  JP SGEN_
 
 SGEN_   LD A,E
-        CP 0X09
+        CP 0x09
         JR NC,S9
         ADD A,A
         LD L,A
@@ -3370,15 +3377,15 @@ SGEN_   LD A,E
         JP (HL)
 
 S9      EXX
-        LD C,0XFF
+        LD C,0xFF
         EXX
-        LD D,0X08
+        LD D,0x08
         JP S8
 
 S0      EXX
-        LD C,0X00
+        LD C,0x00
         EXX
-        LD D,0X01
+        LD D,0x01
         JP S1
 
 S3      EXX
@@ -3467,10 +3474,10 @@ S1      EXX
         ADD A,IYL
         JR Z,S1_4
         JR NC,S1_4
-S1_2    DB 0XCB,0X30;SLI B
+S1_2    DB 0xCB,0x30;SLI B
         JR NC,S1_3
         LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S11L0_1
         DEC A
         JP Z,S11L1_1
@@ -3478,17 +3485,17 @@ S1_2    DB 0XCB,0X30;SLI B
         JP Z,S11L2_1
         JP S11L3
 S1_3    LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S11H0_1
         DEC A
         JP Z,S11H1_1
         DEC A
         JP Z,S11H2_1
         JP S11H3
-S1_4    DB 0XCB,0X30;SLI B
+S1_4    DB 0xCB,0x30;SLI B
         JR NC,S1_5
         LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S12L0_1
         DEC A
         JP Z,S12L1_1
@@ -3496,7 +3503,7 @@ S1_4    DB 0XCB,0X30;SLI B
         JP Z,S12L2_1
         JP S12L3
 S1_5    LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S12H0_1
         DEC A
         JP Z,S12H1_1
@@ -3523,10 +3530,10 @@ S1_6    LD A,IXL
         ADD A,IYL
         JR Z,S1_9
         JR NC,S1_9
-S1_7    DB 0XCB,0X30;SLI B
+S1_7    DB 0xCB,0x30;SLI B
         JR C,S1_8
         LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S13L0
         DEC A
         JP Z,S13L1
@@ -3534,17 +3541,17 @@ S1_7    DB 0XCB,0X30;SLI B
         JP Z,S13L2
         JP S13L3
 S1_8    LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S13H0
         DEC A
         JP Z,S13H1
         DEC A
         JP Z,S13H2
         JP S13H3
-S1_9    DB 0XCB,0X30;SLI B
+S1_9    DB 0xCB,0x30;SLI B
         JR C,S1_A
         LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S14L0
         DEC A
         JP Z,S14L1
@@ -3552,7 +3559,7 @@ S1_9    DB 0XCB,0X30;SLI B
         JP Z,S14L2
         JP S14L3
 S1_A    LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S14H0
         DEC A
         JP Z,S14H1
@@ -3608,7 +3615,7 @@ S11R1   LD IYL,A
         SUB C
         LD B,A
         SRL B
-        LD C,0X00
+        LD C,0x00
         LD A,IYL
         RET
 
@@ -3665,11 +3672,11 @@ S11R2   LD IYL,A
         ADD A,C
         LD B,A
         JR NC,S11R2_2
-        LD C,0X01
+        LD C,0x01
         SRL B
         LD A,IYL
         RET
-S11R2_2 LD C,0X00
+S11R2_2 LD C,0x00
         RRC B
         LD A,IYL
         RET
@@ -3720,7 +3727,7 @@ S11H3   LD A,(HL)
         JP C,S11M1
         JP S11G1
 
-S11R3   LD C,0X00
+S11R3   LD C,0x00
         RRC B
         RET
 
@@ -3729,11 +3736,11 @@ S11R4   LD IYL,A
         ADD A,C
         LD B,A
         JR NC,S11R4_2
-        LD C,0X00
+        LD C,0x00
         RRC B
         LD A,IYL
         RET
-S11R4_2 LD C,0X00
+S11R4_2 LD C,0x00
         SRL B
         LD A,IYL
         RET
@@ -3742,7 +3749,7 @@ S11R5   LD IYL,A
         LD A,B
         SUB C
         LD B,A
-        LD C,0X00
+        LD C,0x00
         SRL B
         LD A,IYL
         RET
@@ -3791,7 +3798,7 @@ S11H0_2 LDI
         JP C,S11M2
         JP S11G2
 
-S11R6   LD C,0X00
+S11R6   LD C,0x00
         SRL B
         RET
 
@@ -3856,14 +3863,14 @@ S12R1   LD IYL,A
         SUB C
         LD B,A
         SRL B
-        LD C,0X00
+        LD C,0x00
         LD A,IYL
         RET
 
 S12R3_3 DEC HL
         LD A,(HL)
         INC HL
-        LD C,0X00
+        LD C,0x00
         RRC B
         RET
         
@@ -3935,11 +3942,11 @@ S12R2   LD IYL,A
         ADD A,C
         LD B,A
         JR NC,S12R2_2
-        LD C,0X01
+        LD C,0x01
         SRL B
         LD A,IYL
         RET
-S12R2_2 LD C,0X00
+S12R2_2 LD C,0x00
         RRC B
         LD A,IYL
         RET
@@ -4005,7 +4012,7 @@ S12R6_5 JP S12R6_2
 S12R3_2 DEC HL
         LD A,(HL)
         INC HL
-S12R3   LD C,0X00
+S12R3   LD C,0x00
         RRC B
         RET
 
@@ -4017,11 +4024,11 @@ S12R4   LD IYL,A
         ADD A,C
         LD B,A
         JR NC,S12R4_2
-        LD C,0X00
+        LD C,0x00
         RRC B
         LD A,IYL
         RET
-S12R4_2 LD C,0X00
+S12R4_2 LD C,0x00
         SRL B
         LD A,IYL
         RET
@@ -4030,7 +4037,7 @@ S12R5   LD IYL,A
         LD A,B
         SUB C
         LD B,A
-        LD C,0X00
+        LD C,0x00
         SRL B
         LD A,IYL
         RET
@@ -4092,7 +4099,7 @@ S12H0_2 LDI
 S12R6_2 DEC HL
         LD A,(HL)
         INC HL
-S12R6   LD C,0X00
+S12R6   LD C,0x00
         SRL B
         RET
 
@@ -4100,13 +4107,13 @@ S12R2_4 JP S12R2_3
 
 S13R1   JR NC,S13R1_2
         SRL B
-        LD C,0X01
+        LD C,0x01
         RET
 S13R1_2 RRC B
-        LD C,0X00
+        LD C,0x00
         RET
 S13R2   SRL B
-        LD C,0X00
+        LD C,0x00
         RET
 
 S13J0   ADD A,(HL)
@@ -4244,7 +4251,7 @@ S13L2   LD A,B
         JP NC,S13K0
         JP S13J0
         
-S13R3   LD C,0X01
+S13R3   LD C,0x01
         JR NC,S13R3_2
         RRC B
         RET
@@ -4253,10 +4260,10 @@ S13R3_2 SRL B
         RET
         
 S13R4   RRC B
-        LD C,0X00
+        LD C,0x00
         RET
 
-S13R5   LD C,0X01
+S13R5   LD C,0x01
         JR NC,S13R5_2
         RRC B
         RET
@@ -4268,15 +4275,15 @@ S14R5_3 JP S14R5
 
 S14R1   JR NC,S14R1_2
         SRL B
-        LD C,0X01
+        LD C,0x01
         RET
         
 S14R1_2 RRC B
-        LD C,0X00
+        LD C,0x00
         RET
         
 S14R2   SRL B
-        LD C,0X00
+        LD C,0x00
         RET
 
 S14J0   ADD A,(HL)
@@ -4438,7 +4445,7 @@ S14L2   LD A,B
         JP NC,S14K0
         JP S14J0
 
-S14R5   LD C,0X01
+S14R5   LD C,0x01
         JR NC,S14R5_2
         RRC B
         RET
@@ -4447,7 +4454,7 @@ S14R5_2 SRL B
         RET
         
 S14R4   RRC B
-        LD C,0X00
+        LD C,0x00
         RET
         
 S14R1_3 JP S14R1
@@ -4474,10 +4481,10 @@ S2      LD H,HIGH (DIVTAB3)
         ADD A,IYL
         JR Z,S2_4
         JR NC,S2_4
-S2_2    DB 0XCB,0X30;SLI B
+S2_2    DB 0xCB,0x30;SLI B
         JR NC,S2_3
         LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S21L0
         DEC A
         JP Z,S21L1
@@ -4485,17 +4492,17 @@ S2_2    DB 0XCB,0X30;SLI B
         JP Z,S21L2
         JP S21L3
 S2_3    LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S21H0
         DEC A
         JP Z,S21H1
         DEC A
         JP Z,S21H2
         JP S21H3
-S2_4    DB 0XCB,0X30;SLI B
+S2_4    DB 0xCB,0x30;SLI B
         JR NC,S2_5
         LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S22L0
         DEC A
         JP Z,S22L1
@@ -4503,7 +4510,7 @@ S2_4    DB 0XCB,0X30;SLI B
         JP Z,S22L2
         JP S22L3
 S2_5    LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S22H0
         DEC A
         JP Z,S22H1
@@ -4531,10 +4538,10 @@ S2_6    LD A,IXL
         ADD A,IYL
         JR Z,S2_9
         JR NC,S2_9
-S2_7    DB 0XCB,0X30;SLI B
+S2_7    DB 0xCB,0x30;SLI B
         JR C,S2_8
         LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S23L0
         DEC A
         JP Z,S23L1
@@ -4542,17 +4549,17 @@ S2_7    DB 0XCB,0X30;SLI B
         JP Z,S23L2
         JP S23L3
 S2_8    LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S23H0
         DEC A
         JP Z,S23H1
         DEC A
         JP Z,S23H2
         JP S23H3
-S2_9    DB 0XCB,0X30;SLI B
+S2_9    DB 0xCB,0x30;SLI B
         JR C,S2_A
         LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S24L0
         DEC A
         JP Z,S24L1
@@ -4560,7 +4567,7 @@ S2_9    DB 0XCB,0X30;SLI B
         JP Z,S24L2
         JP S24L3
 S2_A    LD A,E
-        AND 0X03
+        AND 0x03
         JP Z,S24H0
         DEC A
         JP Z,S24H1
@@ -4623,11 +4630,11 @@ S21L0   LD A,B
         JP C,S21K0
         JP S21J0
 
-S21R1   LD C,0X00
+S21R1   LD C,0x00
         RRC B
         RET
 
-S21R2   LD C,0X01
+S21R2   LD C,0x01
         JR NC,S21R2_2
         RRC B
         RET
@@ -4690,7 +4697,7 @@ S21L1   LD A,B
         JP C,S21K1
         JP S21J1
 
-S21R3   LD C,0X00
+S21R3   LD C,0x00
         SRL B
         RET
 
@@ -4749,7 +4756,7 @@ S21L2   LD A,B
         JP C,S21K2
         JP S21J2
 
-S21R4   LD C,0X01
+S21R4   LD C,0x01
         SRL B
         RET
 
@@ -4809,11 +4816,11 @@ S21L3   LD A,B
         JP S21J3
 
 S21R5   JR NC,S21R5_2
-        LD C,0X02
+        LD C,0x02
         SRL B
         RET
         
-S21R5_2 LD C,0X01
+S21R5_2 LD C,0x01
         RRC B
         RET
 
@@ -4878,11 +4885,11 @@ S22L0   LD A,B
         JP C,S22K0
         JP S22J0
 
-S22R1   LD C,0X00
+S22R1   LD C,0x00
         RRC B
         RET
 
-S22R2   LD C,0X01
+S22R2   LD C,0x01
         JR NC,S22R2_2
         RRC B
         RET
@@ -4954,7 +4961,7 @@ S22L1   LD A,B
         JP C,S22K1
         JP S22J1
 
-S22R3   LD C,0X00
+S22R3   LD C,0x00
         SRL B
         RET
 
@@ -5083,15 +5090,15 @@ S22L3   LD A,B
 S22R2_3 JP S22R2
 
 S22R5   JR NC,S22R5_2
-        LD C,0X02
+        LD C,0x02
         SRL B
         RET
         
-S22R5_2 LD C,0X01
+S22R5_2 LD C,0x01
         RRC B
         RET
 
-S22R4   LD C,0X01
+S22R4   LD C,0x01
         SRL B
         RET
 
@@ -5194,11 +5201,11 @@ S23G2   ADD A,(HL)
         JP NC,S23K0
         JP S23J0
 
-S23R1   LD C,0X01
+S23R1   LD C,0x01
         SRL B
         RET
         
-S23R2   LD C,0X02
+S23R2   LD C,0x02
         JR NC,S23R2_2
         RRC B
         RET
@@ -5305,7 +5312,7 @@ S23G3   ADD A,(HL)
         JP NC,S23K1
         JP S23J1
 
-S23R3   LD C,0X00
+S23R3   LD C,0x00
         RRC B
         RET
 
@@ -5411,15 +5418,15 @@ S23G0   ADD A,(HL)
         JP S23J2
 
 S23R4   JR C,S23R4_2
-        LD C,0X01
+        LD C,0x01
         RRC B
         RET
         
-S23R4_2 LD C,0X02
+S23R4_2 LD C,0x02
         SRL B
         RET
 
-S23R5   LD C,0X01
+S23R5   LD C,0x01
         RRC B
         RET
 
@@ -5523,7 +5530,7 @@ S23G1   ADD A,(HL)
         JP NC,S23K3
         JP S23J3
 
-S23R6   LD C,0X00
+S23R6   LD C,0x00
         SRL B
         RET
 
@@ -5637,11 +5644,11 @@ S24G2   ADD A,(HL)
         JP NC,S24K0
         JP S24J0
 
-S24R1   LD C,0X01
+S24R1   LD C,0x01
         SRL B
         RET
         
-S24R2   LD C,0X02
+S24R2   LD C,0x02
         JR NC,S24R2_2
         RRC B
         RET
@@ -5762,7 +5769,7 @@ S24G3   ADD A,(HL)
         
 S24R2_5 JP S24R2
 
-S24R3   LD C,0X00
+S24R3   LD C,0x00
         RRC B
         RET
 
@@ -5878,17 +5885,17 @@ S24G0   ADD A,(HL)
         JP S24J2
 
 S24R4   JR C,S24R4_2
-        LD C,0X01
+        LD C,0x01
         RRC B
         RET
         
-S24R4_2 LD C,0X02
+S24R4_2 LD C,0x02
         SRL B
         RET
         
 S24R2_3 JP S24R2
 
-S24R5   LD C,0X01
+S24R5   LD C,0x01
         RRC B
         RET
 
@@ -6006,7 +6013,7 @@ S24R2_4 JP S24R2
 
 S24R4_4 JP S24R4
 
-S24R6   LD C,0X00
+S24R6   LD C,0x00
         SRL B
         RET
 
@@ -6036,7 +6043,7 @@ S310    LD A,IXL
         ADD A,IYL
         JR Z,S310_
         JP C,S311
-S310_   DB 0XCB,0X31;SLI C
+S310_   DB 0xCB,0x31;SLI C
         JP C,S3101
         JP S3100
 
@@ -6153,7 +6160,7 @@ S31093  RRC C
         LD D,0
         RET
 
-S311    DB 0XCB,0X31;SLI C
+S311    DB 0xCB,0x31;SLI C
         JP C,S3111
         JR S3110
 
@@ -6290,7 +6297,7 @@ S318    LD A,IXL
         ADD A,IYL
         JR Z,S318_
         JP C,S319
-S318_   DB 0XCB,0X31;SLI C
+S318_   DB 0xCB,0x31;SLI C
         JP NC,S3180
         JP S3181
 
@@ -6444,7 +6451,7 @@ S31892  SRL C
         DEC D
         RET
 
-S319    DB 0XCB,0X31;SLI C
+S319    DB 0xCB,0x31;SLI C
         JP NC,S3190
         JP S3191
 
@@ -6588,7 +6595,7 @@ S4_     LD D,C
         POP BC
 S41     SLA B
         JP C,S418
-        DB 0XCB,0X31;SLI C
+        DB 0xCB,0x31;SLI C
         LD IYH,B
         JP C,S4101
         JP S4100
@@ -6724,7 +6731,7 @@ S41094  RRC C
         LD D,0
         RET
 
-S418    DB 0XCB,0X31;SLI C
+S418    DB 0xCB,0x31;SLI C
         JP NC,S4180
         JP S4181
 
@@ -6879,7 +6886,7 @@ S5_     LD D,C
         POP BC
 S51     SLA B
         JP C,S518
-        DB 0XCB,0X31;SLI C
+        DB 0xCB,0x31;SLI C
         JP C,S5101
         JP S5100
 
@@ -7037,7 +7044,7 @@ S51095  RRC C
         LD D,0
         RET
 
-S518    DB 0XCB,0X31;SLI C
+S518    DB 0xCB,0x31;SLI C
         JP NC,S5180
         JP S5181
 
@@ -7228,7 +7235,7 @@ S6_     LD D,C
         POP BC
 S61     SLA B
         JP C,S618
-        DB 0XCB,0X31;SLI C
+        DB 0xCB,0x31;SLI C
         JP C,S6101
         JP S6100
 
@@ -7410,7 +7417,7 @@ S61096  RRC C
         LD D,0
         RET
 
-S618    DB 0XCB,0X31;SLI C
+S618    DB 0xCB,0x31;SLI C
         JP NC,S6180
         JP S6181
 
@@ -7623,7 +7630,7 @@ S7_     LD D,C
         POP BC
 S71     SLA B
         JP C,S718
-        DB 0XCB,0X31;SLI C
+        DB 0xCB,0x31;SLI C
         JP C,S7101
         JP S7100
 
@@ -7825,7 +7832,7 @@ S71097  RRC C
         LD D,0
         RET
 
-S718    DB 0XCB,0X31;SLI C
+S718    DB 0xCB,0x31;SLI C
         JP NC,S7180
         JP S7181
 
@@ -8058,7 +8065,7 @@ S8_     LD D,C
         POP BC
 S81     SLA B
         JP C,S818
-        DB 0XCB,0X31;SLI C
+        DB 0xCB,0x31;SLI C
         JP C,S8101
         JP S8100
 
@@ -8280,7 +8287,7 @@ S81098  RRC C
         LD D,0
         RET
 
-S818    DB 0XCB,0X31;SLI C
+S818    DB 0xCB,0x31;SLI C
         JP NC,S8180
         JP S8181
 
@@ -8528,41 +8535,41 @@ S81897  SRL C
 ;___END
 ;	ENDMODULE
 
-        ORG GSRomBaseL+0X3E00
+        ORG GSRomBaseL+0x3E00
 DIVTAB3 
-;INCLUDE "_DIVTAB3.a80"					0X10*0X20=0X200
-	DB 0X00,0X01,0X01,0X02,0X03,0X03,0X04,0X05,0X05,0X06,0X07,0X07,0X08,0X09,0X09,0X0A
-	DB 0X0B,0X0B,0X0C,0X0D,0X0D,0X0E,0X0F,0X0F,0X10,0X11,0X11,0X12,0X13,0X13,0X14,0X15
-	DB 0X15,0X16,0X17,0X17,0X18,0X19,0X19,0X1A,0X1B,0X1B,0X1C,0X1D,0X1D,0X1E,0X1F,0X1F
-	DB 0X20,0X21,0X21,0X22,0X23,0X23,0X24,0X25,0X25,0X26,0X27,0X27,0X28,0X29,0X29,0X2A
-	DB 0X2B,0X2B,0X2C,0X2D,0X2D,0X2E,0X2F,0X2F,0X30,0X31,0X31,0X32,0X33,0X33,0X34,0X35
-	DB 0X35,0X36,0X37,0X37,0X38,0X39,0X39,0X3A,0X3B,0X3B,0X3C,0X3D,0X3D,0X3E,0X3F,0X3F
-	DB 0X40,0X41,0X41,0X42,0X43,0X43,0X44,0X45,0X45,0X46,0X47,0X47,0X48,0X49,0X49,0X4A
-	DB 0X4B,0X4B,0X4C,0X4D,0X4D,0X4E,0X4F,0X4F,0X50,0X51,0X51,0X52,0X53,0X53,0X54,0X55
-	DB 0X55,0X56,0X57,0X57,0X58,0X59,0X59,0X5A,0X5B,0X5B,0X5C,0X5D,0X5D,0X5E,0X5F,0X5F
-	DB 0X60,0X61,0X61,0X62,0X63,0X63,0X64,0X65,0X65,0X66,0X67,0X67,0X68,0X69,0X69,0X6A
-	DB 0X6B,0X6B,0X6C,0X6D,0X6D,0X6E,0X6F,0X6F,0X70,0X71,0X71,0X72,0X73,0X73,0X74,0X75
-	DB 0X75,0X76,0X77,0X77,0X78,0X79,0X79,0X7A,0X7B,0X7B,0X7C,0X7D,0X7D,0X7E,0X7F,0X7F
-	DB 0X80,0X81,0X81,0X82,0X83,0X83,0X84,0X85,0X85,0X86,0X87,0X87,0X88,0X89,0X89,0X8A
-	DB 0X8B,0X8B,0X8C,0X8D,0X8D,0X8E,0X8F,0X8F,0X90,0X91,0X91,0X92,0X93,0X93,0X94,0X95
-	DB 0X95,0X96,0X97,0X97,0X98,0X99,0X99,0X9A,0X9B,0X9B,0X9C,0X9D,0X9D,0X9E,0X9F,0X9F
-	DB 0XA0,0XA1,0XA1,0XA2,0XA3,0XA3,0XA4,0XA5,0XA5,0XA6,0XA7,0XA7,0XA8,0XA9,0XA9,0XAA
-	DB 0X55,0X56,0X57,0X57,0X58,0X59,0X59,0X5A,0X5B,0X5B,0X5C,0X5D,0X5D,0X5E,0X5F,0X5F
-	DB 0X60,0X61,0X61,0X62,0X63,0X63,0X64,0X65,0X65,0X66,0X67,0X67,0X68,0X69,0X69,0X6A
-	DB 0X6B,0X6B,0X6C,0X6D,0X6D,0X6E,0X6F,0X6F,0X70,0X71,0X71,0X72,0X73,0X73,0X74,0X75
-	DB 0X75,0X76,0X77,0X77,0X78,0X79,0X79,0X7A,0X7B,0X7B,0X7C,0X7D,0X7D,0X7E,0X7F,0X7F
-	DB 0X80,0X81,0X81,0X82,0X83,0X83,0X84,0X85,0X85,0X86,0X87,0X87,0X88,0X89,0X89,0X8A
-	DB 0X8B,0X8B,0X8C,0X8D,0X8D,0X8E,0X8F,0X8F,0X90,0X91,0X91,0X92,0X93,0X93,0X94,0X95
-	DB 0X95,0X96,0X97,0X97,0X98,0X99,0X99,0X9A,0X9B,0X9B,0X9C,0X9D,0X9D,0X9E,0X9F,0X9F
-	DB 0XA0,0XA1,0XA1,0XA2,0XA3,0XA3,0XA4,0XA5,0XA5,0XA6,0XA7,0XA7,0XA8,0XA9,0XA9,0XAA
-	DB 0XAB,0XAB,0XAC,0XAD,0XAD,0XAE,0XAF,0XAF,0XB0,0XB1,0XB1,0XB2,0XB3,0XB3,0XB4,0XB5
-	DB 0XB5,0XB6,0XB7,0XB7,0XB8,0XB9,0XB9,0XBA,0XBB,0XBB,0XBC,0XBD,0XBD,0XBE,0XBF,0XBF
-	DB 0XC0,0XC1,0XC1,0XC2,0XC3,0XC3,0XC4,0XC5,0XC5,0XC6,0XC7,0XC7,0XC8,0XC9,0XC9,0XCA
-	DB 0XCB,0XCB,0XCC,0XCD,0XCD,0XCE,0XCF,0XCF,0XD0,0XD1,0XD1,0XD2,0XD3,0XD3,0XD4,0XD5
-	DB 0XD5,0XD6,0XD7,0XD7,0XD8,0XD9,0XD9,0XDA,0XDB,0XDB,0XDC,0XDD,0XDD,0XDE,0XDF,0XDF
-	DB 0XE0,0XE1,0XE1,0XE2,0XE3,0XE3,0XE4,0XE5,0XE5,0XE6,0XE7,0XE7,0XE8,0XE9,0XE9,0XEA
-	DB 0XEB,0XEB,0XEC,0XED,0XED,0XEE,0XEF,0XEF,0XF0,0XF1,0XF1,0XF2,0XF3,0XF3,0XF4,0XF5
-	DB 0XF5,0XF6,0XF7,0XF7,0XF8,0XF9,0XF9,0XFA,0XFB,0XFB,0XFC,0XFD,0XFD,0XFE,0XFF,0XFF
+;INCLUDE "_DIVTAB3.a80"					0x10*0x20=0x200
+	DB 0x00,0x01,0x01,0x02,0x03,0x03,0x04,0x05,0x05,0x06,0x07,0x07,0x08,0x09,0x09,0x0A
+	DB 0x0B,0x0B,0x0C,0x0D,0x0D,0x0E,0x0F,0x0F,0x10,0x11,0x11,0x12,0x13,0x13,0x14,0x15
+	DB 0x15,0x16,0x17,0x17,0x18,0x19,0x19,0x1A,0x1B,0x1B,0x1C,0x1D,0x1D,0x1E,0x1F,0x1F
+	DB 0x20,0x21,0x21,0x22,0x23,0x23,0x24,0x25,0x25,0x26,0x27,0x27,0x28,0x29,0x29,0x2A
+	DB 0x2B,0x2B,0x2C,0x2D,0x2D,0x2E,0x2F,0x2F,0x30,0x31,0x31,0x32,0x33,0x33,0x34,0x35
+	DB 0x35,0x36,0x37,0x37,0x38,0x39,0x39,0x3A,0x3B,0x3B,0x3C,0x3D,0x3D,0x3E,0x3F,0x3F
+	DB 0x40,0x41,0x41,0x42,0x43,0x43,0x44,0x45,0x45,0x46,0x47,0x47,0x48,0x49,0x49,0x4A
+	DB 0x4B,0x4B,0x4C,0x4D,0x4D,0x4E,0x4F,0x4F,0x50,0x51,0x51,0x52,0x53,0x53,0x54,0x55
+	DB 0x55,0x56,0x57,0x57,0x58,0x59,0x59,0x5A,0x5B,0x5B,0x5C,0x5D,0x5D,0x5E,0x5F,0x5F
+	DB 0x60,0x61,0x61,0x62,0x63,0x63,0x64,0x65,0x65,0x66,0x67,0x67,0x68,0x69,0x69,0x6A
+	DB 0x6B,0x6B,0x6C,0x6D,0x6D,0x6E,0x6F,0x6F,0x70,0x71,0x71,0x72,0x73,0x73,0x74,0x75
+	DB 0x75,0x76,0x77,0x77,0x78,0x79,0x79,0x7A,0x7B,0x7B,0x7C,0x7D,0x7D,0x7E,0x7F,0x7F
+	DB 0x80,0x81,0x81,0x82,0x83,0x83,0x84,0x85,0x85,0x86,0x87,0x87,0x88,0x89,0x89,0x8A
+	DB 0x8B,0x8B,0x8C,0x8D,0x8D,0x8E,0x8F,0x8F,0x90,0x91,0x91,0x92,0x93,0x93,0x94,0x95
+	DB 0x95,0x96,0x97,0x97,0x98,0x99,0x99,0x9A,0x9B,0x9B,0x9C,0x9D,0x9D,0x9E,0x9F,0x9F
+	DB 0xA0,0xA1,0xA1,0xA2,0xA3,0xA3,0xA4,0xA5,0xA5,0xA6,0xA7,0xA7,0xA8,0xA9,0xA9,0xAA
+	DB 0x55,0x56,0x57,0x57,0x58,0x59,0x59,0x5A,0x5B,0x5B,0x5C,0x5D,0x5D,0x5E,0x5F,0x5F
+	DB 0x60,0x61,0x61,0x62,0x63,0x63,0x64,0x65,0x65,0x66,0x67,0x67,0x68,0x69,0x69,0x6A
+	DB 0x6B,0x6B,0x6C,0x6D,0x6D,0x6E,0x6F,0x6F,0x70,0x71,0x71,0x72,0x73,0x73,0x74,0x75
+	DB 0x75,0x76,0x77,0x77,0x78,0x79,0x79,0x7A,0x7B,0x7B,0x7C,0x7D,0x7D,0x7E,0x7F,0x7F
+	DB 0x80,0x81,0x81,0x82,0x83,0x83,0x84,0x85,0x85,0x86,0x87,0x87,0x88,0x89,0x89,0x8A
+	DB 0x8B,0x8B,0x8C,0x8D,0x8D,0x8E,0x8F,0x8F,0x90,0x91,0x91,0x92,0x93,0x93,0x94,0x95
+	DB 0x95,0x96,0x97,0x97,0x98,0x99,0x99,0x9A,0x9B,0x9B,0x9C,0x9D,0x9D,0x9E,0x9F,0x9F
+	DB 0xA0,0xA1,0xA1,0xA2,0xA3,0xA3,0xA4,0xA5,0xA5,0xA6,0xA7,0xA7,0xA8,0xA9,0xA9,0xAA
+	DB 0xAB,0xAB,0xAC,0xAD,0xAD,0xAE,0xAF,0xAF,0xB0,0xB1,0xB1,0xB2,0xB3,0xB3,0xB4,0xB5
+	DB 0xB5,0xB6,0xB7,0xB7,0xB8,0xB9,0xB9,0xBA,0xBB,0xBB,0xBC,0xBD,0xBD,0xBE,0xBF,0xBF
+	DB 0xC0,0xC1,0xC1,0xC2,0xC3,0xC3,0xC4,0xC5,0xC5,0xC6,0xC7,0xC7,0xC8,0xC9,0xC9,0xCA
+	DB 0xCB,0xCB,0xCC,0xCD,0xCD,0xCE,0xCF,0xCF,0xD0,0xD1,0xD1,0xD2,0xD3,0xD3,0xD4,0xD5
+	DB 0xD5,0xD6,0xD7,0xD7,0xD8,0xD9,0xD9,0xDA,0xDB,0xDB,0xDC,0xDD,0xDD,0xDE,0xDF,0xDF
+	DB 0xE0,0xE1,0xE1,0xE2,0xE3,0xE3,0xE4,0xE5,0xE5,0xE6,0xE7,0xE7,0xE8,0xE9,0xE9,0xEA
+	DB 0xEB,0xEB,0xEC,0xED,0xED,0xEE,0xEF,0xEF,0xF0,0xF1,0xF1,0xF2,0xF3,0xF3,0xF4,0xF5
+	DB 0xF5,0xF6,0xF7,0xF7,0xF8,0xF9,0xF9,0xFA,0xFB,0xFB,0xFC,0xFD,0xFD,0xFE,0xFF,0xFF
 
 ___LEND
 
@@ -8577,15 +8584,15 @@ INITVAR DI
 ;---
         EX AF,AF'
         LD A,(NUMPG)
-        LD SP,0X8000
-        LD HL,0X8080
-        LD B,0X00
+        LD SP,0x8000
+        LD HL,0x8080
+        LD B,0x00
 INITV00 REPT 16
         PUSH HL
         ENDM
         DJNZ INITV00
-        LD HL,0X0000
-        LD B,0XFC;0XFE	; ОЧИЩАТЬ ПАМЯТЬ НЕ НИЖЕ 00X4080 ЧТОБЫ НЕ УНИЧТОЖАТЬ ТАБЛИЦУ СТРАНИЦ
+        LD HL,0x0000
+        LD B,0xFC;0xFE	; ОЧИЩАТЬ ПАМЯТЬ НЕ НИЖЕ 00x4080 ЧТОБЫ НЕ УНИЧТОЖАТЬ ТАБЛИЦУ СТРАНИЦ
 INITV01 REPT 16
         PUSH HL
         ENDM
@@ -8596,7 +8603,7 @@ INITV01 REPT 16
 ;---patched
         CALL Patch5i2
 ;---
-        LD A,0X00
+        LD A,0x00
         LD (INFO),A
         XOR A
         LD (ROMPG),A
@@ -8608,24 +8615,24 @@ INITV01 REPT 16
         LD A,(HL)
         INC H
         LD A,(HL)
-        LD A,0X3F
+        LD A,0x3F
         OUT (VOL1),A
         OUT (VOL2),A
         OUT (VOL3),A
         OUT (VOL4),A
         LD HL,CHNVOL
         LD DE,CHNVOL+1
-        LD BC,0X0007
-        LD (HL),0XBF
+        LD BC,0x0007
+        LD (HL),0xBF
         LDIR
         LD A,HIGH (INTTAB)
         LD I,A
         LD HL,INT7
         LD DE,INTAREA
-        LD BC,0X0017
+        LD BC,0x0017
         LDIR
         EX DE,HL
-        LD (HL),0XC3
+        LD (HL),0xC3
         INC L
         LD (HL),LOW (INT7)
         INC L
@@ -8634,23 +8641,23 @@ INITV01 REPT 16
         LD (QTFREE),HL
         LD (QTBUSY),HL
         LD DE,QTMAP+1
-        LD BC,0X001F
+        LD BC,0x001F
         LD (HL),B
         LDIR
         LD HL,VOLTAB
         LD DE,VOLTAB+1
-        LD BC,0X001F
-        LD (HL),0X3F
+        LD BC,0x001F
+        LD (HL),0x3F
         LDIR
         LD HL,VOLRQTB
         LD DE,VOLRQTB+1
-        LD BC,0X0007
-        LD (HL),0X3F
+        LD BC,0x0007
+        LD (HL),0x3F
         LDIR
-        LD A,0X0F
+        LD A,0x0F
         LD (GSCHNS),A
         LD (MTCHNS),A
-        LD A,0X40
+        LD A,0x40
         LD (MODVOL),A
         LD (FXMVOL),A
         LD (FXVOL),A
@@ -8661,7 +8668,7 @@ INITV01 REPT 16
         LD A,(NUMPG)
         SRL A
         LD B,A
-        LD HL,0X8000
+        LD HL,0x8000
         RR H
         LD A,B
         LD (RAMTOP),HL
@@ -8688,94 +8695,94 @@ INITV01 REPT 16
         LD (PTR4+2),A
         LD IY,CHANSFX
         LD (CURCHAN),IY
-        LD BC,0X0801
+        LD BC,0x0801
         LD DE,CHANLEN
-INITV03 LD (IY+CHSTAT),0X40
+INITV03 LD (IY+CHSTAT),0x40
         LD (IY+CHRDR),C
         LD (IY+CHRDRI),C
-        LD A,0X08
+        LD A,0x08
         SUB B
         LD (IY+CHRDN),A
-        AND 0X02
+        AND 0x02
         JR Z,INITV05
         SET 5,(IY+CHSTAT)
-INITV05 LD (IY+CHFLAGS),0X00
-        LD (IY+CHPORT),0X01
-        LD (IY+CHVIBCM),0X11
-        LD (IY+CHTRMCM),0X11
-        LD (IY+CHOFFST),0X01
-        LD (IY+CHWNT),0X7F
-        LD (IY+CHOLDV),0X80
-        LD (IY+CHEPAN),0X20
-        LD (IY+CHEVOL),0X40
+INITV05 LD (IY+CHFLAGS),0x00
+        LD (IY+CHPORT),0x01
+        LD (IY+CHVIBCM),0x11
+        LD (IY+CHTRMCM),0x11
+        LD (IY+CHOFFST),0x01
+        LD (IY+CHWNT),0x7F
+        LD (IY+CHOLDV),0x80
+        LD (IY+CHEPAN),0x20
+        LD (IY+CHEVOL),0x40
         RLC C
         ADD IY,DE
         DJNZ INITV03
         LD IY,CHANS
-        LD B,0X08
-INITV04 LD (IY+CHSTAT),0X00
-        LD (IY+CHFLAGS),0X00
-        LD (IY+CHPORT),0X01
-        LD (IY+CHVIBCM),0X11
-        LD (IY+CHTRMCM),0X11
-        LD (IY+CHOFFST),0X01
-        LD (IY+CHWNT),0X7F
-        LD (IY+CHOLDV),0X80
-        LD (IY+CHEPAN),0X20
-        LD (IY+CHEVOL),0X40
+        LD B,0x08
+INITV04 LD (IY+CHSTAT),0x00
+        LD (IY+CHFLAGS),0x00
+        LD (IY+CHPORT),0x01
+        LD (IY+CHVIBCM),0x11
+        LD (IY+CHTRMCM),0x11
+        LD (IY+CHOFFST),0x01
+        LD (IY+CHWNT),0x7F
+        LD (IY+CHOLDV),0x80
+        LD (IY+CHEPAN),0x20
+        LD (IY+CHEVOL),0x40
         ADD IY,DE
         DJNZ INITV04
         LD IY,CHANS
-        LD (IY+CHSTAT),0X00
-        LD (IY+CHRDR),0X01
-        LD (IY+CHRDRI),0X01
-        LD (IY+CHRDN),0X00
+        LD (IY+CHSTAT),0x00
+        LD (IY+CHRDR),0x01
+        LD (IY+CHRDRI),0x01
+        LD (IY+CHRDN),0x00
         ADD IY,DE
-        LD (IY+CHSTAT),0X20
-        LD (IY+CHRDR),0X04
-        LD (IY+CHRDRI),0X04
-        LD (IY+CHRDN),0X02
+        LD (IY+CHSTAT),0x20
+        LD (IY+CHRDR),0x04
+        LD (IY+CHRDRI),0x04
+        LD (IY+CHRDN),0x02
         ADD IY,DE
-        LD (IY+CHSTAT),0X20
-        LD (IY+CHRDR),0X08
-        LD (IY+CHRDRI),0X08
-        LD (IY+CHRDN),0X03
+        LD (IY+CHSTAT),0x20
+        LD (IY+CHRDR),0x08
+        LD (IY+CHRDRI),0x08
+        LD (IY+CHRDN),0x03
         ADD IY,DE
-        LD (IY+CHSTAT),0X00
-        LD (IY+CHRDR),0X02
-        LD (IY+CHRDRI),0X02
-        LD (IY+CHRDN),0X01
+        LD (IY+CHSTAT),0x00
+        LD (IY+CHRDR),0x02
+        LD (IY+CHRDRI),0x02
+        LD (IY+CHRDN),0x01
         LD HL,750
         LD (TICKLEN),HL
         LD (TCKLEFT),HL
         LD (FXTICK),HL
         LD (FXTCLEN),HL
-        LD IXH,0X80
-        LD DE,0X0000
+        LD IXH,0x80
+        LD DE,0x0000
         IN A,(ZXDATRD)
         JP COMINT
 
 ; B - NUMBER OF CHANNELS
 
-INITCHN LD HL,(0XEC60)
+INITCHN LD HL,(0xEC60)
         LD (IY+CHPERL),L  ; C-4
         LD (IY+CHPERH),H
-        LD HL,(0XE060)
+        LD HL,(0xE060)
         LD (IY+CHFRQL),L
         LD (IY+CHFRQH),H
         LD (IY+CHNOTE),48
-        LD (IY+CHFLAGS),0X00
-        LD (IY+CHREAL),0X7F
-        LD (IY+CHCNTL),0X00
-        LD (IY+CHCNTH),0X00
-        LD (IY+CHINS),0X00
-        LD (IY+CHSMP),0X00
-        LD (IY+CHCOM),0X00
-        LD (IY+CHPARM),0X00
-        LD (IY+CHVIBPS),0X00
-        LD (IY+CHTRMPS),0X00
-        LD (IY+CHPATPS),0X00
-        LD (IY+CHLPCNT),0X00
+        LD (IY+CHFLAGS),0x00
+        LD (IY+CHREAL),0x7F
+        LD (IY+CHCNTL),0x00
+        LD (IY+CHCNTH),0x00
+        LD (IY+CHINS),0x00
+        LD (IY+CHSMP),0x00
+        LD (IY+CHCOM),0x00
+        LD (IY+CHPARM),0x00
+        LD (IY+CHVIBPS),0x00
+        LD (IY+CHTRMPS),0x00
+        LD (IY+CHPATPS),0x00
+        LD (IY+CHLPCNT),0x00
         LD A,B
         LD BC,CHANLEN
         ADD IY,BC
@@ -8786,7 +8793,7 @@ INITCHN LD HL,(0XEC60)
 ;INCLUDE "COM_H.a80"
 
 HGET    IN A,(ZXSTAT)
-        AND 0X81
+        AND 0x81
         JR Z,HGET
         IN A,(ZXDATRD)
         RET M
@@ -8801,19 +8808,19 @@ HSEND   IN A,(ZXSTAT)
 
 HTAIL   LD HL,HTAIL2
 HTAIL2  IN A,(ZXSTAT)
-        AND 0X81
+        AND 0x81
         JR Z,HTAIL2
         RRCA
         JR C,HTAIL3
         IN A,(ZXDATRD)
         JP (HL)
 HTAIL3  IN A,(ZXCMD)
-        CP 0XE0
+        CP 0xE0
         JP NC,COMINT
-        CP 0XD0
+        CP 0xD0
         JP C,COMINT
         JR Z,HTAIL5
-        CP 0XD1
+        CP 0xD1
         JR Z,HTAIL6
         XOR A
 HTAIL4  OUT (ZXDATWR),A
@@ -8825,10 +8832,10 @@ HTAIL5  LD A,(ERRCODE)
 
 ERR30
 ERR20
-ERR10   LD A,0X10        ;NOT ENOUGH FREE SPACE
+ERR10   LD A,0x10        ;NOT ENOUGH FREE SPACE
         JR ERR
         
-ERR11   LD A,0X11        ;NOT ENOUGH FREE ENTRIES
+ERR11   LD A,0x11        ;NOT ENOUGH FREE ENTRIES
         JR ERR
 
 ERR     LD (ERRCODE),A
@@ -8903,12 +8910,12 @@ COM2A   LD A,(MODVOL)
         OUT (ZXDATWR),A
         IN A,(ZXDATRD)
         OUT (CLRCBIT),A
-        CP 0X40
+        CP 0x40
         JR C,COM2A_
-        LD A,0X40
+        LD A,0x40
 COM2A_  LD (MODVOL),A
         LD IY,CHANS
-        LD B,0X08
+        LD B,0x08
         LD DE,CHANLEN
 COM2A__ SET 0,(IY+CHSTAT)
         ADD IY,DE
@@ -8921,12 +8928,12 @@ COM2B   LD A,(FXVOL)
         OUT (ZXDATWR),A
         IN A,(ZXDATRD)
         OUT (CLRCBIT),A
-        CP 0X40
+        CP 0x40
         JR C,COM2B_
-        LD A,0X40
+        LD A,0x40
 COM2B_  LD (FXVOL),A
         LD IY,CHANSFX
-        LD B,0X08
+        LD B,0x08
         LD DE,CHANLEN
 COM2B__ SET 0,(IY+CHSTAT)
         ADD IY,DE
@@ -8980,8 +8987,8 @@ COM2D__ XOR A
 ;Set Current FX
 ;Установить текущий эффект. Просто присваивает переменной CURFX это зна-
 ;чение. Если какая-либо команда требует номер сэмпла (sample handle), то
-;можно вместо этого номера подать ей 0X00 и интерпретатор подставит вмес-
-;то этого нуля значение переменной CURFX. (См. команды 0X38, 0X39, 0X40-0X4F
+;можно вместо этого номера подать ей 0x00 и интерпретатор подставит вмес-
+;то этого нуля значение переменной CURFX. (См. команды 0x38, 0x39, 0x40-0x4F
 ;для понимания вышеизложенного.)
 COM2E   LD A,(CURFX)
         OUT (ZXDATWR),A
@@ -9022,7 +9029,7 @@ COM2F_  LD HL,(CNTTRK)
         LD (CURTRK),HL
         RET
         
-COM2F__ LD HL,0X0000
+COM2F__ LD HL,0x0000
         LD (CURTRK),HL
         RET
 
@@ -9037,9 +9044,9 @@ COM30   LD A,(CNTMOD)
         OUT (ZXDATWR),A
         IN A,(ZXDATRD)
         OUT (CLRCBIT),A
-        LD C,0X00
+        LD C,0x00
         CALL LOAD
-LDMOD   LD A,0X00		;0XC3F8
+LDMOD   LD A,0x00		;0xC3F8
         LD (CONVERT),A
 ;---patched
         CALL Patch5x
@@ -9067,19 +9074,19 @@ COM31_  LD B,A
         CP B
         JP C,COM31_2
         LD A,B
-        LD C,0X00
+        LD C,0x00
 COM65_  OUT (ZXDATWR),A
         OUT (CLRCBIT),A
-PLAYMOD	LD A,(BUSY)		;0XC426
+PLAYMOD	LD A,(BUSY)		;0xC426
         PUSH AF
-        LD A,0XFF
+        LD A,0xFF
         LD (BUSY),A
         LD A,B
         LD (MODULE),A
         LD (CURMOD),A
         LD A,%00000011
         LD (MTSTAT),A
-        LD A,0X06
+        LD A,0x06
         LD (MTSPEED),A
         LD A,C
         LD (MTSNGPS),A
@@ -9094,24 +9101,24 @@ PLAYMOD	LD A,(BUSY)		;0XC426
         LD (MTJMPFL),A
         INC A
         LD (MTTYPE),A
-        LD A,0X40
+        LD A,0x40
         LD (MTVOL),A
         DEC A
         LD (MTROWS),A
         LD A,125
         CALL FXF
         LD IY,CHANS
-        LD B,0X08
+        LD B,0x08
         LD DE,CHANLEN
 COM31__ RES 7,(IY+CHSTAT)
         SET 0,(IY+CHSTAT)
-        LD (IY+CHVOL),0X40
-        LD (IY+CHMVOL),0X40
+        LD (IY+CHVOL),0x40
+        LD (IY+CHMVOL),0x40
         ADD IY,DE
         DJNZ COM31__
         CALL INITPAT
         CALL EFXGTNT
-        LD A,0XFF
+        LD A,0xFF
         LD (PROCESS),A
         POP AF
         LD (BUSY),A
@@ -9130,7 +9137,7 @@ COM32   LD A,(MODULE)
         OUT (ZXDATWR),A
         IN A,(ZXDATRD)
         OUT (CLRCBIT),A
-STOPMOD	LD HL,MTSTAT		;0XC4AE
+STOPMOD	LD HL,MTSTAT		;0xC4AE
         SET 7,(HL)
         RET
 
@@ -9140,13 +9147,13 @@ COM33   LD A,(MODULE)
         OUT (ZXDATWR),A
         IN A,(ZXDATRD)
         OUT (CLRCBIT),A
-CONTMOD	LD A,(MODULE)		;0XC4BD
+CONTMOD	LD A,(MODULE)		;0xC4BD
         OR A
         RET Z
         LD HL,MTSTAT
         BIT 6,(HL)
         RET NZ
-        LD A,0XFF
+        LD A,0xFF
         LD (PROCESS),A
         RES 7,(HL)
         LD (PROCESS),A
@@ -9165,12 +9172,12 @@ COM35   LD A,(MTVOL)
         OUT (ZXDATWR),A
         IN A,(ZXDATRD)
         OUT (CLRCBIT),A
-        CP 0X40
+        CP 0x40
         JR C,COM35_
-        LD A,0X40
+        LD A,0x40
 COM35_  LD (MTVOL),A
         LD IY,CHANS
-        LD B,0X08
+        LD B,0x08
         LD DE,CHANLEN
 COM35__ SET 0,(IY+CHSTAT)
         ADD IY,DE
@@ -9178,8 +9185,8 @@ COM35__ SET 0,(IY+CHSTAT)
         RET
 
 ;Data on (*)
-;Устанавливает регистр данных в 0XFF.
-COM36   LD A,0XFF
+;Устанавливает регистр данных в 0xFF.
+COM36   LD A,0xFF
         OUT (ZXDATWR),A
         OUT (CLRCBIT),A
         RET
@@ -9189,7 +9196,7 @@ COM36   LD A,0XFF
 COM37   OUT (CLRCBIT),A
         LD HL,MTSTAT
         SET 7,(HL)
-        LD HL,0X0000
+        LD HL,0x0000
         XOR A
         LD (CURADR),HL
         LD (CURADR+2),A
@@ -9203,9 +9210,9 @@ COM37   OUT (CLRCBIT),A
 ;Load FX (Extended version)
 ;Загрузка сэмпла эффекта в память. Позволяет загружать сэмплы со знаком.
 COM3E   IN A,(ZXDATRD)
-        CP 0X01
+        CP 0x01
         JR Z,COM38
-        LD IXL,0X80
+        LD IXL,0x80
         OR A
         JR Z,COM38_
         XOR A
@@ -9216,7 +9223,7 @@ COM3E   IN A,(ZXDATRD)
 
 ;Load FX
 ;Загрузка сэмпла эффекта в память. Загружает беззнаковые сэмплы (PC type)
-COM38   LD IXL,0X00
+COM38   LD IXL,0x00
 COM38_  LD A,(CNTFX)
         CP 60
         JP NC,COM38_9
@@ -9234,7 +9241,7 @@ COM38_  LD A,(CNTFX)
         LD E,L
         LD D,H
         INC DE
-        LD BC,0X003F
+        LD BC,0x003F
         LD (HL),B
         LDIR
         LD HL,(CURADR)
@@ -9256,14 +9263,14 @@ COM38_  LD A,(CNTFX)
         SBC A,(IY+10)
         LD (IY+13),A
         LD (IY+19),A
-        LD (IY+16),0XFF
-        LD (IY+20),0X40
-        LD (IY+23),0X80
-        LD (IY+24),0X0F
-        LD (IY+25),0X0F
-        LD (IY+26),0X80
-        LD (IY+27),0XFF
-        LD (IY+28),0XFF
+        LD (IY+16),0xFF
+        LD (IY+20),0x40
+        LD (IY+23),0x80
+        LD (IY+24),0x0F
+        LD (IY+25),0x0F
+        LD (IY+26),0x80
+        LD (IY+27),0xFF
+        LD (IY+28),0xFF
         LD (IY+31),60
         LD E,60
         CALL GETPER
@@ -9282,10 +9289,10 @@ COM38_9 XOR A
         RET
 
 GETFX   DEC A
-        CP 0X20
+        CP 0x20
         JR C,GETFX2
-        SUB 0X20
-        LD H,0X00
+        SUB 0x20
+        LD H,0x00
         ADD A,A
         ADD A,A
         ADD A,A
@@ -9304,7 +9311,7 @@ GETFX   DEC A
         POP IY
         RET
 
-GETFX2  LD H,0X00
+GETFX2  LD H,0x00
         ADD A,A
         ADD A,A
         ADD A,A
@@ -9341,7 +9348,7 @@ COM39_1 LD (CURFX),A
         CALL GETFX
         LD A,(BUSY)
         PUSH AF
-        LD A,0XFF
+        LD A,0xFF
         LD (BUSY),A
         PUSH HL
         POP IY
@@ -9350,7 +9357,7 @@ COM39_1 LD (CURFX),A
         LD (BUSY),A
         RET
 
-COM39_9 LD A,0XFF
+COM39_9 LD A,0xFF
         OUT (ZXDATWR),A
         OUT (CLRCBIT),A
         RET
@@ -9369,12 +9376,12 @@ COM3D   LD A,(FXMVOL)
         OUT (ZXDATWR),A
         IN A,(ZXDATRD)
         OUT (CLRCBIT),A
-        CP 0X40
+        CP 0x40
         JR C,COM3D_
-        LD A,0X40
+        LD A,0x40
 COM3D_  LD (FXMVOL),A
         LD IY,CHANSFX
-        LD B,0X08
+        LD B,0x08
         LD DE,CHANLEN
 COM3D__ SET 0,(IY+CHSTAT)
         ADD IY,DE
@@ -9415,9 +9422,9 @@ COM41   IN A,(ZXDATRD)
         RET Z
         CALL GETFX
         LD A,E
-        CP 0X41
+        CP 0x41
         JR C,COM41_
-        LD E,0X40
+        LD E,0x40
 COM41_  LD (IY+20),E
         RET
 
@@ -9435,7 +9442,7 @@ COM42   LD A,(CURFX)
         RET
 
 ;Set FX Sample Priority
-;Установка приоритета для текущего эффекта. (См. команду 0X39)
+;Установка приоритета для текущего эффекта. (См. команду 0x39)
 COM45   LD A,(CURFX)
         CALL GETFX
         PUSH HL
@@ -9448,7 +9455,7 @@ COM45   LD A,(CURFX)
         RET
 
 ;Set FX Sample Seek First parameter
-;Установка параметра Seek First для текущего эффекта. (См. команду 0X39) 
+;Установка параметра Seek First для текущего эффекта. (См. команду 0x39) 
 COM46   LD A,(CURFX)
         CALL GETFX
         PUSH HL
@@ -9461,7 +9468,7 @@ COM46   LD A,(CURFX)
         RET
 
 ;Set FX Sample Seek Last parameter
-;Установка параметра Seek Last для текущего эффекта. (См. команду 0X39)
+;Установка параметра Seek Last для текущего эффекта. (См. команду 0x39)
 COM47   LD A,(CURFX)
         CALL GETFX
         PUSH HL
@@ -9503,7 +9510,7 @@ COM49   LD A,(CURFX)
         LD (IY+19),A
         RET
 
-COM58   LD B,0X00
+COM58   LD B,0x00
         OUT (ZXDATWR),A
         JP COM50_
 
@@ -9511,16 +9518,16 @@ COM50   IN A,(ZXDATRD)
         LD B,A
 COM50_  IN A,(ZXCMD)
         OUT (CLRCBIT),A
-        AND 0X07
+        AND 0x07
         LD E,A
         CALL HGET
         LD L,A
         LD A,E
-        CP 0X04
+        CP 0x04
         CALL NC,HGET
         LD H,A
         LD A,E
-        CP 0X07
+        CP 0x07
         CALL Z,HGET
         LD D,A
         LD A,B
@@ -9530,7 +9537,7 @@ COM50_  IN A,(ZXCMD)
         OR A
         JP Z,ERR20
 C50_00  LD B,A
-        LD C,0X01
+        LD C,0x01
         LD IY,CHANSFX
 C50_01  LD A,B
         AND C
@@ -9540,27 +9547,27 @@ C50_01  LD A,B
         ADD A,LOW (CHANLEN)
         LD IYL,A
         LD A,IYH
-        ADC A,0X00
+        ADC A,0x00
         LD IYH,A
         JP C50_01
 
 C50_02  LD A,E
         OR A
         JP Z,C50_80
-        CP 0X02
+        CP 0x02
         JP Z,C50_A0
-        CP 0X04
+        CP 0x04
         JP Z,C50_C0
-        CP 0X05
+        CP 0x05
         JP Z,C50_D0
-        CP 0X06
+        CP 0x06
         JP Z,C50_E0
-        CP 0X07
+        CP 0x07
         JP Z,C50_F0
 C50_LP
 C50_80  SET 7,(IY+CHSTAT)
         LD A,L
-        AND 0X7F
+        AND 0x7F
         CP 96
         JP NC,C50_LP
 C50_81  LD A,(IY+CHSMP)
@@ -9583,8 +9590,8 @@ C50_81  LD A,(IY+CHSMP)
         CP E
         JR Z,C50_83
         LD (IY+CHNOTE),E
-C50_82  LD (IY+CHCNTL),0X00
-        LD (IY+CHCNTH),0X00
+C50_82  LD (IY+CHCNTL),0x00
+        LD (IY+CHCNTH),0x00
 C50_83  POP HL
         PUSH HL
         BIT 7,(IY+CHSTAT)
@@ -9596,9 +9603,9 @@ C50_84  POP HL
         JP C50_LP
 
 C50_90  LD A,L
-        CP 0X40
+        CP 0x40
         JR C,C50_91
-        LD L,0X40
+        LD L,0x40
 C50_91  LD (IY+CHVOL),A
         LD (IY+CHMVOL),A
         JP C50_LP
@@ -9614,17 +9621,17 @@ C50_C0  LD A,H
         JR NZ,C50_C1
         OR L
         JR NZ,C50_C1
-        LD L,0X01
+        LD L,0x01
 C50_C1  LD A,H
-        CP 0X20
+        CP 0x20
         JR C,C50_C2
-        LD HL,0X1FFF
+        LD HL,0x1FFF
 C50_C2  LD A,(IY+CHSTAT)
         SET 7,(IY+CHSTAT)
         LD (IY+CHPERL),L
         LD (IY+CHPERH),H
-        LD (IY+CHCNTL),0X00
-        LD (IY+CHCNTH),0X00
+        LD (IY+CHCNTL),0x00
+        LD (IY+CHCNTH),0x00
         LD (IY+CHSTAT),A
         JP C50_LP
 
@@ -9633,17 +9640,17 @@ C50_D0  LD A,H
         JR NZ,C50_D1
         OR L
         JR NZ,C50_D1
-        LD L,0X01
+        LD L,0x01
 C50_D1  LD A,H
-        CP 0X80
+        CP 0x80
         JR C,C50_D2
-        LD HL,0X7FFF
+        LD HL,0x7FFF
 C50_D2  LD A,(IY+CHSTAT)
         SET 7,(IY+CHSTAT)
         LD (IY+CHFRQL),L
         LD (IY+CHFRQH),H
-        LD (IY+CHCNTL),0X00
-        LD (IY+CHCNTH),0X00
+        LD (IY+CHCNTL),0x00
+        LD (IY+CHCNTH),0x00
         LD (IY+CHSTAT),A
         JP C50_LP
 
@@ -9669,10 +9676,10 @@ COM61   LD A,(MTPATPS)
 COM62   LD A,(MTSNGPS)
         RRCA
         RRCA
-        AND 0XC0
+        AND 0xC0
         LD B,A
         LD A,(MTPATPS)
-        AND 0X3F
+        AND 0x3F
         OR B
         OUT (ZXDATWR),A
         OUT (CLRCBIT),A
@@ -9685,7 +9692,7 @@ COM64   LD HL,CHANS+CHMVOL
         
 COM63   LD HL,CHANS+CHREAL
 COM64_  LD DE,CHANLEN
-        LD B,0X04
+        LD B,0x04
         LD A,(HL)
         OUT (ZXDATWR),A
         OUT (CLRCBIT),A
@@ -9702,9 +9709,9 @@ COM63__ SET 7,(HL)
         RET
 
 ;Set speed/tempo (*)
-;Установка скорости в пределах 0X01-0X1F. При значениях 0X20-0XFF устанавли-
+;Установка скорости в пределах 0x01-0x1F. При значениях 0x20-0xFF устанавли-
 ;вается темп проигрывания. Значения темпа соответствуют оригинальным при
-;скорости равной 0X06.
+;скорости равной 0x06.
 COM66   IN A,(ZXDATRD)
         OUT (CLRCBIT),A
         CALL FXF
@@ -9726,7 +9733,7 @@ COM68   LD A,(MTBPM)
 
 ;Process Sound (*)
 ;Переход на следующий кварк (или тик) в процессе проигрывания звука.
-COM69   LD A,0XFF
+COM69   LD A,0xFF
         LD (INGEN),A
         CALL ENGINE
         XOR A
@@ -9757,7 +9764,7 @@ COM3A_2 ADD IY,DE
         JP NZ,COM3A_2
         RET
 
-;Direct Play FX Sample (0X80..0X83)
+;Direct Play FX Sample (0x80..0x83)
 ;Проигрывание сэмпла в заданном канале.
 COM80   IN A,(ZXDATRD)
         OR A
@@ -9804,7 +9811,7 @@ COM80_2 PUSH IY
         LD IY,CHANSFX
         LD DE,CHANLEN
         LD A,B
-        AND 0X07
+        AND 0x07
 COM80_3 JP Z,PLFX_12
         ADD IY,DE
         DEC A
@@ -9817,7 +9824,7 @@ COMA0   IN A,(ZXDATRD)
         LD B,A
         LD IY,CHANSFX
         LD DE,CHANLEN
-        AND 0X07
+        AND 0x07
 COMA0_1 JR Z,COMA0_2
         ADD IY,DE
         DEC A
@@ -9848,7 +9855,7 @@ GETPER  LD HL,AMFRQTB   ; FOR AMIGA FREQUENCY
 GETFRQ  LD HL,GSFRQTB
 GETFRQ_ LD A,(IY+CHFINE)
         RRA
-        AND 0X0F
+        AND 0x0F
         JR Z,GETFRQ2
         LD C,A
         ADD A,A
@@ -9881,7 +9888,7 @@ GETFRQ3 SLA E
         RET Z
         RET
 
-PLAYFX  LD C,0X00
+PLAYFX  LD C,0x00
         LD A,(MTSTAT)
         OR A
         JP M,PLFX_03
@@ -9890,7 +9897,7 @@ PLAYFX  LD C,0X00
         JR Z,PLFX_03
         LD IY,CHANS
         LD DE,CHANLEN
-        LD B,0X04
+        LD B,0x04
 PLFX_00 BIT 7,(IY+CHSTAT)
         JR Z,PLFX_01
         LD A,(IY+CHMVOL)
@@ -9916,7 +9923,7 @@ PLFX_03 PUSH HL
         AND (IY+24)
         JR NZ,PLFX_10
         LD A,(IY+26)
-        CP 0X40
+        CP 0x40
         JR NC,PLFX_04
         LD A,C
         AND (IY+25)
@@ -9941,7 +9948,7 @@ PLFX_05 LD A,(FXCHNS)
         PUSH IY
         LD IY,CHANSFX
         LD L,A
-        LD H,0XFF
+        LD H,0xFF
         LD DE,CHANLEN
         SRL B
         JP C,PLFX_06
@@ -9985,7 +9992,7 @@ PLFX_12 LD A,(FXCHNS)
         LD E,(IY+8)
         LD D,(IY+9)
         LD A,(IY+10)
-        DB 0XCB,0X32;SLI D
+        DB 0xCB,0x32;SLI D
         RLA
         RRC D
         EX (SP),IY
@@ -10001,14 +10008,14 @@ PLFX_12 LD A,(FXCHNS)
         LD D,A
         LD A,(IY+10)
         ADC A,(IY+13)
-        DB 0XCB,0X32;SLI D
+        DB 0xCB,0x32;SLI D
         RLA
         RRC D
         EX (SP),IY
         LD (IY+CHENDP),A
         LD (IY+CHENDL),E
         LD (IY+CHENDH),D
-        LD (IY+CHLPBP),0XFF
+        LD (IY+CHLPBP),0xFF
         EX (SP),IY
         LD A,(IY+16)
         INC A
@@ -10021,7 +10028,7 @@ PLFX_12 LD A,(FXCHNS)
         LD D,A
         LD A,(IY+10)
         ADC A,(IY+16)
-        DB 0XCB,0X32;SLI D
+        DB 0xCB,0x32;SLI D
         RLA
         RRC D
         EX (SP),IY
@@ -10037,7 +10044,7 @@ PLFX_12 LD A,(FXCHNS)
         LD D,A
         LD A,(IY+10)
         ADC A,(IY+19)
-        DB 0XCB,0X32;SLI D
+        DB 0xCB,0x32;SLI D
         RLA
         RRC D
         EX (SP),IY
@@ -10075,22 +10082,22 @@ PLFX_13 LD E,(IY+20)
         LD (IY+CHFRQL),L
         LD (IY+CHFRQH),H
         LD (IY+CHPRIOR),C
-        LD (IY+CHFADVH),0XFF
-        LD (IY+CHFADVL),0XFF
-        LD (IY+CHDELVH),0XFF
-        LD (IY+CHDELVL),0XFF
-        LD (IY+CHEPAN),0X20
-        LD (IY+CHEVOL),0X40
-        LD (IY+CHCNTL),0X00
-        LD (IY+CHCNTH),0X00
-        LD (IY+CHVOL),0X40
-        LD (IY+CHPAN),0X80
+        LD (IY+CHFADVH),0xFF
+        LD (IY+CHFADVL),0xFF
+        LD (IY+CHDELVH),0xFF
+        LD (IY+CHDELVL),0xFF
+        LD (IY+CHEPAN),0x20
+        LD (IY+CHEVOL),0x40
+        LD (IY+CHCNTL),0x00
+        LD (IY+CHCNTH),0x00
+        LD (IY+CHVOL),0x40
+        LD (IY+CHPAN),0x80
         SET 7,(IY+CHSTAT)
         SET 0,(IY+CHSTAT)
         PUSH IY
         POP HL
         POP IY
-        LD A,0XFF
+        LD A,0xFF
         LD (PROCESS),A
         RET
 
@@ -10156,18 +10163,18 @@ MOVMEM  XOR A
         EXX
         CP E
         JP C,MOVH
-MOVL    DB 0XCB,0X32;SLI D
+MOVL    DB 0xCB,0x32;SLI D
         RL B
         RRC D
         PUSH DE
         EXX
         EX DE,HL
         POP HL
-        DB 0XCB,0X32;SLI D
+        DB 0xCB,0x32;SLI D
         RL B
         RRC D
         LD A,B
-        LD BC,0X0000
+        LD BC,0x0000
         EXX
         LD C,A
 ML1     EXX
@@ -10260,7 +10267,7 @@ MLC     POP DE
         OR A
         SBC HL,DE
         LD A,IXL
-        SBC A,0X00
+        SBC A,0x00
         LD IXL,A
         OR L
         OR H
@@ -10278,7 +10285,7 @@ MH0     DEC HL
         ADD HL,DE
         LD A,B
         ADC A,IXL
-        DB 0XCB,0X34;SLI H
+        DB 0xCB,0x34;SLI H
         RLA
         RRC H
         LD B,A
@@ -10295,7 +10302,7 @@ MHF     EX DE,HL
         POP DE
         ADD HL,DE
         ADC A,B
-        DB 0XCB,0X34;SLI H
+        DB 0xCB,0x34;SLI H
         RLA
         RRC H
         EX DE,HL
@@ -10358,7 +10365,7 @@ MHA     PUSH BC
         LD A,(DE)
         LD (SDPAGE),A
         EXX
-        LD DE,BUFFER+0X00FF
+        LD DE,BUFFER+0x00FF
         LD A,C
         CALL MLDD
         POP DE
@@ -10369,7 +10376,7 @@ MHA     PUSH BC
         LD A,(DE)
         LD (SDPAGE),A
         EXX
-        LD HL,BUFFER+0X00FF
+        LD HL,BUFFER+0x00FF
         LD A,C
         CALL MLDD
         POP HL
@@ -10387,7 +10394,7 @@ MHC     POP DE
         OR A
         SBC HL,DE
         LD A,IXL
-        SBC A,0X00
+        SBC A,0x00
         LD IXL,A
         OR L
         OR H
@@ -10404,7 +10411,7 @@ MHC     POP DE
 ;EFFECT   : MOVES MEMORY BLOCK FROM HIGH MEMORY TO LOW
 ;               SWITCH TO PAGE 0
 
-LDMEM   DB 0XCB,0X34;SLI H
+LDMEM   DB 0xCB,0x34;SLI H
         RLA
         RRC H
 LM1     LD IXL,A
@@ -10443,7 +10450,7 @@ LM5     LD A,L
 ;EFFECT   : MOVES MEMORY BLOCK FROM LOW MEMORY TO HIGH
 ;               SWITCH TO PAGE 0
 
-SVMEM   DB 0XCB,0X32;SLI D
+SVMEM   DB 0xCB,0x32;SLI D
         RLA
         RRC D
 SM1     LD IXL,A
@@ -10481,34 +10488,34 @@ SM5     LD A,E
 ENGINE  LD HL,(QTFREE)
         LD H,HIGH (QTMAP)
         LD A,L
-        AND 0X1C
+        AND 0x1C
         LD L,A
         LD (QTFREE),HL
         LD A,(HL)
         OR A
         JP NZ,ENG_FUL
-        LD A,(CHANSFX+0X000)
+        LD A,(CHANSFX+0x000)
         RLCA
         RR C
-        LD A,(CHANSFX+0X040)
+        LD A,(CHANSFX+0x040)
         RLCA
         RR C
-        LD A,(CHANSFX+0X080)
+        LD A,(CHANSFX+0x080)
         RLCA
         RR C
-        LD A,(CHANSFX+0X0C0)
+        LD A,(CHANSFX+0x0C0)
         RLCA
         RR C
-        LD A,(CHANSFX+0X100)
+        LD A,(CHANSFX+0x100)
         RLCA
         RR C
-        LD A,(CHANSFX+0X140)
+        LD A,(CHANSFX+0x140)
         RLCA
         RR C
-        LD A,(CHANSFX+0X180)
+        LD A,(CHANSFX+0x180)
         RLCA
         RR C
-        LD A,(CHANSFX+0X1C0)
+        LD A,(CHANSFX+0x1C0)
         RLCA
         RR C
         LD A,(GSCHNS)
@@ -10534,27 +10541,27 @@ ENG_01  LD A,(MODSWCH)
         LD A,(MODULE)
         OR A
         JR Z,ENG_03
-        LD A,0X01
+        LD A,0x01
         LD (SGENOFF),A
         LD A,(TCKLEFT+1)
-        CP 0X02
+        CP 0x02
         JR NC,ENG_05
         OR A
         LD A,(TCKLEFT)
         JR Z,ENG_04
-        SUB 0X80
+        SUB 0x80
         JR NC,ENG_05
         JP ENG_04
 
-ENG_03  LD A,0X01
+ENG_03  LD A,0x01
         LD (SGENOFF),A
         LD A,(FXTICK+1)
-        CP 0X02
+        CP 0x02
         JR NC,ENG_05
         OR A
         LD A,(FXTICK)
         JR Z,ENG_04
-        SUB 0X80
+        SUB 0x80
         JR NC,ENG_05
 ENG_04  NEG
         LD (SGENOFF),A
@@ -10581,7 +10588,7 @@ ENG_07  CALL QUANTUM
 
 ENG_80  LD A,(SGENOFF)
         LD E,A
-        LD D,0X00
+        LD D,0x00
         LD HL,(FXTICK)
         OR A
         SBC HL,DE
@@ -10618,7 +10625,7 @@ FXCHK_  LD HL,FXJP2
         
 FXCHK   LD HL,FXJP1
 FXCHK__ LD A,(IY+CHCOM)
-        AND 0X1F
+        AND 0x1F
         ADD A,A
         ADD A,L
         LD L,A
@@ -10637,7 +10644,7 @@ FXE__   RRCA
         RRCA
         RRCA
         RRCA
-        AND 0X0F
+        AND 0x0F
         ADD A,A
         ADD A,L
         LD L,A
@@ -10646,7 +10653,7 @@ FXE__   RRCA
         LD H,(HL)
         LD L,A
         LD A,(IY+CHPARM)
-        AND 0X0F
+        AND 0x0F
         JP (HL)
 
 FXRET   RET
@@ -10660,14 +10667,14 @@ EFXNOP2 CALL EFXCNV
 
 ;---patched
 EFXCNV  LD A,H
-        CP 0X04
+        CP 0x04
         JR NC,EFXCNV1
         XOR A
         LD (CPAGE),A
         OUT (MPAG),A
         ADD HL,HL
         LD A,H
-        ADD A,0XF8
+        ADD A,0xF8
         LD H,A
         LD A,(HL)
         INC HL
@@ -10762,7 +10769,7 @@ FX0     OR A
         ADD A,L
         LD L,A
         LD A,H
-        ADC A,0X00
+        ADC A,0x00
         LD H,A
         LD A,(HL)
         OR A
@@ -10779,7 +10786,7 @@ FX0     OR A
         RRCA
         RRCA
         RRCA
-FX0_2   AND 0X0F
+FX0_2   AND 0x0F
         ADD A,E
         LD E,A
         CP 96
@@ -10790,13 +10797,13 @@ FX0_2   AND 0X0F
         RET
 
 FX1     LD E,A
-        LD D,0X00
+        LD D,0x00
         LD L,(IY+CHPERL)
         LD H,(IY+CHPERH)
         OR A
         SBC HL,DE
         JR NC,FX1_2
-        LD HL,0X0000
+        LD HL,0x0000
 FX1_2   PUSH HL
         LD HL,113
 FX1_8   POP DE
@@ -10822,12 +10829,12 @@ FX1_9   SET 7,(IY+CHFLAGS)
         RET
 
 FX2     LD E,A
-        LD D,0X00
+        LD D,0x00
         LD L,(IY+CHPERL)
         LD H,(IY+CHPERH)
         ADD HL,DE
         JR NC,FX2_2
-        LD HL,0XFFFF
+        LD HL,0xFFFF
 FX2_2   PUSH HL
         LD HL,856
 FX2_8   POP DE
@@ -10868,7 +10875,7 @@ FX3_1   LD A,(IY+CHWNT)
         JR Z,FX3_9
         ADD HL,DE
         LD C,(IY+CHPORT)
-        LD B,0X00
+        LD B,0x00
         JR C,FX3_5
         SBC HL,BC
         JR C,FX3_9
@@ -10903,9 +10910,9 @@ FX3_9   LD E,(IY+CHWNT)
         LD (IY+CHFRQL),L
         LD (IY+CHFRQH),H
         RES 7,(IY+CHFLAGS)
-        LD (IY+CHCOM),0X00
-        LD (IY+CHPARM),0X00
-        LD (IY+CHWNT),0X7F
+        LD (IY+CHCOM),0x00
+        LD (IY+CHPARM),0x00
+        LD (IY+CHWNT),0x7F
         RET
 
 FX3_    RET
@@ -10916,43 +10923,43 @@ FX4     PUSH DE
         JR Z,FX4_3
         LD L,A
         LD H,(IY+CHVIBCM)
-        AND 0X0F
+        AND 0x0F
         JR Z,FX4_1
         XOR H
-        AND 0X0F
+        AND 0x0F
         XOR H
         LD H,A
 FX4_1   LD A,L
-        AND 0XF0
+        AND 0xF0
         JR Z,FX4_2
         XOR H
-        AND 0XF0
+        AND 0xF0
         XOR H
         LD H,A
 FX4_2   LD (IY+CHVIBCM),H
 FX4_3   LD D,(IY+CHVIBPS)
         LD A,D
-        AND 0X03
+        AND 0x03
         JR Z,FX4_5
-        CP 0X03
+        CP 0x03
         JR NZ,FX4_A
         LD A,R
-        AND 0X03
+        AND 0x03
         JR Z,FX4_5
-        CP 0X03
+        CP 0x03
         JR Z,FX4_5
 FX4_A   DEC A
         JR Z,FX4_4
-        LD E,0XFF
+        LD E,0xFF
         JP FX4_6
 
 FX4_4   LD A,D
-        AND 0X7C
+        AND 0x7C
         RLCA
         LD E,A
         BIT 7,D
         JR NZ,FX4_6
-        LD A,0XF8
+        LD A,0xF8
         SUB E
         LD E,A
         JP FX4_6
@@ -10960,27 +10967,27 @@ FX4_4   LD A,D
 FX4_5   LD A,D
         RRCA
         RRCA
-        AND 0X1F
+        AND 0x1F
         LD HL,VIBTB
         ADD A,L
         LD L,A
         LD E,(HL)
 FX4_6   LD A,(IY+CHVIBCM)
-        AND 0X0F
+        AND 0x0F
         JR Z,FX4_9
         LD B,A
-        LD HL,0X0000
+        LD HL,0x0000
         LD D,H
 FX4_7   ADD HL,DE
         DJNZ FX4_7
-        LD B,0X07
+        LD B,0x07
         LD A,L
 FX4_8   SRL H
         RRA
         DJNZ FX4_8
         ADC A,D
         LD L,A
-        LD H,0X00
+        LD H,0x00
         BIT 7,(IY+CHVIBPS)
         JR Z,FX4_9
         DEC H
@@ -10992,7 +10999,7 @@ FX4_9   LD E,(IY+CHPERL)
         ADD HL,DE
         CALL EFXNOP2
         LD A,(IY+CHVIBCM)
-        AND 0XF0
+        AND 0xF0
         RRCA
         RRCA
         ADD A,(IY+CHVIBPS)
@@ -11015,43 +11022,43 @@ FX7     PUSH DE
         JR Z,FX7_3
         LD L,A
         LD H,(IY+CHTRMCM)
-        AND 0X0F
+        AND 0x0F
         JR Z,FX7_1
         XOR H
-        AND 0X0F
+        AND 0x0F
         XOR H
         LD H,A
 FX7_1   LD A,L
-        AND 0XF0
+        AND 0xF0
         JR Z,FX7_2
         XOR H
-        AND 0XF0
+        AND 0xF0
         XOR H
         LD H,A
 FX7_2   LD (IY+CHTRMCM),H
 FX7_3   LD D,(IY+CHTRMPS)
         LD A,D
-        AND 0X03
+        AND 0x03
         JR Z,FX7_5
-        CP 0X03
+        CP 0x03
         JR NZ,FX7_A
         LD A,R
-        AND 0X03
+        AND 0x03
         JR Z,FX7_5
-        CP 0X03
+        CP 0x03
         JR Z,FX7_5
 FX7_A   DEC A
         JR Z,FX7_4
-        LD E,0XFF
+        LD E,0xFF
         JP FX7_6
 
 FX7_4   LD A,D
-        AND 0X7C
+        AND 0x7C
         RLCA
         LD E,A
         BIT 7,D
         JR NZ,FX7_6
-        LD A,0XF8
+        LD A,0xF8
         SUB E
         LD E,A
         JP FX7_6
@@ -11059,20 +11066,20 @@ FX7_4   LD A,D
 FX7_5   LD A,D
         RRCA
         RRCA
-        AND 0X1F
+        AND 0x1F
         LD HL,VIBTB
         ADD A,L
         LD L,A
         LD E,(HL)
 FX7_6   LD A,(IY+CHTRMCM)
-        AND 0X0F
+        AND 0x0F
         JR Z,FX7_9
         LD B,A
-        LD HL,0X0000
+        LD HL,0x0000
         LD D,H
 FX7_7   ADD HL,DE
         DJNZ FX7_7
-        LD B,0X06
+        LD B,0x06
         LD A,L
 FX7_8   SRL H
         RRA
@@ -11088,15 +11095,15 @@ FX7_8   SRL H
         JP FX7_B
 
 FX7_9   ADD A,(IY+CHVOL)
-        CP 0X40
+        CP 0x40
         JR C,FX7_B
-        LD A,0X40
+        LD A,0x40
 FX7_B   CP (IY+CHMVOL)
         LD (IY+CHMVOL),A
         JR Z,FX7_C
         SET 0,(IY+CHSTAT)
 FX7_C   LD A,(IY+CHTRMCM)
-        AND 0XF0
+        AND 0xF0
         RRCA
         RRCA
         ADD A,(IY+CHTRMPS)
@@ -11111,29 +11118,29 @@ FX9     OR A
         JR Z,FX9_1
         LD (IY+CHOFFST),A
 FX9_1   LD H,(IY+CHOFFST)
-        LD L,0X00
+        LD L,0x00
 FXA     OR A
         RET Z
         LD L,A
         LD A,(IY+CHVOL)
         LD H,A
         LD A,L
-        AND 0XF0
+        AND 0xF0
         JR Z,FXA_1
         RRCA
         RRCA
         RRCA
         RRCA
         ADD A,H
-        CP 0X40
+        CP 0x40
         JR C,FXA_2
-        LD A,0X40
+        LD A,0x40
         JP FXA_2
         
 FXA_1   LD A,H
         SUB L
         JR NC,FXA_2
-        LD A,0X00
+        LD A,0x00
         LD (IY+CHCOM),A
         LD (IY+CHPARM),A
 FXA_2   LD (IY+CHVOL),A
@@ -11152,9 +11159,9 @@ FXB     DEC A
         LD (MTJMPFL),A
         RET
         
-FXC     CP 0X40
+FXC     CP 0x40
         JR C,FXC_1
-        LD A,0X40
+        LD A,0x40
 FXC_1   LD (IY+CHVOL),A
         CP (IY+CHMVOL)
         LD (IY+CHMVOL),A
@@ -11163,7 +11170,7 @@ FXC_1   LD (IY+CHVOL),A
         RET
 
 FXD     LD L,A
-        AND 0XF0
+        AND 0xF0
         RRCA
         LD H,A
         RRCA
@@ -11171,25 +11178,25 @@ FXD     LD L,A
         ADD A,H
         LD H,A
         LD A,L
-        AND 0X0F
+        AND 0x0F
         ADD A,H
-        CP 0X40
+        CP 0x40
         JR C,FXD_1
         XOR A
 FXD_1   LD (MTBRKPS),A
-        LD A,0X01
+        LD A,0x01
         LD (MTJMPFL),A
         RET
 
 FXF     OR A
         JR Z,FXF_5
-        CP 0X20
+        CP 0x20
         JR NC,FXF_1
 FXF_0   LD (MTSPEED),A
         RET
         
 FXF_1   LD (MTBPM),A
-        SUB 0X20
+        SUB 0x20
         LD HL,BPMTAB
         ADD A,A
         JR NC,FXF_3
@@ -11214,7 +11221,7 @@ FXF_5
         SET 7,(HL)
         RET
 
-FXE0    AND 0X01
+FXE0    AND 0x01
         LD (MTFILTR),A
         RET
 
@@ -11228,10 +11235,10 @@ FXE4    RES 1,(IY+CHFLAGS)
         BIT 2,A
         JR Z,FXE4_2
         SET 1,(IY+CHFLAGS)
-FXE4_2  AND 0X03
+FXE4_2  AND 0x03
         LD L,A
         LD A,(IY+CHVIBPS)
-        AND 0XFC
+        AND 0xFC
         OR L
         LD (IY+CHVIBPS),A
         RET
@@ -11249,7 +11256,7 @@ FXE6    OR A
         RET Z
 FXE6_1  LD A,(IY+CHPATPS)
         LD (MTBRKPS),A
-        LD A,0X01
+        LD A,0x01
         LD (MTBRKFL),A
         RET
         
@@ -11264,10 +11271,10 @@ FXE7    RES 0,(IY+CHFLAGS)
         BIT 2,A
         JR Z,FXE7_2
         SET 0,(IY+CHFLAGS)
-FXE7_2  AND 0X03
+FXE7_2  AND 0x03
         LD L,A
         LD A,(IY+CHTRMPS)
-        AND 0XFC
+        AND 0xFC
         OR L
         LD (IY+CHTRMPS),A
         RET
@@ -11319,55 +11326,55 @@ FXEE    LD HL,MTPDT2
 ;VOLUME CALCULATION FOR MODULES AND FX
 
 CALCVOL RES 0,(IY+CHSTAT)
-        LD DE,0XFC00
+        LD DE,0xFC00
         LD A,(IY+CHMVOL)
-        AND 0X7F
+        AND 0x7F
         JP Z,CALCV_Z
-        CP 0X40
+        CP 0x40
         CALL C,MUL64
         LD A,(IY+CHEVOL)
         OR A
         JP Z,CALCV_Z
-        CP 0X40
+        CP 0x40
         CALL C,MUL64
         LD A,(IY+CHFADVH)
         SRL A
         SRL A
-        ADC A,0X00
+        ADC A,0x00
         JP Z,CALCV_Z
-        CP 0X40
+        CP 0x40
         CALL C,MUL64
         BIT 6,(IY+CHSTAT)
         JP Z,CALCV_N
         LD A,(FXVOL)
         OR A
         JP Z,CALCV_Z
-        CP 0X40
+        CP 0x40
         CALL C,MUL64
         LD A,(FXMVOL)
         OR A
         JP Z,CALCV_Z
-        CP 0X40
+        CP 0x40
         CALL C,MUL64
         JP CALCV_X
 
 CALCV_N LD A,(MTVOL)
         OR A
         JP Z,CALCV_Z
-        CP 0X40
+        CP 0x40
         CALL C,MUL64
         LD A,(MODVOL)
         OR A
         JP Z,CALCV_Z
-        CP 0X40
+        CP 0x40
         CALL C,MUL64
 CALCV_X LD C,(IY+CHPAN)
         LD A,(IY+CHEPAN)
-        SUB 0X20
+        SUB 0x20
         JR Z,CALCV_V
         JR NC,CALCV_I
         NEG
-CALCV_I CP 0X20
+CALCV_I CP 0x20
         JR C,CALCV_U
         LD H,(IY+CHPAN)
         LD A,H
@@ -11397,21 +11404,21 @@ CALCV_M SLA L
         SRL A
         LD H,A
 CALCV_Q LD A,(IY+CHEPAN)
-        CP 0X20
+        CP 0x20
         JR C,CALCV_P
         LD A,C
         ADD A,H
         LD C,A
         JR NC,CALCV_V
-        LD C,0XFF
+        LD C,0xFF
         JP CALCV_W
 CALCV_P LD A,C
         SUB H
-        LD C,0X00
+        LD C,0x00
         JR C,CALCV_O
         LD C,A
 CALCV_V LD A,C
-        CP 0X80
+        CP 0x80
         JR Z,CALCV_Y
         OR A
         JP M,CALCV_W
@@ -11429,7 +11436,7 @@ CALCV_W BIT 5,(IY+CHSTAT)
 CALCV_Y LD A,D
         SRL A
         SRL A
-        ADC A,0X00
+        ADC A,0x00
 CALCV_Z LD C,A
         LD HL,VOLRQTB
         LD A,L
@@ -11439,8 +11446,8 @@ CALCV_Z LD C,A
         RET
 
 MUL64   LD B,A
-        LD HL,0X0000
-        AND 0X0F
+        LD HL,0x0000
+        AND 0x0F
         JR Z,MUL64_F
         SLA B
         SLA B
@@ -11460,13 +11467,13 @@ MUL64_F LD A,B
         JR Z,MUL64_S
         SRL D
         RR E
-        CP 0X20
+        CP 0x20
         RET Z
         LD L,E
         LD H,D
         SRL D
         RR E
-        CP 0X10
+        CP 0x10
         RET Z
         ADD HL,DE
 MUL64_S EX DE,HL
@@ -11478,9 +11485,9 @@ TCOM    IN A,(ZXSTAT)
         RRCA
         JR NC,TCOM
 TCOM_   IN A,(ZXCMD)
-        CP 0X20
+        CP 0x20
         JP NC,COMINT2
-        CP 0X01
+        CP 0x01
         JR Z,TCOM
         OUT (CLRCBIT),A
         LD HL,TCOMTB
@@ -11494,30 +11501,30 @@ TCOM_   IN A,(ZXCMD)
         JP (HL)
 
 TCOM2   LD HL,DAC0
-        LD A,0X3F
+        LD A,0x3F
         OUT (VOL1),A
 TCOMDAC LD (HL),0
         LD A,(HL)
         LD IY,TCONT1
         JP TWAIT
         
-TCONT1  LD (HL),0XFF
+TCONT1  LD (HL),0xFF
         LD A,(HL)
         LD IY,TCOMDAC
         JP TWAIT
 
 TCOM3   LD HL,DAC1
-        LD A,0X3F
+        LD A,0x3F
         OUT (VOL2),A
         JR TCOMDAC
         
 TCOM4   LD HL,DAC2
-        LD A,0X3F
+        LD A,0x3F
         OUT (VOL3),A
         JR TCOMDAC
         
 TCOM5   LD HL,DAC3
-        LD A,0X3F
+        LD A,0x3F
         OUT (VOL4),A
         JR TCOMDAC
 
@@ -11526,54 +11533,54 @@ TCOM6   XOR A
         LD IY,TCONT2
         JP TWAIT
         
-TCONT2  LD A,0XFF
+TCONT2  LD A,0xFF
         OUT (ZXDATWR),A
         LD IY,TCOM6
         JP TWAIT
 
 TCOM7   LD C,VOL1
         LD HL,DAC0
-        LD (HL),0XFF
+        LD (HL),0xFF
         LD A,(HL)
-TCOMVOL LD A,0X00
+TCOMVOL LD A,0x00
         OUT (C),A
         LD IY,TCONT3
         JP TWAIT
         
-TCONT3  LD A,0XFF
+TCONT3  LD A,0xFF
         OUT (C),A
         LD IY,TCOMVOL
         JP TWAIT
 
 TCOM8   LD C,VOL2
         LD HL,DAC1
-        LD (HL),0XFF
+        LD (HL),0xFF
         LD A,(HL)
         JR TCOMVOL
         
 TCOM9   LD C,VOL3
         LD HL,DAC2
-        LD (HL),0XFF
+        LD (HL),0xFF
         LD A,(HL)
         JR TCOMVOL
         
 TCOMA   LD C,VOL4
         LD HL,DAC3
-        LD (HL),0XFF
+        LD (HL),0xFF
         LD A,(HL)
         JR TCOMVOL
 
 TCOMB   LD HL,DAC0
         LD C,VOL1
-TCOMTST LD B,0X3F
+TCOMTST LD B,0x3F
 TCOMT4  OUT (C),B
         LD D,114
-TCOMT5  LD (HL),0X00
+TCOMT5  LD (HL),0x00
         LD A,(HL)
         XOR A
 TCOMT6  DEC A
         JR NZ,TCOMT6
-        LD (HL),0XFF
+        LD (HL),0xFF
         LD A,(HL)
         XOR A
 TCOMT7  DEC A
@@ -11599,12 +11606,12 @@ TCOME   LD HL,DAC3
         LD C,VOL4
         JP TCOMTST
 
-TCOMF   LD A,0X3F
+TCOMF   LD A,0x3F
         OUT (VOL1),A
         OUT (VOL2),A
         OUT (VOL3),A
         OUT (VOL4),A
-        LD B,0X00
+        LD B,0x00
         LD L,B
 TCONT8  LD H,HIGH (DAC0)
         LD (HL),B
@@ -11632,7 +11639,7 @@ TCOM11  IN A,(ZXDATRD)
         JP TCOM_
 
 TCOM12  LD HL,DAC0
-TCONT9  LD A,0X3F
+TCONT9  LD A,0x3F
         OUT (VOL1),A
         OUT (VOL2),A
         OUT (VOL3),A
@@ -11641,7 +11648,7 @@ TCONTA  IN A,(ZXDATRD)
         LD (HL),A
         LD A,(HL)
 TCONTB  DJNZ TCONTB
-        LD (HL),0X00
+        LD (HL),0x00
         LD A,(HL)
 TCONTC  DJNZ TCONTC
         IN A,(ZXSTAT)
@@ -11658,7 +11665,7 @@ TCOM14  LD HL,DAC2
 TCOM15  LD HL,DAC3
         JR TCONT9
 
-TWAIT   LD B,0X04
+TWAIT   LD B,0x04
 TWAIT1  LD DE,38686
 TWAIT2  IN A,(ZXSTAT)
         RRCA
@@ -11674,69 +11681,69 @@ TWAIT2  IN A,(ZXSTAT)
 
 	align 256
 	
-VIBTB	db 0X00,0X18,0X31,0X4A,0X61,0X78,0X8D,0XA1
-	db 0XB4,0XC5,0XD4,0XE0,0XEB,0XF4,0XFA,0XFD
-	db 0XFF,0XFD,0XFA,0XF4,0XEB,0XE0,0XD4,0XC5
-	db 0XB4,0XA1,0X8D,0X78,0X61,0X4A,0X31,0X18
+VIBTB	db 0x00,0x18,0x31,0x4A,0x61,0x78,0x8D,0xA1
+	db 0xB4,0xC5,0xD4,0xE0,0xEB,0xF4,0xFA,0xFD
+	db 0xFF,0xFD,0xFA,0xF4,0xEB,0xE0,0xD4,0xC5
+	db 0xB4,0xA1,0x8D,0x78,0x61,0x4A,0x31,0x18
 
-COMTABH DB LOW (COM20),LOW (COM21),LOW (COM22),LOW (COM23),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0X20
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COM2A),LOW (COM2B),LOW (COM2C),LOW (COM2D),LOW (COM2E),LOW (COM2F)  ;0X28
-        DB LOW (COM30),LOW (COM31),LOW (COM32),LOW (COM33),LOW (COM34),LOW (COM35),LOW (COM36),LOW (COM37)  ;0X30
-        DB LOW (COM38),LOW (COM39),LOW (COM3A),LOW (COM3B),LOW (COM3C),LOW (COM3D),LOW (COM3E),LOW (COM3F)  ;0X38
-        DB LOW (COM40),LOW (COM41),LOW (COM42),LOW (COMHZ),LOW (COMHZ),LOW (COM45),LOW (COM46),LOW (COM47)  ;0X40
-        DB LOW (COM48),LOW (COM49),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0X48
-        DB LOW (COM50),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0X50
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0X58
-        DB LOW (COM60),LOW (COM61),LOW (COM62),LOW (COM63),LOW (COM64),LOW (COM65),LOW (COM66),LOW (COM67)  ;0X60
-        DB LOW (COM68),LOW (COM69),LOW (COM6A),LOW (COM6B),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0X68 patched
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0X70
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0X78
-        DB LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80)  ;0X80
-        DB LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80)  ;0X88
-        DB LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80)  ;0X90
-        DB LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80)  ;0X98
-        DB LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0)  ;0XA0
-        DB LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0)  ;0XA8
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0XB0
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0XB8
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0XC0
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0XC8
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0XD0
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0XD8
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0XE0
-        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0XE8
+COMTABH DB LOW (COM20),LOW (COM21),LOW (COM22),LOW (COM23),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0x20
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COM2A),LOW (COM2B),LOW (COM2C),LOW (COM2D),LOW (COM2E),LOW (COM2F)  ;0x28
+        DB LOW (COM30),LOW (COM31),LOW (COM32),LOW (COM33),LOW (COM34),LOW (COM35),LOW (COM36),LOW (COM37)  ;0x30
+        DB LOW (COM38),LOW (COM39),LOW (COM3A),LOW (COM3B),LOW (COM3C),LOW (COM3D),LOW (COM3E),LOW (COM3F)  ;0x38
+        DB LOW (COM40),LOW (COM41),LOW (COM42),LOW (COMHZ),LOW (COMHZ),LOW (COM45),LOW (COM46),LOW (COM47)  ;0x40
+        DB LOW (COM48),LOW (COM49),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0x48
+        DB LOW (COM50),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0x50
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0x58
+        DB LOW (COM60),LOW (COM61),LOW (COM62),LOW (COM63),LOW (COM64),LOW (COM65),LOW (COM66),LOW (COM67)  ;0x60
+        DB LOW (COM68),LOW (COM69),LOW (COM6A),LOW (COM6B),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0x68 patched
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0x70
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0x78
+        DB LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80)  ;0x80
+        DB LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80)  ;0x88
+        DB LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80)  ;0x90
+        DB LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80),LOW (COM80)  ;0x98
+        DB LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0)  ;0xA0
+        DB LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0),LOW (COMA0)  ;0xA8
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0xB0
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0xB8
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0xC0
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0xC8
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0xD0
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0xD8
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0xE0
+        DB LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ),LOW (COMHZ)  ;0xE8
 
-        DUPL 0X10,0
-        DUPL 0X20,0
+        DUPL 0x10,0
+        DUPL 0x20,0
 
-	DB HIGH (COM20),HIGH (COM21),HIGH (COM22),HIGH (COM23),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0X20
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COM2A),HIGH (COM2B),HIGH (COM2C),HIGH (COM2D),HIGH (COM2E),HIGH (COM2F)  ;0X28
-        DB HIGH (COM30),HIGH (COM31),HIGH (COM32),HIGH (COM33),HIGH (COM34),HIGH (COM35),HIGH (COM36),HIGH (COM37)  ;0X30
-        DB HIGH (COM38),HIGH (COM39),HIGH (COM3A),HIGH (COM3B),HIGH (COM3C),HIGH (COM3D),HIGH (COM3E),HIGH (COM3F)  ;0X38
-        DB HIGH (COM40),HIGH (COM41),HIGH (COM42),HIGH (COMHZ),HIGH (COMHZ),HIGH (COM45),HIGH (COM46),HIGH (COM47)  ;0X40
-        DB HIGH (COM48),HIGH (COM49),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0X48
-        DB HIGH (COM50),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0X50
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0X58
-        DB HIGH (COM60),HIGH (COM61),HIGH (COM62),HIGH (COM63),HIGH (COM64),HIGH (COM65),HIGH (COM66),HIGH (COM67)  ;0X60
-        DB HIGH (COM68),HIGH (COM69),HIGH (COM6A),HIGH (COM6B),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0X68 patched
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0X70
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0X78
-        DB HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80)  ;0X80
-        DB HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80)  ;0X88
-        DB HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80)  ;0X90
-        DB HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80)  ;0X98
-        DB HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0)  ;0XA0
-        DB HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0)  ;0XA8
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0XB0
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0XB8
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0XC0
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0XC8
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0XD0
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0XD8
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0XE0
-        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0XE8
+	DB HIGH (COM20),HIGH (COM21),HIGH (COM22),HIGH (COM23),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0x20
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COM2A),HIGH (COM2B),HIGH (COM2C),HIGH (COM2D),HIGH (COM2E),HIGH (COM2F)  ;0x28
+        DB HIGH (COM30),HIGH (COM31),HIGH (COM32),HIGH (COM33),HIGH (COM34),HIGH (COM35),HIGH (COM36),HIGH (COM37)  ;0x30
+        DB HIGH (COM38),HIGH (COM39),HIGH (COM3A),HIGH (COM3B),HIGH (COM3C),HIGH (COM3D),HIGH (COM3E),HIGH (COM3F)  ;0x38
+        DB HIGH (COM40),HIGH (COM41),HIGH (COM42),HIGH (COMHZ),HIGH (COMHZ),HIGH (COM45),HIGH (COM46),HIGH (COM47)  ;0x40
+        DB HIGH (COM48),HIGH (COM49),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0x48
+        DB HIGH (COM50),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0x50
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0x58
+        DB HIGH (COM60),HIGH (COM61),HIGH (COM62),HIGH (COM63),HIGH (COM64),HIGH (COM65),HIGH (COM66),HIGH (COM67)  ;0x60
+        DB HIGH (COM68),HIGH (COM69),HIGH (COM6A),HIGH (COM6B),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0x68 patched
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0x70
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0x78
+        DB HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80)  ;0x80
+        DB HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80)  ;0x88
+        DB HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80)  ;0x90
+        DB HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80),HIGH (COM80)  ;0x98
+        DB HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0)  ;0xA0
+        DB HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0),HIGH (COMA0)  ;0xA8
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0xB0
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0xB8
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0xC0
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0xC8
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0xD0
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0xD8
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0xE0
+        DB HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ),HIGH (COMHZ)  ;0xE8
 
-        DUPL 0X10,0
+        DUPL 0x10,0
 
 FXJP1   DW FXNOP,FXNOP,FXNOP,FXNOP,FXNOP,FXNOP,FXNOP,FXNOP
         DW FXNOP,FXNOP,FXNOP,FXB  ,FXC  ,FXD  ,FXE  ,FXF
@@ -11778,7 +11785,7 @@ NOTEGET LD E,(IY+CHNOTE)
 NOTEFND LD HL,AMFRQTB
         LD A,(IY+CHFINE)
         RRA
-        AND 0X0F
+        AND 0x0F
         JR Z,NOTEFN1
         LD C,A
         ADD A,A
@@ -11800,7 +11807,7 @@ NOTEFN1 LD E,(IY+CHPERL)
         LD E,A
         RET
 
-DIH     LD BC,0X005F
+DIH     LD BC,0x005F
         PUSH HL
         INC HL
         LD A,(HL)
@@ -11824,7 +11831,7 @@ DIHRGR  LD E,(HL)
         XOR A
         RET
         
-DIH2    LD A,0XBF
+DIH2    LD A,0xBF
         ADD A,L
         LD L,A
         LD A,H
@@ -11856,11 +11863,11 @@ DIH3    POP HL
 DIHLP   PUSH HL
         LD A,B
         ADD A,C
-        AND 0XFE
+        AND 0xFE
         ADD A,L
         LD L,A
         LD A,H
-        ADC A,0X00
+        ADC A,0x00
         LD H,A
         INC HL
         LD A,(HL)
@@ -11936,442 +11943,442 @@ DIHFGR  POP BC
         LD A,B
         RET
 
-AMINOTE dw 0X1AC0,0X1940,0X17D0,0X1680,0X1530,0X1400,0X12E0,0X11D0,0X10D0,0X0FE0,0X0F00,0X0E28;C-0
-	dw 0X0D60,0X0CA0,0X0BE8,0X0B40,0X0A98,0X0A00,0X0970,0X08E8,0X0868,0X07F0,0X0780,0X0714;C-1
-	dw 0X06B0,0X0650,0X05F4,0X05A0,0X054C,0X0500,0X04B8,0X0474,0X0434,0X03F8,0X03C0,0X038A;C-2
-	dw 0X0358,0X0328,0X02FA,0X02D0,0X02A6,0X0280,0X025C,0X023A,0X021A,0X01FC,0X01E0,0X01C5;C-3
-	dw 0X01AC,0X0194,0X017D,0X0168,0X0153,0X0140,0X012E,0X011D,0X010D,0X00FE,0X00F0,0X00E2;C-4
-	dw 0X00D6,0X00CA,0X00BE,0X00B4,0X00AA,0X00A0,0X0097,0X008F,0X0087,0X007F,0X0078,0X0071;C-5
-	dw 0X006B,0X0065,0X005F,0X005A,0X0055,0X0050,0X004B,0X0047,0X0043,0X003F,0X003C,0X0038;C-6
-	dw 0X0035,0X0032,0X002F,0X002D,0X002A,0X0028,0X0025,0X0023,0X0021,0X001F,0X001E,0X001C;C-7
+AMINOTE dw 0x1AC0,0x1940,0x17D0,0x1680,0x1530,0x1400,0x12E0,0x11D0,0x10D0,0x0FE0,0x0F00,0x0E28;C-0
+	dw 0x0D60,0x0CA0,0x0BE8,0x0B40,0x0A98,0x0A00,0x0970,0x08E8,0x0868,0x07F0,0x0780,0x0714;C-1
+	dw 0x06B0,0x0650,0x05F4,0x05A0,0x054C,0x0500,0x04B8,0x0474,0x0434,0x03F8,0x03C0,0x038A;C-2
+	dw 0x0358,0x0328,0x02FA,0x02D0,0x02A6,0x0280,0x025C,0x023A,0x021A,0x01FC,0x01E0,0x01C5;C-3
+	dw 0x01AC,0x0194,0x017D,0x0168,0x0153,0x0140,0x012E,0x011D,0x010D,0x00FE,0x00F0,0x00E2;C-4
+	dw 0x00D6,0x00CA,0x00BE,0x00B4,0x00AA,0x00A0,0x0097,0x008F,0x0087,0x007F,0x0078,0x0071;C-5
+	dw 0x006B,0x0065,0x005F,0x005A,0x0055,0x0050,0x004B,0x0047,0x0043,0x003F,0x003C,0x0038;C-6
+	dw 0x0035,0x0032,0x002F,0x002D,0x002A,0x0028,0x0025,0x0023,0x0021,0x001F,0x001E,0x001C;C-7
 ___END
 
-		DUPL GSRomBaseH+0X2000-$,0XFF
-	        PHASE GSRomBaseH+0X2000
+		DUPL GSRomBaseH+0x2000-$,0xFF
+	        PHASE GSRomBaseH+0x2000
 	
 ;INCLUDE "_GSFRQTB.a80" ;patched
 GSFRQTB	
 ;00
-	dw 0X4854,0X4446,0X4071,0X3CD1,0X3968,0X362F,0X3324,0X3045,0X2D91,0X2B02,0X2897,0X2652
-	dw 0X242A,0X2223,0X2037,0X1E68,0X1CB5,0X1B17,0X1992,0X1822,0X16C8,0X1581,0X144D,0X1329
-	dw 0X1215,0X1111,0X101B,0X0F35,0X0E5A,0X0D8D,0X0CCA,0X0C12,0X0B62,0X0AC0,0X0A26,0X0994
-	dw 0X090A,0X0888,0X080F,0X079A,0X072C,0X06C5,0X0663,0X0607,0X05B1,0X0560,0X0511,0X04C8
-	dw 0X0485,0X0444,0X0406,0X03CD,0X0397,0X0363,0X0333,0X0305,0X02DA,0X02AE,0X0288,0X0265
-	dw 0X0242,0X0222,0X0204,0X01E6,0X01CB,0X01B0,0X0198,0X0182,0X016D,0X0157,0X0144,0X0131
-	dw 0X0121,0X0111,0X0100,0X00F3,0X00E5,0X00D8,0X00CD,0X00BF,0X00B5,0X00AD,0X00A2,0X009A
-	dw 0X0092,0X0087,0X0081,0X0079,0X0071,0X006C,0X0066,0X0061,0X005B,0X0056,0X0051,0X004B
+	dw 0x4854,0x4446,0x4071,0x3CD1,0x3968,0x362F,0x3324,0x3045,0x2D91,0x2B02,0x2897,0x2652
+	dw 0x242A,0x2223,0x2037,0x1E68,0x1CB5,0x1B17,0x1992,0x1822,0x16C8,0x1581,0x144D,0x1329
+	dw 0x1215,0x1111,0x101B,0x0F35,0x0E5A,0x0D8D,0x0CCA,0x0C12,0x0B62,0x0AC0,0x0A26,0x0994
+	dw 0x090A,0x0888,0x080F,0x079A,0x072C,0x06C5,0x0663,0x0607,0x05B1,0x0560,0x0511,0x04C8
+	dw 0x0485,0x0444,0x0406,0x03CD,0x0397,0x0363,0x0333,0x0305,0x02DA,0x02AE,0x0288,0x0265
+	dw 0x0242,0x0222,0x0204,0x01E6,0x01CB,0x01B0,0x0198,0x0182,0x016D,0x0157,0x0144,0x0131
+	dw 0x0121,0x0111,0x0100,0x00F3,0x00E5,0x00D8,0x00CD,0x00BF,0x00B5,0x00AD,0x00A2,0x009A
+	dw 0x0092,0x0087,0x0081,0x0079,0x0071,0x006C,0x0066,0x0061,0x005B,0x0056,0x0051,0x004B
 ;01
-	dw 0X47D0,0X43C7,0X3FFA,0X3C62,0X38FE,0X35CB,0X32C6,0X2FEE,0X2D3D,0X2AB4,0X284E,0X260B
-	dw 0X23E6,0X21E5,0X1FFB,0X1E32,0X1C7F,0X1AE7,0X1964,0X17F7,0X169D,0X1558,0X1427,0X1305
-	dw 0X11F4,0X10F1,0X0FFD,0X0F18,0X0E3F,0X0D72,0X0CB2,0X0BFA,0X0B4F,0X0AAD,0X0A13,0X0981
-	dw 0X08FA,0X0878,0X07FE,0X078D,0X0721,0X06BA,0X0659,0X05FD,0X05A6,0X0555,0X0509,0X04C0
-	dw 0X047D,0X043C,0X0400,0X03C5,0X038F,0X035B,0X032B,0X02FF,0X02D4,0X02AC,0X0283,0X0260
-	dw 0X023D,0X021F,0X01FF,0X01E4,0X01C8,0X01AD,0X0195,0X017F,0X016A,0X0154,0X0141,0X0131
-	dw 0X011E,0X010E,0X0100,0X00F0,0X00E3,0X00D8,0X00CA,0X00BF,0X00B5,0X00AA,0X00A2,0X0097
-	dw 0X008F,0X0087,0X007F,0X0079,0X0071,0X006C,0X0066,0X005E,0X0059,0X0056,0X0051,0X004B
+	dw 0x47D0,0x43C7,0x3FFA,0x3C62,0x38FE,0x35CB,0x32C6,0x2FEE,0x2D3D,0x2AB4,0x284E,0x260B
+	dw 0x23E6,0x21E5,0x1FFB,0x1E32,0x1C7F,0x1AE7,0x1964,0x17F7,0x169D,0x1558,0x1427,0x1305
+	dw 0x11F4,0x10F1,0x0FFD,0x0F18,0x0E3F,0x0D72,0x0CB2,0x0BFA,0x0B4F,0x0AAD,0x0A13,0x0981
+	dw 0x08FA,0x0878,0x07FE,0x078D,0x0721,0x06BA,0x0659,0x05FD,0x05A6,0x0555,0x0509,0x04C0
+	dw 0x047D,0x043C,0x0400,0x03C5,0x038F,0x035B,0x032B,0x02FF,0x02D4,0x02AC,0x0283,0x0260
+	dw 0x023D,0x021F,0x01FF,0x01E4,0x01C8,0x01AD,0x0195,0x017F,0x016A,0x0154,0x0141,0x0131
+	dw 0x011E,0x010E,0x0100,0x00F0,0x00E3,0x00D8,0x00CA,0x00BF,0x00B5,0x00AA,0x00A2,0x0097
+	dw 0x008F,0x0087,0x007F,0x0079,0x0071,0x006C,0x0066,0x005E,0x0059,0x0056,0x0051,0x004B
 ;02
-	dw 0X474C,0X434B,0X3F83,0X3BF3,0X3895,0X356A,0X326A,0X2F95,0X2CE9,0X2A63,0X2802,0X25C5
-	dw 0X23A6,0X21A4,0X1FC2,0X1DF9,0X1C4C,0X1AB3,0X1933,0X17C9,0X1674,0X1532,0X1401,0X12E2
-	dw 0X11D1,0X10D3,0X0FE0,0X0EFC,0X0E24,0X0D59,0X0C99,0X0BE4,0X0B3A,0X0A98,0X0A00,0X0971
-	dw 0X08EA,0X0868,0X07F1,0X077D,0X0713,0X06AC,0X064E,0X05F2,0X059E,0X054D,0X0501,0X04B8
-	dw 0X0475,0X0434,0X03F8,0X03BF,0X0389,0X0356,0X0325,0X02FA,0X02CF,0X02A6,0X0280,0X025A
-	dw 0X023A,0X021A,0X01FC,0X01DE,0X01C3,0X01AB,0X0192,0X017D,0X0167,0X0152,0X013F,0X012E
-	dw 0X011B,0X010E,0X00FE,0X00F0,0X00E3,0X00D5,0X00CA,0X00BD,0X00B2,0X00AA,0X009F,0X0097
-	dw 0X008F,0X0087,0X007F,0X0076,0X0071,0X006C,0X0064,0X005E,0X0059,0X0053,0X0051,0X004B
+	dw 0x474C,0x434B,0x3F83,0x3BF3,0x3895,0x356A,0x326A,0x2F95,0x2CE9,0x2A63,0x2802,0x25C5
+	dw 0x23A6,0x21A4,0x1FC2,0x1DF9,0x1C4C,0x1AB3,0x1933,0x17C9,0x1674,0x1532,0x1401,0x12E2
+	dw 0x11D1,0x10D3,0x0FE0,0x0EFC,0x0E24,0x0D59,0x0C99,0x0BE4,0x0B3A,0x0A98,0x0A00,0x0971
+	dw 0x08EA,0x0868,0x07F1,0x077D,0x0713,0x06AC,0x064E,0x05F2,0x059E,0x054D,0x0501,0x04B8
+	dw 0x0475,0x0434,0x03F8,0x03BF,0x0389,0x0356,0x0325,0x02FA,0x02CF,0x02A6,0x0280,0x025A
+	dw 0x023A,0x021A,0x01FC,0x01DE,0x01C3,0x01AB,0x0192,0x017D,0x0167,0x0152,0x013F,0x012E
+	dw 0x011B,0x010E,0x00FE,0x00F0,0x00E3,0x00D5,0x00CA,0x00BD,0x00B2,0x00AA,0x009F,0x0097
+	dw 0x008F,0x0087,0x007F,0x0076,0x0071,0x006C,0x0064,0x005E,0x0059,0x0053,0x0051,0x004B
 ;03
-	dw 0X46C7,0X42CE,0X3F0E,0X3B85,0X382E,0X3506,0X320E,0X2F3E,0X2C98,0X2A17,0X27B9,0X257F
-	dw 0X2365,0X2168,0X1F87,0X1DC3,0X1C15,0X1A83,0X1905,0X179E,0X164C,0X150A,0X13DB,0X12BF
-	dw 0X11B1,0X10B3,0X0FC5,0X0EE1,0X0E0C,0X0D41,0X0C84,0X0BCF,0X0B24,0X0A85,0X09ED,0X095E
-	dw 0X08D9,0X085A,0X07E1,0X076F,0X0706,0X06A2,0X0640,0X05E7,0X0593,0X0542,0X04F6,0X04B0
-	dw 0X046C,0X042C,0X03F0,0X03B7,0X0381,0X0351,0X0320,0X02F5,0X02C9,0X02A1,0X027B,0X0258
-	dw 0X0235,0X0217,0X01F9,0X01DB,0X01C0,0X01A8,0X0190,0X017A,0X0164,0X0152,0X013F,0X012C
-	dw 0X011B,0X010B,0X00FB,0X00ED,0X00E0,0X00D2,0X00C8,0X00BD,0X00B2,0X00A7,0X009F,0X0094
-	dw 0X008C,0X0084,0X007F,0X0076,0X0071,0X0069,0X0064,0X005E,0X0059,0X0053,0X004E,0X004B
+	dw 0x46C7,0x42CE,0x3F0E,0x3B85,0x382E,0x3506,0x320E,0x2F3E,0x2C98,0x2A17,0x27B9,0x257F
+	dw 0x2365,0x2168,0x1F87,0x1DC3,0x1C15,0x1A83,0x1905,0x179E,0x164C,0x150A,0x13DB,0x12BF
+	dw 0x11B1,0x10B3,0x0FC5,0x0EE1,0x0E0C,0x0D41,0x0C84,0x0BCF,0x0B24,0x0A85,0x09ED,0x095E
+	dw 0x08D9,0x085A,0x07E1,0x076F,0x0706,0x06A2,0x0640,0x05E7,0x0593,0x0542,0x04F6,0x04B0
+	dw 0x046C,0x042C,0x03F0,0x03B7,0x0381,0x0351,0x0320,0x02F5,0x02C9,0x02A1,0x027B,0x0258
+	dw 0x0235,0x0217,0x01F9,0x01DB,0x01C0,0x01A8,0x0190,0x017A,0x0164,0x0152,0x013F,0x012C
+	dw 0x011B,0x010B,0x00FB,0x00ED,0x00E0,0x00D2,0x00C8,0x00BD,0x00B2,0x00A7,0x009F,0x0094
+	dw 0x008C,0x0084,0x007F,0x0076,0x0071,0x0069,0x0064,0x005E,0x0059,0x0053,0x004E,0x004B
 ;04
-	dw 0X4645,0X4255,0X3E9A,0X3B18,0X37C7,0X34A4,0X31AF,0X2EE5,0X2C44,0X29C9,0X2770,0X2538
-	dw 0X2324,0X212A,0X1F4E,0X1D8B,0X1BE2,0X1A52,0X18D7,0X1772,0X1623,0X14E4,0X13B8,0X129C
-	dw 0X1190,0X1095,0X0FA7,0X0EC6,0X0DF1,0X0D29,0X0C6B,0X0BB9,0X0B11,0X0A72,0X09DA,0X094E
-	dw 0X08C9,0X084A,0X07D3,0X0762,0X06F8,0X0694,0X0635,0X05DC,0X0588,0X0537,0X04EE,0X04A8
-	dw 0X0464,0X0423,0X03E8,0X03B2,0X037C,0X034B,0X031A,0X02EF,0X02C4,0X029B,0X0276,0X0252
-	dw 0X0232,0X0211,0X01F4,0X01D9,0X01BE,0X01A5,0X018D,0X0177,0X0162,0X014F,0X013C,0X0129
-	dw 0X0119,0X0108,0X00FB,0X00EB,0X00E0,0X00D2,0X00C8,0X00BA,0X00AF,0X00A7,0X009C,0X0094
-	dw 0X008C,0X0084,0X007C,0X0076,0X006E,0X0069,0X0064,0X005E,0X0059,0X0053,0X004E,0X004B
+	dw 0x4645,0x4255,0x3E9A,0x3B18,0x37C7,0x34A4,0x31AF,0x2EE5,0x2C44,0x29C9,0x2770,0x2538
+	dw 0x2324,0x212A,0x1F4E,0x1D8B,0x1BE2,0x1A52,0x18D7,0x1772,0x1623,0x14E4,0x13B8,0x129C
+	dw 0x1190,0x1095,0x0FA7,0x0EC6,0x0DF1,0x0D29,0x0C6B,0x0BB9,0x0B11,0x0A72,0x09DA,0x094E
+	dw 0x08C9,0x084A,0x07D3,0x0762,0x06F8,0x0694,0x0635,0x05DC,0x0588,0x0537,0x04EE,0x04A8
+	dw 0x0464,0x0423,0x03E8,0x03B2,0x037C,0x034B,0x031A,0x02EF,0x02C4,0x029B,0x0276,0x0252
+	dw 0x0232,0x0211,0x01F4,0x01D9,0x01BE,0x01A5,0x018D,0x0177,0x0162,0x014F,0x013C,0x0129
+	dw 0x0119,0x0108,0x00FB,0x00EB,0x00E0,0x00D2,0x00C8,0x00BA,0x00AF,0x00A7,0x009C,0x0094
+	dw 0x008C,0x0084,0x007C,0x0076,0x006E,0x0069,0x0064,0x005E,0x0059,0x0053,0x004E,0x004B
 ;05
-	dw 0X45C3,0X41D8,0X3E29,0X3AAA,0X3761,0X3443,0X3156,0X2E8F,0X2BF3,0X297A,0X2727,0X24F5
-	dw 0X22E3,0X20EC,0X1F13,0X1D55,0X1BAF,0X1A21,0X18A9,0X1747,0X15FB,0X14BE,0X1395,0X1279
-	dw 0X1170,0X1077,0X0F89,0X0EAB,0X0DD8,0X0D10,0X0C56,0X0BA3,0X0AFC,0X0A5F,0X09CA,0X093E
-	dw 0X08B9,0X083A,0X07C6,0X0754,0X06EB,0X0689,0X062B,0X05D1,0X057E,0X052F,0X04E3,0X049D
-	dw 0X045C,0X041E,0X03E3,0X03AA,0X0376,0X0343,0X0315,0X02EA,0X02BF,0X0296,0X0273,0X0250
-	dw 0X022D,0X020F,0X01F1,0X01D6,0X01BB,0X01A3,0X018A,0X0175,0X015F,0X014C,0X0139,0X0126
-	dw 0X0116,0X0106,0X00F8,0X00EB,0X00DD,0X00D0,0X00C5,0X00BA,0X00AF,0X00A4,0X009C,0X0094
-	dw 0X008C,0X0084,0X007C,0X0074,0X006E,0X0069,0X0061,0X005B,0X0059,0X0053,0X004E,0X0049
+	dw 0x45C3,0x41D8,0x3E29,0x3AAA,0x3761,0x3443,0x3156,0x2E8F,0x2BF3,0x297A,0x2727,0x24F5
+	dw 0x22E3,0x20EC,0x1F13,0x1D55,0x1BAF,0x1A21,0x18A9,0x1747,0x15FB,0x14BE,0x1395,0x1279
+	dw 0x1170,0x1077,0x0F89,0x0EAB,0x0DD8,0x0D10,0x0C56,0x0BA3,0x0AFC,0x0A5F,0x09CA,0x093E
+	dw 0x08B9,0x083A,0x07C6,0x0754,0x06EB,0x0689,0x062B,0x05D1,0x057E,0x052F,0x04E3,0x049D
+	dw 0x045C,0x041E,0x03E3,0x03AA,0x0376,0x0343,0x0315,0x02EA,0x02BF,0x0296,0x0273,0x0250
+	dw 0x022D,0x020F,0x01F1,0x01D6,0x01BB,0x01A3,0x018A,0x0175,0x015F,0x014C,0x0139,0x0126
+	dw 0x0116,0x0106,0x00F8,0x00EB,0x00DD,0x00D0,0x00C5,0x00BA,0x00AF,0x00A4,0x009C,0x0094
+	dw 0x008C,0x0084,0x007C,0x0074,0x006E,0x0069,0x0061,0x005B,0x0059,0x0053,0x004E,0x0049
 ;06
-	dw 0X4544,0X4161,0X3DB4,0X3A3D,0X36FA,0X33E4,0X30FA,0X2E3B,0X2BA2,0X292E,0X26DE,0X24B1
-	dw 0X22A2,0X20B0,0X1EDA,0X1D1E,0X1B7B,0X19F1,0X187B,0X171C,0X15D2,0X1498,0X136F,0X1258
-	dw 0X114F,0X1057,0X0F6E,0X0E90,0X0DBD,0X0CF8,0X0C3D,0X0B8E,0X0AE9,0X0A4C,0X09B7,0X092B
-	dw 0X08A9,0X082C,0X07B5,0X0747,0X06E0,0X067C,0X0620,0X05C7,0X0573,0X0524,0X04DB,0X0495
-	dw 0X0454,0X0416,0X03DA,0X03A4,0X036E,0X033E,0X0310,0X02E4,0X02B9,0X0293,0X026D,0X024A
-	dw 0X022A,0X0209,0X01EE,0X01D1,0X01B8,0X01A0,0X0188,0X0172,0X015C,0X0149,0X0136,0X0126
-	dw 0X0113,0X0106,0X00F6,0X00E8,0X00DB,0X00D0,0X00C2,0X00B7,0X00AF,0X00A4,0X009C,0X0092
-	dw 0X0089,0X0081,0X007C,0X0074,0X006E,0X0066,0X0061,0X005B,0X0056,0X0051,0X004E,0X0049
+	dw 0x4544,0x4161,0x3DB4,0x3A3D,0x36FA,0x33E4,0x30FA,0x2E3B,0x2BA2,0x292E,0x26DE,0x24B1
+	dw 0x22A2,0x20B0,0x1EDA,0x1D1E,0x1B7B,0x19F1,0x187B,0x171C,0x15D2,0x1498,0x136F,0x1258
+	dw 0x114F,0x1057,0x0F6E,0x0E90,0x0DBD,0x0CF8,0x0C3D,0x0B8E,0x0AE9,0x0A4C,0x09B7,0x092B
+	dw 0x08A9,0x082C,0x07B5,0x0747,0x06E0,0x067C,0x0620,0x05C7,0x0573,0x0524,0x04DB,0x0495
+	dw 0x0454,0x0416,0x03DA,0x03A4,0x036E,0x033E,0x0310,0x02E4,0x02B9,0x0293,0x026D,0x024A
+	dw 0x022A,0x0209,0x01EE,0x01D1,0x01B8,0x01A0,0x0188,0x0172,0x015C,0x0149,0x0136,0x0126
+	dw 0x0113,0x0106,0x00F6,0x00E8,0x00DB,0x00D0,0x00C2,0x00B7,0x00AF,0x00A4,0x009C,0x0092
+	dw 0x0089,0x0081,0x007C,0x0074,0x006E,0x0066,0x0061,0x005B,0x0056,0x0051,0x004E,0x0049
 ;07
-	dw 0X44C3,0X40E8,0X3D43,0X39D4,0X3693,0X3383,0X30A1,0X2DE4,0X2B51,0X28E3,0X2698,0X246E
-	dw 0X2261,0X2075,0X1EA1,0X1CE8,0X1B4B,0X19C3,0X1850,0X16F3,0X15A9,0X1472,0X134C,0X1235
-	dw 0X1132,0X1039,0X0F50,0X0E75,0X0DA5,0X0CE0,0X0C28,0X0B78,0X0AD3,0X0A39,0X09A4,0X091A
-	dw 0X0899,0X081C,0X07A8,0X0739,0X06D2,0X0671,0X0612,0X05BC,0X056B,0X051C,0X04D3,0X048D
-	dw 0X044C,0X040E,0X03D5,0X039C,0X0369,0X0338,0X030A,0X02DF,0X02B4,0X028E,0X0268,0X0248
-	dw 0X0224,0X0207,0X01E9,0X01CE,0X01B3,0X019B,0X0185,0X016F,0X015A,0X0147,0X0134,0X0124
-	dw 0X0113,0X0103,0X00F6,0X00E8,0X00DB,0X00CD,0X00C2,0X00B7,0X00AD,0X00A2,0X009A,0X0092
-	dw 0X0089,0X0081,0X0079,0X0074,0X006C,0X0066,0X0061,0X005B,0X0056,0X0051,0X004E,0X0049
+	dw 0x44C3,0x40E8,0x3D43,0x39D4,0x3693,0x3383,0x30A1,0x2DE4,0x2B51,0x28E3,0x2698,0x246E
+	dw 0x2261,0x2075,0x1EA1,0x1CE8,0x1B4B,0x19C3,0x1850,0x16F3,0x15A9,0x1472,0x134C,0x1235
+	dw 0x1132,0x1039,0x0F50,0x0E75,0x0DA5,0x0CE0,0x0C28,0x0B78,0x0AD3,0x0A39,0x09A4,0x091A
+	dw 0x0899,0x081C,0x07A8,0x0739,0x06D2,0x0671,0x0612,0x05BC,0x056B,0x051C,0x04D3,0x048D
+	dw 0x044C,0x040E,0x03D5,0x039C,0x0369,0x0338,0x030A,0x02DF,0x02B4,0x028E,0x0268,0x0248
+	dw 0x0224,0x0207,0x01E9,0x01CE,0x01B3,0x019B,0x0185,0x016F,0x015A,0x0147,0x0134,0x0124
+	dw 0x0113,0x0103,0x00F6,0x00E8,0x00DB,0x00CD,0x00C2,0x00B7,0x00AD,0x00A2,0x009A,0x0092
+	dw 0x0089,0x0081,0x0079,0x0074,0x006C,0x0066,0x0061,0x005B,0x0056,0x0051,0x004E,0x0049
 ;08
-	dw 0X4CA1,0X4854,0X4446,0X4071,0X3CD1,0X3968,0X362F,0X3324,0X3045,0X2D91,0X2B02,0X2897
-	dw 0X2652,0X242A,0X2223,0X2037,0X1E68,0X1CB5,0X1B17,0X1992,0X1822,0X16C8,0X1581,0X144D
-	dw 0X1329,0X1215,0X1111,0X101B,0X0F35,0X0E5A,0X0D8D,0X0CCA,0X0C12,0X0B62,0X0AC0,0X0A26
-	dw 0X0994,0X090A,0X0888,0X080F,0X079A,0X072C,0X06C5,0X0663,0X0607,0X05B1,0X0560,0X0511
-	dw 0X04C8,0X0485,0X0444,0X0406,0X03CD,0X0397,0X0363,0X0333,0X0305,0X02DA,0X02AE,0X0288
-	dw 0X0265,0X0242,0X0222,0X0204,0X01E6,0X01CB,0X01B0,0X0198,0X0182,0X016D,0X0157,0X0144
-	dw 0X0131,0X0121,0X0111,0X0100,0X00F3,0X00E5,0X00D8,0X00CD,0X00BF,0X00B5,0X00AD,0X00A2
-	dw 0X009A,0X0092,0X0087,0X0081,0X0079,0X0071,0X006C,0X0066,0X0061,0X005B,0X0056,0X0051
+	dw 0x4CA1,0x4854,0x4446,0x4071,0x3CD1,0x3968,0x362F,0x3324,0x3045,0x2D91,0x2B02,0x2897
+	dw 0x2652,0x242A,0x2223,0x2037,0x1E68,0x1CB5,0x1B17,0x1992,0x1822,0x16C8,0x1581,0x144D
+	dw 0x1329,0x1215,0x1111,0x101B,0x0F35,0x0E5A,0x0D8D,0x0CCA,0x0C12,0x0B62,0x0AC0,0x0A26
+	dw 0x0994,0x090A,0x0888,0x080F,0x079A,0x072C,0x06C5,0x0663,0x0607,0x05B1,0x0560,0x0511
+	dw 0x04C8,0x0485,0x0444,0x0406,0x03CD,0x0397,0x0363,0x0333,0x0305,0x02DA,0x02AE,0x0288
+	dw 0x0265,0x0242,0x0222,0x0204,0x01E6,0x01CB,0x01B0,0x0198,0x0182,0x016D,0x0157,0x0144
+	dw 0x0131,0x0121,0x0111,0x0100,0x00F3,0x00E5,0x00D8,0x00CD,0x00BF,0x00B5,0x00AD,0x00A2
+	dw 0x009A,0x0092,0x0087,0x0081,0x0079,0x0071,0x006C,0x0066,0x0061,0x005B,0x0056,0x0051
 ;09
-	dw 0X4C14,0X47D0,0X43C7,0X3FFA,0X3C62,0X38FE,0X35CB,0X32C6,0X2FEE,0X2D3D,0X2AB4,0X284E
-	dw 0X260B,0X23E6,0X21E5,0X1FFB,0X1E32,0X1C7F,0X1AE7,0X1964,0X17F7,0X169D,0X1558,0X1427
-	dw 0X1305,0X11F4,0X10F1,0X0FFD,0X0F18,0X0E3F,0X0D72,0X0CB2,0X0BFA,0X0B4F,0X0AAD,0X0A13
-	dw 0X0981,0X08FA,0X0878,0X07FE,0X078D,0X0721,0X06BA,0X0659,0X05FD,0X05A6,0X0555,0X0509
-	dw 0X04C0,0X047D,0X043C,0X0400,0X03C5,0X038F,0X035B,0X032B,0X02FF,0X02D4,0X02AC,0X0283
-	dw 0X0260,0X023D,0X021F,0X01FF,0X01E4,0X01C8,0X01AD,0X0195,0X017F,0X016A,0X0154,0X0141
-	dw 0X0131,0X011E,0X010E,0X0100,0X00F0,0X00E3,0X00D8,0X00CA,0X00BF,0X00B5,0X00AA,0X00A2
-	dw 0X0097,0X008F,0X0087,0X007F,0X0079,0X0071,0X006C,0X0066,0X005E,0X0059,0X0056,0X0051
+	dw 0x4C14,0x47D0,0x43C7,0x3FFA,0x3C62,0x38FE,0x35CB,0x32C6,0x2FEE,0x2D3D,0x2AB4,0x284E
+	dw 0x260B,0x23E6,0x21E5,0x1FFB,0x1E32,0x1C7F,0x1AE7,0x1964,0x17F7,0x169D,0x1558,0x1427
+	dw 0x1305,0x11F4,0x10F1,0x0FFD,0x0F18,0x0E3F,0x0D72,0x0CB2,0x0BFA,0x0B4F,0x0AAD,0x0A13
+	dw 0x0981,0x08FA,0x0878,0x07FE,0x078D,0x0721,0x06BA,0x0659,0x05FD,0x05A6,0x0555,0x0509
+	dw 0x04C0,0x047D,0x043C,0x0400,0x03C5,0x038F,0x035B,0x032B,0x02FF,0x02D4,0x02AC,0x0283
+	dw 0x0260,0x023D,0x021F,0x01FF,0x01E4,0x01C8,0x01AD,0x0195,0x017F,0x016A,0x0154,0x0141
+	dw 0x0131,0x011E,0x010E,0x0100,0x00F0,0x00E3,0x00D8,0x00CA,0x00BF,0x00B5,0x00AA,0x00A2
+	dw 0x0097,0x008F,0x0087,0x007F,0x0079,0x0071,0x006C,0x0066,0x005E,0x0059,0x0056,0x0051
 ;0A
-	dw 0X4B88,0X474C,0X434B,0X3F83,0X3BF3,0X3895,0X356A,0X326A,0X2F95,0X2CE9,0X2A63,0X2802
-	dw 0X25C5,0X23A6,0X21A4,0X1FC2,0X1DF9,0X1C4C,0X1AB3,0X1933,0X17C9,0X1674,0X1532,0X1401
-	dw 0X12E2,0X11D1,0X10D3,0X0FE0,0X0EFC,0X0E24,0X0D59,0X0C99,0X0BE4,0X0B3A,0X0A98,0X0A00
-	dw 0X0971,0X08EA,0X0868,0X07F1,0X077D,0X0713,0X06AC,0X064E,0X05F2,0X059E,0X054D,0X0501
-	dw 0X04B8,0X0475,0X0434,0X03F8,0X03BF,0X0389,0X0356,0X0325,0X02FA,0X02CF,0X02A6,0X0280
-	dw 0X025A,0X023A,0X021A,0X01FC,0X01DE,0X01C3,0X01AB,0X0192,0X017D,0X0167,0X0152,0X013F
-	dw 0X012E,0X011B,0X010E,0X00FE,0X00F0,0X00E3,0X00D5,0X00CA,0X00BD,0X00B2,0X00AA,0X009F
-	dw 0X0097,0X008F,0X0087,0X007F,0X0076,0X0071,0X006C,0X0064,0X005E,0X0059,0X0053,0X0051
+	dw 0x4B88,0x474C,0x434B,0x3F83,0x3BF3,0x3895,0x356A,0x326A,0x2F95,0x2CE9,0x2A63,0x2802
+	dw 0x25C5,0x23A6,0x21A4,0x1FC2,0x1DF9,0x1C4C,0x1AB3,0x1933,0x17C9,0x1674,0x1532,0x1401
+	dw 0x12E2,0x11D1,0x10D3,0x0FE0,0x0EFC,0x0E24,0x0D59,0x0C99,0x0BE4,0x0B3A,0x0A98,0x0A00
+	dw 0x0971,0x08EA,0x0868,0x07F1,0x077D,0x0713,0x06AC,0x064E,0x05F2,0x059E,0x054D,0x0501
+	dw 0x04B8,0x0475,0x0434,0x03F8,0x03BF,0x0389,0x0356,0x0325,0x02FA,0x02CF,0x02A6,0x0280
+	dw 0x025A,0x023A,0x021A,0x01FC,0x01DE,0x01C3,0x01AB,0x0192,0x017D,0x0167,0x0152,0x013F
+	dw 0x012E,0x011B,0x010E,0x00FE,0x00F0,0x00E3,0x00D5,0x00CA,0x00BD,0x00B2,0x00AA,0x009F
+	dw 0x0097,0x008F,0x0087,0x007F,0x0076,0x0071,0x006C,0x0064,0x005E,0x0059,0x0053,0x0051
 ;0B
-	dw 0X4AFE,0X46C7,0X42CE,0X3F0E,0X3B85,0X382E,0X3506,0X320E,0X2F3E,0X2C98,0X2A17,0X27B9
-	dw 0X257F,0X2365,0X2168,0X1F87,0X1DC3,0X1C15,0X1A83,0X1905,0X179E,0X164C,0X150A,0X13DB
-	dw 0X12BF,0X11B1,0X10B3,0X0FC5,0X0EE1,0X0E0C,0X0D41,0X0C84,0X0BCF,0X0B24,0X0A85,0X09ED
-	dw 0X095E,0X08D9,0X085A,0X07E1,0X076F,0X0706,0X06A2,0X0640,0X05E7,0X0593,0X0542,0X04F6
-	dw 0X04B0,0X046C,0X042C,0X03F0,0X03B7,0X0381,0X0351,0X0320,0X02F5,0X02C9,0X02A1,0X027B
-	dw 0X0258,0X0235,0X0217,0X01F9,0X01DB,0X01C0,0X01A8,0X0190,0X017A,0X0164,0X0152,0X013F
-	dw 0X012C,0X011B,0X010B,0X00FB,0X00ED,0X00E0,0X00D2,0X00C8,0X00BD,0X00B2,0X00A7,0X009F
-	dw 0X0094,0X008C,0X0084,0X007F,0X0076,0X0071,0X0069,0X0064,0X005E,0X0059,0X0053,0X004E
+	dw 0x4AFE,0x46C7,0x42CE,0x3F0E,0x3B85,0x382E,0x3506,0x320E,0x2F3E,0x2C98,0x2A17,0x27B9
+	dw 0x257F,0x2365,0x2168,0x1F87,0x1DC3,0x1C15,0x1A83,0x1905,0x179E,0x164C,0x150A,0x13DB
+	dw 0x12BF,0x11B1,0x10B3,0x0FC5,0x0EE1,0x0E0C,0x0D41,0x0C84,0x0BCF,0x0B24,0x0A85,0x09ED
+	dw 0x095E,0x08D9,0x085A,0x07E1,0x076F,0x0706,0x06A2,0x0640,0x05E7,0x0593,0x0542,0x04F6
+	dw 0x04B0,0x046C,0x042C,0x03F0,0x03B7,0x0381,0x0351,0x0320,0x02F5,0x02C9,0x02A1,0x027B
+	dw 0x0258,0x0235,0x0217,0x01F9,0x01DB,0x01C0,0x01A8,0x0190,0x017A,0x0164,0x0152,0x013F
+	dw 0x012C,0x011B,0x010B,0x00FB,0x00ED,0x00E0,0x00D2,0x00C8,0x00BD,0x00B2,0x00A7,0x009F
+	dw 0x0094,0x008C,0x0084,0x007F,0x0076,0x0071,0x0069,0x0064,0x005E,0x0059,0x0053,0x004E
 ;0C
-	dw 0X4A74,0X4645,0X4255,0X3E9A,0X3B18,0X37C7,0X34A4,0X31AF,0X2EE5,0X2C44,0X29C9,0X2770
-	dw 0X2538,0X2324,0X212A,0X1F4E,0X1D8B,0X1BE2,0X1A52,0X18D7,0X1772,0X1623,0X14E4,0X13B8
-	dw 0X129C,0X1190,0X1095,0X0FA7,0X0EC6,0X0DF1,0X0D29,0X0C6B,0X0BB9,0X0B11,0X0A72,0X09DA
-	dw 0X094E,0X08C9,0X084A,0X07D3,0X0762,0X06F8,0X0694,0X0635,0X05DC,0X0588,0X0537,0X04EE
-	dw 0X04A8,0X0464,0X0423,0X03E8,0X03B2,0X037C,0X034B,0X031A,0X02EF,0X02C4,0X029B,0X0276
-	dw 0X0252,0X0232,0X0211,0X01F4,0X01D9,0X01BE,0X01A5,0X018D,0X0177,0X0162,0X014F,0X013C
-	dw 0X0129,0X0119,0X0108,0X00FB,0X00EB,0X00E0,0X00D2,0X00C8,0X00BA,0X00AF,0X00A7,0X009C
-	dw 0X0094,0X008C,0X0084,0X007C,0X0076,0X006E,0X0069,0X0064,0X005E,0X0059,0X0053,0X004E
+	dw 0x4A74,0x4645,0x4255,0x3E9A,0x3B18,0x37C7,0x34A4,0x31AF,0x2EE5,0x2C44,0x29C9,0x2770
+	dw 0x2538,0x2324,0x212A,0x1F4E,0x1D8B,0x1BE2,0x1A52,0x18D7,0x1772,0x1623,0x14E4,0x13B8
+	dw 0x129C,0x1190,0x1095,0x0FA7,0x0EC6,0x0DF1,0x0D29,0x0C6B,0x0BB9,0x0B11,0x0A72,0x09DA
+	dw 0x094E,0x08C9,0x084A,0x07D3,0x0762,0x06F8,0x0694,0x0635,0x05DC,0x0588,0x0537,0x04EE
+	dw 0x04A8,0x0464,0x0423,0x03E8,0x03B2,0x037C,0x034B,0x031A,0x02EF,0x02C4,0x029B,0x0276
+	dw 0x0252,0x0232,0x0211,0x01F4,0x01D9,0x01BE,0x01A5,0x018D,0x0177,0x0162,0x014F,0x013C
+	dw 0x0129,0x0119,0x0108,0x00FB,0x00EB,0x00E0,0x00D2,0x00C8,0x00BA,0x00AF,0x00A7,0x009C
+	dw 0x0094,0x008C,0x0084,0x007C,0x0076,0x006E,0x0069,0x0064,0x005E,0x0059,0x0053,0x004E
 ;0D
-	dw 0X49EA,0X45C3,0X41D8,0X3E29,0X3AAA,0X3761,0X3443,0X3156,0X2E8F,0X2BF3,0X297A,0X2727
-	dw 0X24F5,0X22E3,0X20EC,0X1F13,0X1D55,0X1BAF,0X1A21,0X18A9,0X1747,0X15FB,0X14BE,0X1395
-	dw 0X1279,0X1170,0X1077,0X0F89,0X0EAB,0X0DD8,0X0D10,0X0C56,0X0BA3,0X0AFC,0X0A5F,0X09CA
-	dw 0X093E,0X08B9,0X083A,0X07C6,0X0754,0X06EB,0X0689,0X062B,0X05D1,0X057E,0X052F,0X04E3
-	dw 0X049D,0X045C,0X041E,0X03E3,0X03AA,0X0376,0X0343,0X0315,0X02EA,0X02BF,0X0296,0X0273
-	dw 0X0250,0X022D,0X020F,0X01F1,0X01D6,0X01BB,0X01A3,0X018A,0X0175,0X015F,0X014C,0X0139
-	dw 0X0126,0X0116,0X0106,0X00F8,0X00EB,0X00DD,0X00D0,0X00C5,0X00BA,0X00AF,0X00A4,0X009C
-	dw 0X0094,0X008C,0X0084,0X007C,0X0074,0X006E,0X0069,0X0061,0X005B,0X0059,0X0053,0X004E
+	dw 0x49EA,0x45C3,0x41D8,0x3E29,0x3AAA,0x3761,0x3443,0x3156,0x2E8F,0x2BF3,0x297A,0x2727
+	dw 0x24F5,0x22E3,0x20EC,0x1F13,0x1D55,0x1BAF,0x1A21,0x18A9,0x1747,0x15FB,0x14BE,0x1395
+	dw 0x1279,0x1170,0x1077,0x0F89,0x0EAB,0x0DD8,0x0D10,0x0C56,0x0BA3,0x0AFC,0x0A5F,0x09CA
+	dw 0x093E,0x08B9,0x083A,0x07C6,0x0754,0x06EB,0x0689,0x062B,0x05D1,0x057E,0x052F,0x04E3
+	dw 0x049D,0x045C,0x041E,0x03E3,0x03AA,0x0376,0x0343,0x0315,0x02EA,0x02BF,0x0296,0x0273
+	dw 0x0250,0x022D,0x020F,0x01F1,0x01D6,0x01BB,0x01A3,0x018A,0x0175,0x015F,0x014C,0x0139
+	dw 0x0126,0x0116,0x0106,0x00F8,0x00EB,0x00DD,0x00D0,0x00C5,0x00BA,0x00AF,0x00A4,0x009C
+	dw 0x0094,0x008C,0x0084,0x007C,0x0074,0x006E,0x0069,0x0061,0x005B,0x0059,0x0053,0x004E
 ;0E
-	dw 0X4963,0X4544,0X4161,0X3DB4,0X3A3D,0X36FA,0X33E4,0X30FA,0X2E3B,0X2BA2,0X292E,0X26DE
-	dw 0X24B1,0X22A2,0X20B0,0X1EDA,0X1D1E,0X1B7B,0X19F1,0X187B,0X171C,0X15D2,0X1498,0X136F
-	dw 0X1258,0X114F,0X1057,0X0F6E,0X0E90,0X0DBD,0X0CF8,0X0C3D,0X0B8E,0X0AE9,0X0A4C,0X09B7
-	dw 0X092B,0X08A9,0X082C,0X07B5,0X0747,0X06E0,0X067C,0X0620,0X05C7,0X0573,0X0524,0X04DB
-	dw 0X0495,0X0454,0X0416,0X03DA,0X03A4,0X036E,0X033E,0X0310,0X02E4,0X02B9,0X0293,0X026D
-	dw 0X024A,0X022A,0X0209,0X01EE,0X01D1,0X01B8,0X01A0,0X0188,0X0172,0X015C,0X0149,0X0136
-	dw 0X0126,0X0113,0X0106,0X00F6,0X00E8,0X00DB,0X00D0,0X00C2,0X00B7,0X00AF,0X00A4,0X009C
-	dw 0X0092,0X0089,0X0081,0X007C,0X0074,0X006E,0X0066,0X0061,0X005B,0X0056,0X0051,0X004E
+	dw 0x4963,0x4544,0x4161,0x3DB4,0x3A3D,0x36FA,0x33E4,0x30FA,0x2E3B,0x2BA2,0x292E,0x26DE
+	dw 0x24B1,0x22A2,0x20B0,0x1EDA,0x1D1E,0x1B7B,0x19F1,0x187B,0x171C,0x15D2,0x1498,0x136F
+	dw 0x1258,0x114F,0x1057,0x0F6E,0x0E90,0x0DBD,0x0CF8,0x0C3D,0x0B8E,0x0AE9,0x0A4C,0x09B7
+	dw 0x092B,0x08A9,0x082C,0x07B5,0x0747,0x06E0,0x067C,0x0620,0x05C7,0x0573,0x0524,0x04DB
+	dw 0x0495,0x0454,0x0416,0x03DA,0x03A4,0x036E,0x033E,0x0310,0x02E4,0x02B9,0x0293,0x026D
+	dw 0x024A,0x022A,0x0209,0x01EE,0x01D1,0x01B8,0x01A0,0x0188,0x0172,0x015C,0x0149,0x0136
+	dw 0x0126,0x0113,0x0106,0x00F6,0x00E8,0x00DB,0x00D0,0x00C2,0x00B7,0x00AF,0x00A4,0x009C
+	dw 0x0092,0x0089,0x0081,0x007C,0x0074,0x006E,0x0066,0x0061,0x005B,0x0056,0x0051,0x004E
 ;0F
-	dw 0X48DC,0X44C3,0X40E8,0X3D43,0X39D4,0X3693,0X3383,0X30A1,0X2DE4,0X2B51,0X28E3,0X2698
-	dw 0X246E,0X2261,0X2075,0X1EA1,0X1CE8,0X1B4B,0X19C3,0X1850,0X16F3,0X15A9,0X1472,0X134C
-	dw 0X1235,0X1132,0X1039,0X0F50,0X0E75,0X0DA5,0X0CE0,0X0C28,0X0B78,0X0AD3,0X0A39,0X09A4
-	dw 0X091A,0X0899,0X081C,0X07A8,0X0739,0X06D2,0X0671,0X0612,0X05BC,0X056B,0X051C,0X04D3
-	dw 0X048D,0X044C,0X040E,0X03D5,0X039C,0X0369,0X0338,0X030A,0X02DF,0X02B4,0X028E,0X0268
-	dw 0X0248,0X0224,0X0207,0X01E9,0X01CE,0X01B3,0X019B,0X0185,0X016F,0X015A,0X0147,0X0134
-	dw 0X0124,0X0113,0X0103,0X00F6,0X00E8,0X00DB,0X00CD,0X00C2,0X00B7,0X00AD,0X00A2,0X009A
-	dw 0X0092,0X0089,0X0081,0X0079,0X0074,0X006C,0X0066,0X0061,0X005B,0X0056,0X0051,0X004E
+	dw 0x48DC,0x44C3,0x40E8,0x3D43,0x39D4,0x3693,0x3383,0x30A1,0x2DE4,0x2B51,0x28E3,0x2698
+	dw 0x246E,0x2261,0x2075,0x1EA1,0x1CE8,0x1B4B,0x19C3,0x1850,0x16F3,0x15A9,0x1472,0x134C
+	dw 0x1235,0x1132,0x1039,0x0F50,0x0E75,0x0DA5,0x0CE0,0x0C28,0x0B78,0x0AD3,0x0A39,0x09A4
+	dw 0x091A,0x0899,0x081C,0x07A8,0x0739,0x06D2,0x0671,0x0612,0x05BC,0x056B,0x051C,0x04D3
+	dw 0x048D,0x044C,0x040E,0x03D5,0x039C,0x0369,0x0338,0x030A,0x02DF,0x02B4,0x028E,0x0268
+	dw 0x0248,0x0224,0x0207,0x01E9,0x01CE,0x01B3,0x019B,0x0185,0x016F,0x015A,0x0147,0x0134
+	dw 0x0124,0x0113,0x0103,0x00F6,0x00E8,0x00DB,0x00CD,0x00C2,0x00B7,0x00AD,0x00A2,0x009A
+	dw 0x0092,0x0089,0x0081,0x0079,0x0074,0x006C,0x0066,0x0061,0x005B,0x0056,0x0051,0x004E
 	
 ;INCLUDE "_AMFRQTB.a80"
-AMFRQTB ;EQU 0XEC00
+AMFRQTB ;EQU 0xEC00
 ;00
-	dw 0X1AC0,0X1940,0X17D5,0X167E,0X153B,0X140A,0X12EA,0X11DA,0X10DA,0X0FE8,0X0F03,0X0E2C
-	dw 0X0D60,0X0CA0,0X0BEA,0X0B3F,0X0A9E,0X0A05,0X0975,0X08ED,0X086D,0X07F4,0X0782,0X0716
-	dw 0X06B0,0X0650,0X05F5,0X05A0,0X054F,0X0503,0X04BB,0X0477,0X0436,0X03FA,0X03C1,0X038B
-	dw 0X0358,0X0328,0X02FB,0X02D0,0X02A7,0X0281,0X025D,0X023B,0X021B,0X01FD,0X01E0,0X01C5
-	dw 0X01AC,0X0194,0X017D,0X0168,0X0154,0X0141,0X012F,0X011E,0X010E,0X00FE,0X00F0,0X00E3
-	dw 0X00D6,0X00CA,0X00BF,0X00B4,0X00AA,0X00A0,0X0097,0X008F,0X0087,0X007F,0X0078,0X0071
-	dw 0X006B,0X0065,0X005F,0X005A,0X0055,0X0050,0X004C,0X0047,0X0043,0X0040,0X003C,0X0039
-	dw 0X0036,0X0032,0X0030,0X002D,0X002A,0X0028,0X0026,0X0024,0X0022,0X0020,0X001E,0X001C
+	dw 0x1AC0,0x1940,0x17D5,0x167E,0x153B,0x140A,0x12EA,0x11DA,0x10DA,0x0FE8,0x0F03,0x0E2C
+	dw 0x0D60,0x0CA0,0x0BEA,0x0B3F,0x0A9E,0x0A05,0x0975,0x08ED,0x086D,0x07F4,0x0782,0x0716
+	dw 0x06B0,0x0650,0x05F5,0x05A0,0x054F,0x0503,0x04BB,0x0477,0x0436,0x03FA,0x03C1,0x038B
+	dw 0x0358,0x0328,0x02FB,0x02D0,0x02A7,0x0281,0x025D,0x023B,0x021B,0x01FD,0x01E0,0x01C5
+	dw 0x01AC,0x0194,0x017D,0x0168,0x0154,0x0141,0x012F,0x011E,0x010E,0x00FE,0x00F0,0x00E3
+	dw 0x00D6,0x00CA,0x00BF,0x00B4,0x00AA,0x00A0,0x0097,0x008F,0x0087,0x007F,0x0078,0x0071
+	dw 0x006B,0x0065,0x005F,0x005A,0x0055,0x0050,0x004C,0x0047,0x0043,0x0040,0x003C,0x0039
+	dw 0x0036,0x0032,0x0030,0x002D,0x002A,0x0028,0x0026,0x0024,0x0022,0x0020,0x001E,0x001C
 ;01
-	dw 0X1A8F,0X1911,0X17A9,0X1655,0X1514,0X13E5,0X12C7,0X11BA,0X10BB,0X0FCB,0X0EE8,0X0E12
-	dw 0X0D47,0X0C89,0X0BD4,0X0B2B,0X0A8A,0X09F3,0X0964,0X08DD,0X085D,0X07E5,0X0774,0X0709
-	dw 0X06A4,0X0644,0X05EA,0X0595,0X0545,0X04F9,0X04B2,0X046E,0X042F,0X03F3,0X03BA,0X0384
-	dw 0X0352,0X0322,0X02F5,0X02CB,0X02A3,0X027D,0X0259,0X0237,0X0217,0X01F9,0X01DD,0X01C2
-	dw 0X01A9,0X0191,0X017B,0X0165,0X0151,0X013E,0X012C,0X011C,0X010C,0X00FD,0X00EE,0X00E1
-	dw 0X00D4,0X00C9,0X00BD,0X00B3,0X00A9,0X009F,0X0096,0X008E,0X0086,0X007E,0X0077,0X0071
-	dw 0X006A,0X0064,0X005F,0X0059,0X0054,0X0050,0X004B,0X0047,0X0043,0X003F,0X003C,0X0038
-	dw 0X0035,0X0032,0X002F,0X002D,0X002A,0X0028,0X0026,0X0023,0X0021,0X0020,0X001E,0X001C
+	dw 0x1A8F,0x1911,0x17A9,0x1655,0x1514,0x13E5,0x12C7,0x11BA,0x10BB,0x0FCB,0x0EE8,0x0E12
+	dw 0x0D47,0x0C89,0x0BD4,0x0B2B,0x0A8A,0x09F3,0x0964,0x08DD,0x085D,0x07E5,0x0774,0x0709
+	dw 0x06A4,0x0644,0x05EA,0x0595,0x0545,0x04F9,0x04B2,0x046E,0x042F,0x03F3,0x03BA,0x0384
+	dw 0x0352,0x0322,0x02F5,0x02CB,0x02A3,0x027D,0x0259,0x0237,0x0217,0x01F9,0x01DD,0x01C2
+	dw 0x01A9,0x0191,0x017B,0x0165,0x0151,0x013E,0x012C,0x011C,0x010C,0x00FD,0x00EE,0x00E1
+	dw 0x00D4,0x00C9,0x00BD,0x00B3,0x00A9,0x009F,0x0096,0x008E,0x0086,0x007E,0x0077,0x0071
+	dw 0x006A,0x0064,0x005F,0x0059,0x0054,0x0050,0x004B,0x0047,0x0043,0x003F,0x003C,0x0038
+	dw 0x0035,0x0032,0x002F,0x002D,0x002A,0x0028,0x0026,0x0023,0x0021,0x0020,0x001E,0x001C
 ;02
-	dw 0X1A5E,0X18E3,0X177D,0X162C,0X14ED,0X13C1,0X12A5,0X1199,0X109C,0X0FAD,0X0ECC,0X0DF8
-	dw 0X0D2F,0X0C71,0X0BBF,0X0B16,0X0A77,0X09E0,0X0952,0X08CC,0X084E,0X07D7,0X0766,0X06FC
-	dw 0X0697,0X0639,0X05DF,0X058B,0X053B,0X04F0,0X04A9,0X0466,0X0427,0X03EB,0X03B3,0X037E
-	dw 0X034C,0X031C,0X02F0,0X02C5,0X029E,0X0278,0X0255,0X0233,0X0214,0X01F6,0X01DA,0X01BF
-	dw 0X01A6,0X018E,0X0178,0X0163,0X014F,0X013C,0X012A,0X011A,0X010A,0X00FB,0X00ED,0X00DF
-	dw 0X00D3,0X00C7,0X00BC,0X00B1,0X00A7,0X009E,0X0095,0X008D,0X0085,0X007D,0X0076,0X0070
-	dw 0X0069,0X0064,0X005E,0X0059,0X0054,0X004F,0X004B,0X0046,0X0042,0X003F,0X003B,0X0038
-	dw 0X0035,0X0032,0X002F,0X002C,0X002A,0X0028,0X0025,0X0023,0X0021,0X001F,0X001E,0X001C
+	dw 0x1A5E,0x18E3,0x177D,0x162C,0x14ED,0x13C1,0x12A5,0x1199,0x109C,0x0FAD,0x0ECC,0x0DF8
+	dw 0x0D2F,0x0C71,0x0BBF,0x0B16,0x0A77,0x09E0,0x0952,0x08CC,0x084E,0x07D7,0x0766,0x06FC
+	dw 0x0697,0x0639,0x05DF,0x058B,0x053B,0x04F0,0x04A9,0x0466,0x0427,0x03EB,0x03B3,0x037E
+	dw 0x034C,0x031C,0x02F0,0x02C5,0x029E,0x0278,0x0255,0x0233,0x0214,0x01F6,0x01DA,0x01BF
+	dw 0x01A6,0x018E,0x0178,0x0163,0x014F,0x013C,0x012A,0x011A,0x010A,0x00FB,0x00ED,0x00DF
+	dw 0x00D3,0x00C7,0x00BC,0x00B1,0x00A7,0x009E,0x0095,0x008D,0x0085,0x007D,0x0076,0x0070
+	dw 0x0069,0x0064,0x005E,0x0059,0x0054,0x004F,0x004B,0x0046,0x0042,0x003F,0x003B,0x0038
+	dw 0x0035,0x0032,0x002F,0x002C,0x002A,0x0028,0x0025,0x0023,0x0021,0x001F,0x001E,0x001C
 ;03
-	dw 0X1A2D,0X18B5,0X1752,0X1603,0X14C7,0X139C,0X1283,0X1179,0X107E,0X0F91,0X0EB1,0X0DDE
-	dw 0X0D17,0X0C5B,0X0BA9,0X0B02,0X0A63,0X09CE,0X0941,0X08BC,0X083F,0X07C8,0X0758,0X06EF
-	dw 0X068B,0X062D,0X05D5,0X0581,0X0532,0X04E7,0X04A1,0X045E,0X041F,0X03E4,0X03AC,0X0377
-	dw 0X0346,0X0317,0X02EA,0X02C0,0X0299,0X0274,0X0250,0X022F,0X0210,0X01F2,0X01D6,0X01BC
-	dw 0X01A3,0X018B,0X0175,0X0160,0X014C,0X013A,0X0128,0X0118,0X0108,0X00F9,0X00EB,0X00DE
-	dw 0X00D1,0X00C6,0X00BB,0X00B0,0X00A6,0X009D,0X0094,0X008C,0X0084,0X007D,0X0076,0X006F
-	dw 0X0069,0X0063,0X005D,0X0058,0X0053,0X004E,0X004A,0X0046,0X0042,0X003E,0X003B,0X0037
-	dw 0X0034,0X0031,0X002F,0X002C,0X002A,0X0027,0X0025,0X0023,0X0021,0X001F,0X001D,0X001C
+	dw 0x1A2D,0x18B5,0x1752,0x1603,0x14C7,0x139C,0x1283,0x1179,0x107E,0x0F91,0x0EB1,0x0DDE
+	dw 0x0D17,0x0C5B,0x0BA9,0x0B02,0x0A63,0x09CE,0x0941,0x08BC,0x083F,0x07C8,0x0758,0x06EF
+	dw 0x068B,0x062D,0x05D5,0x0581,0x0532,0x04E7,0x04A1,0x045E,0x041F,0x03E4,0x03AC,0x0377
+	dw 0x0346,0x0317,0x02EA,0x02C0,0x0299,0x0274,0x0250,0x022F,0x0210,0x01F2,0x01D6,0x01BC
+	dw 0x01A3,0x018B,0x0175,0x0160,0x014C,0x013A,0x0128,0x0118,0x0108,0x00F9,0x00EB,0x00DE
+	dw 0x00D1,0x00C6,0x00BB,0x00B0,0x00A6,0x009D,0x0094,0x008C,0x0084,0x007D,0x0076,0x006F
+	dw 0x0069,0x0063,0x005D,0x0058,0x0053,0x004E,0x004A,0x0046,0x0042,0x003E,0x003B,0x0037
+	dw 0x0034,0x0031,0x002F,0x002C,0x002A,0x0027,0x0025,0x0023,0x0021,0x001F,0x001D,0x001C
 ;04
-	dw 0X19FD,0X1888,0X1727,0X15DB,0X14A1,0X1378,0X1260,0X1158,0X105F,0X0F74,0X0E96,0X0DC4
-	dw 0X0CFF,0X0C44,0X0B94,0X0AED,0X0A50,0X09BC,0X0930,0X08AC,0X0830,0X07BA,0X074B,0X06E2
-	dw 0X067F,0X0622,0X05CA,0X0577,0X0528,0X04DE,0X0498,0X0456,0X0418,0X03DD,0X03A5,0X0371
-	dw 0X0340,0X0311,0X02E5,0X02BB,0X0294,0X026F,0X024C,0X022B,0X020C,0X01EE,0X01D3,0X01B9
-	dw 0X01A0,0X0188,0X0172,0X015E,0X014A,0X0138,0X0126,0X0116,0X0106,0X00F7,0X00E9,0X00DC
-	dw 0X00D0,0X00C4,0X00B9,0X00AF,0X00A5,0X009C,0X0093,0X008B,0X0083,0X007C,0X0075,0X006E
-	dw 0X0068,0X0062,0X005D,0X0057,0X0053,0X004E,0X004A,0X0045,0X0041,0X003E,0X003A,0X0037
-	dw 0X0034,0X0031,0X002E,0X002C,0X0029,0X0027,0X0025,0X0023,0X0021,0X001F,0X001D,0X001C
+	dw 0x19FD,0x1888,0x1727,0x15DB,0x14A1,0x1378,0x1260,0x1158,0x105F,0x0F74,0x0E96,0x0DC4
+	dw 0x0CFF,0x0C44,0x0B94,0x0AED,0x0A50,0x09BC,0x0930,0x08AC,0x0830,0x07BA,0x074B,0x06E2
+	dw 0x067F,0x0622,0x05CA,0x0577,0x0528,0x04DE,0x0498,0x0456,0x0418,0x03DD,0x03A5,0x0371
+	dw 0x0340,0x0311,0x02E5,0x02BB,0x0294,0x026F,0x024C,0x022B,0x020C,0x01EE,0x01D3,0x01B9
+	dw 0x01A0,0x0188,0x0172,0x015E,0x014A,0x0138,0x0126,0x0116,0x0106,0x00F7,0x00E9,0x00DC
+	dw 0x00D0,0x00C4,0x00B9,0x00AF,0x00A5,0x009C,0x0093,0x008B,0x0083,0x007C,0x0075,0x006E
+	dw 0x0068,0x0062,0x005D,0x0057,0x0053,0x004E,0x004A,0x0045,0x0041,0x003E,0x003A,0x0037
+	dw 0x0034,0x0031,0x002E,0x002C,0x0029,0x0027,0x0025,0x0023,0x0021,0x001F,0x001D,0x001C
 ;05
-	dw 0X19CD,0X185A,0X16FD,0X15B2,0X147B,0X1354,0X123F,0X1138,0X1041,0X0F57,0X0E7B,0X0DAB
-	dw 0X0CE7,0X0C2D,0X0B7E,0X0AD9,0X0A3D,0X09AA,0X091F,0X089C,0X0821,0X07AC,0X073E,0X06D5
-	dw 0X0673,0X0617,0X05BF,0X056D,0X051F,0X04D5,0X0490,0X044E,0X0410,0X03D6,0X039F,0X036B
-	dw 0X033A,0X030B,0X02E0,0X02B6,0X028F,0X026B,0X0248,0X0227,0X0208,0X01EB,0X01CF,0X01B5
-	dw 0X019D,0X0186,0X0170,0X015B,0X0148,0X0135,0X0124,0X0114,0X0104,0X00F5,0X00E8,0X00DB
-	dw 0X00CE,0X00C3,0X00B8,0X00AE,0X00A4,0X009B,0X0092,0X008A,0X0082,0X007B,0X0074,0X006D
-	dw 0X0067,0X0061,0X005C,0X0057,0X0052,0X004D,0X0049,0X0045,0X0041,0X003D,0X003A,0X0037
-	dw 0X0034,0X0031,0X002E,0X002B,0X0029,0X0027,0X0024,0X0022,0X0021,0X001F,0X001D,0X001B
+	dw 0x19CD,0x185A,0x16FD,0x15B2,0x147B,0x1354,0x123F,0x1138,0x1041,0x0F57,0x0E7B,0x0DAB
+	dw 0x0CE7,0x0C2D,0x0B7E,0x0AD9,0x0A3D,0x09AA,0x091F,0x089C,0x0821,0x07AC,0x073E,0x06D5
+	dw 0x0673,0x0617,0x05BF,0x056D,0x051F,0x04D5,0x0490,0x044E,0x0410,0x03D6,0x039F,0x036B
+	dw 0x033A,0x030B,0x02E0,0x02B6,0x028F,0x026B,0x0248,0x0227,0x0208,0x01EB,0x01CF,0x01B5
+	dw 0x019D,0x0186,0x0170,0x015B,0x0148,0x0135,0x0124,0x0114,0x0104,0x00F5,0x00E8,0x00DB
+	dw 0x00CE,0x00C3,0x00B8,0x00AE,0x00A4,0x009B,0x0092,0x008A,0x0082,0x007B,0x0074,0x006D
+	dw 0x0067,0x0061,0x005C,0x0057,0x0052,0x004D,0x0049,0x0045,0x0041,0x003D,0x003A,0x0037
+	dw 0x0034,0x0031,0x002E,0x002B,0x0029,0x0027,0x0024,0x0022,0x0021,0x001F,0x001D,0x001B
 ;06
-	dw 0X199E,0X182E,0X16D2,0X158A,0X1455,0X1331,0X121D,0X1119,0X1023,0X0F3B,0X0E60,0X0D92
-	dw 0X0CCF,0X0C17,0X0B69,0X0AC5,0X0A2A,0X0998,0X090E,0X088C,0X0812,0X079E,0X0730,0X06C9
-	dw 0X0667,0X060B,0X05B5,0X0563,0X0515,0X04CC,0X0487,0X0446,0X0409,0X03CF,0X0398,0X0364
-	dw 0X0334,0X0306,0X02DA,0X02B1,0X028B,0X0266,0X0244,0X0223,0X0204,0X01E7,0X01CC,0X01B2
-	dw 0X019A,0X0183,0X016D,0X0159,0X0145,0X0133,0X0122,0X0112,0X0102,0X00F4,0X00E6,0X00D9
-	dw 0X00CD,0X00C1,0X00B7,0X00AC,0X00A3,0X009A,0X0091,0X0089,0X0081,0X007A,0X0073,0X006D
-	dw 0X0066,0X0061,0X005B,0X0056,0X0051,0X004D,0X0048,0X0044,0X0041,0X003D,0X003A,0X0036
-	dw 0X0033,0X0030,0X002E,0X002B,0X0029,0X0026,0X0024,0X0022,0X0020,0X001E,0X001D,0X001B
+	dw 0x199E,0x182E,0x16D2,0x158A,0x1455,0x1331,0x121D,0x1119,0x1023,0x0F3B,0x0E60,0x0D92
+	dw 0x0CCF,0x0C17,0x0B69,0x0AC5,0x0A2A,0x0998,0x090E,0x088C,0x0812,0x079E,0x0730,0x06C9
+	dw 0x0667,0x060B,0x05B5,0x0563,0x0515,0x04CC,0x0487,0x0446,0x0409,0x03CF,0x0398,0x0364
+	dw 0x0334,0x0306,0x02DA,0x02B1,0x028B,0x0266,0x0244,0x0223,0x0204,0x01E7,0x01CC,0x01B2
+	dw 0x019A,0x0183,0x016D,0x0159,0x0145,0x0133,0x0122,0x0112,0x0102,0x00F4,0x00E6,0x00D9
+	dw 0x00CD,0x00C1,0x00B7,0x00AC,0x00A3,0x009A,0x0091,0x0089,0x0081,0x007A,0x0073,0x006D
+	dw 0x0066,0x0061,0x005B,0x0056,0x0051,0x004D,0x0048,0x0044,0x0041,0x003D,0x003A,0x0036
+	dw 0x0033,0x0030,0x002E,0x002B,0x0029,0x0026,0x0024,0x0022,0x0020,0x001E,0x001D,0x001B
 ;07
-	dw 0X196E,0X1801,0X16A8,0X1563,0X142F,0X130D,0X11FC,0X10F9,0X1005,0X0F1F,0X0E46,0X0D79
-	dw 0X0CB7,0X0C01,0X0B54,0X0AB1,0X0A18,0X0987,0X08FE,0X087D,0X0803,0X0790,0X0723,0X06BC
-	dw 0X065C,0X0600,0X05AA,0X0559,0X050C,0X04C3,0X047F,0X043E,0X0401,0X03C8,0X0391,0X035E
-	dw 0X032E,0X0300,0X02D5,0X02AC,0X0286,0X0262,0X023F,0X021F,0X0201,0X01E4,0X01C9,0X01AF
-	dw 0X0197,0X0180,0X016B,0X0156,0X0143,0X0131,0X0120,0X0110,0X0100,0X00F2,0X00E4,0X00D8
-	dw 0X00CB,0X00C0,0X00B5,0X00AB,0X00A1,0X0098,0X0090,0X0088,0X0080,0X0079,0X0072,0X006C
-	dw 0X0066,0X0060,0X005B,0X0056,0X0051,0X004C,0X0048,0X0044,0X0040,0X003C,0X0039,0X0036
-	dw 0X0033,0X0030,0X002D,0X002B,0X0028,0X0026,0X0024,0X0022,0X0020,0X001E,0X001D,0X001B
+	dw 0x196E,0x1801,0x16A8,0x1563,0x142F,0x130D,0x11FC,0x10F9,0x1005,0x0F1F,0x0E46,0x0D79
+	dw 0x0CB7,0x0C01,0x0B54,0x0AB1,0x0A18,0x0987,0x08FE,0x087D,0x0803,0x0790,0x0723,0x06BC
+	dw 0x065C,0x0600,0x05AA,0x0559,0x050C,0x04C3,0x047F,0x043E,0x0401,0x03C8,0x0391,0x035E
+	dw 0x032E,0x0300,0x02D5,0x02AC,0x0286,0x0262,0x023F,0x021F,0x0201,0x01E4,0x01C9,0x01AF
+	dw 0x0197,0x0180,0x016B,0x0156,0x0143,0x0131,0x0120,0x0110,0x0100,0x00F2,0x00E4,0x00D8
+	dw 0x00CB,0x00C0,0x00B5,0x00AB,0x00A1,0x0098,0x0090,0x0088,0x0080,0x0079,0x0072,0x006C
+	dw 0x0066,0x0060,0x005B,0x0056,0x0051,0x004C,0x0048,0x0044,0x0040,0x003C,0x0039,0x0036
+	dw 0x0033,0x0030,0x002D,0x002B,0x0028,0x0026,0x0024,0x0022,0x0020,0x001E,0x001D,0x001B
 ;08
-	dw 0X1C57,0X1AC0,0X1940,0X17D5,0X167E,0X153B,0X140A,0X12EA,0X11DA,0X10DA,0X0FE8,0X0F03
-	dw 0X0E2C,0X0D60,0X0CA0,0X0BEA,0X0B3F,0X0A9E,0X0A05,0X0975,0X08ED,0X086D,0X07F4,0X0782
-	dw 0X0716,0X06B0,0X0650,0X05F5,0X05A0,0X054F,0X0503,0X04BB,0X0477,0X0436,0X03FA,0X03C1
-	dw 0X038B,0X0358,0X0328,0X02FB,0X02D0,0X02A7,0X0281,0X025D,0X023B,0X021B,0X01FD,0X01E0
-	dw 0X01C5,0X01AC,0X0194,0X017D,0X0168,0X0154,0X0141,0X012F,0X011E,0X010E,0X00FE,0X00F0
-	dw 0X00E3,0X00D6,0X00CA,0X00BF,0X00B4,0X00AA,0X00A0,0X0097,0X008F,0X0087,0X007F,0X0078
-	dw 0X0071,0X006B,0X0065,0X005F,0X005A,0X0055,0X0050,0X004C,0X0047,0X0043,0X0040,0X003C
-	dw 0X0039,0X0036,0X0032,0X0030,0X002D,0X002A,0X0028,0X0026,0X0024,0X0022,0X0020,0X001E
+	dw 0x1C57,0x1AC0,0x1940,0x17D5,0x167E,0x153B,0x140A,0x12EA,0x11DA,0x10DA,0x0FE8,0x0F03
+	dw 0x0E2C,0x0D60,0x0CA0,0x0BEA,0x0B3F,0x0A9E,0x0A05,0x0975,0x08ED,0x086D,0x07F4,0x0782
+	dw 0x0716,0x06B0,0x0650,0x05F5,0x05A0,0x054F,0x0503,0x04BB,0x0477,0x0436,0x03FA,0x03C1
+	dw 0x038B,0x0358,0x0328,0x02FB,0x02D0,0x02A7,0x0281,0x025D,0x023B,0x021B,0x01FD,0x01E0
+	dw 0x01C5,0x01AC,0x0194,0x017D,0x0168,0x0154,0x0141,0x012F,0x011E,0x010E,0x00FE,0x00F0
+	dw 0x00E3,0x00D6,0x00CA,0x00BF,0x00B4,0x00AA,0x00A0,0x0097,0x008F,0x0087,0x007F,0x0078
+	dw 0x0071,0x006B,0x0065,0x005F,0x005A,0x0055,0x0050,0x004C,0x0047,0x0043,0x0040,0x003C
+	dw 0x0039,0x0036,0x0032,0x0030,0x002D,0x002A,0x0028,0x0026,0x0024,0x0022,0x0020,0x001E
 ;09
-	dw 0X1C23,0X1A8F,0X1911,0X17A9,0X1655,0X1514,0X13E5,0X12C7,0X11BA,0X10BB,0X0FCB,0X0EE8
-	dw 0X0E12,0X0D47,0X0C89,0X0BD4,0X0B2B,0X0A8A,0X09F3,0X0964,0X08DD,0X085D,0X07E5,0X0774
-	dw 0X0709,0X06A4,0X0644,0X05EA,0X0595,0X0545,0X04F9,0X04B2,0X046E,0X042F,0X03F3,0X03BA
-	dw 0X0384,0X0352,0X0322,0X02F5,0X02CB,0X02A3,0X027D,0X0259,0X0237,0X0217,0X01F9,0X01DD
-	dw 0X01C2,0X01A9,0X0191,0X017B,0X0165,0X0151,0X013E,0X012C,0X011C,0X010C,0X00FD,0X00EE
-	dw 0X00E1,0X00D4,0X00C9,0X00BD,0X00B3,0X00A9,0X009F,0X0096,0X008E,0X0086,0X007E,0X0077
-	dw 0X0071,0X006A,0X0064,0X005F,0X0059,0X0054,0X0050,0X004B,0X0047,0X0043,0X003F,0X003C
-	dw 0X0038,0X0035,0X0032,0X002F,0X002D,0X002A,0X0028,0X0026,0X0023,0X0021,0X0020,0X001E
+	dw 0x1C23,0x1A8F,0x1911,0x17A9,0x1655,0x1514,0x13E5,0x12C7,0x11BA,0x10BB,0x0FCB,0x0EE8
+	dw 0x0E12,0x0D47,0x0C89,0x0BD4,0x0B2B,0x0A8A,0x09F3,0x0964,0x08DD,0x085D,0x07E5,0x0774
+	dw 0x0709,0x06A4,0x0644,0x05EA,0x0595,0x0545,0x04F9,0x04B2,0x046E,0x042F,0x03F3,0x03BA
+	dw 0x0384,0x0352,0x0322,0x02F5,0x02CB,0x02A3,0x027D,0x0259,0x0237,0x0217,0x01F9,0x01DD
+	dw 0x01C2,0x01A9,0x0191,0x017B,0x0165,0x0151,0x013E,0x012C,0x011C,0x010C,0x00FD,0x00EE
+	dw 0x00E1,0x00D4,0x00C9,0x00BD,0x00B3,0x00A9,0x009F,0x0096,0x008E,0x0086,0x007E,0x0077
+	dw 0x0071,0x006A,0x0064,0x005F,0x0059,0x0054,0x0050,0x004B,0x0047,0x0043,0x003F,0x003C
+	dw 0x0038,0x0035,0x0032,0x002F,0x002D,0x002A,0x0028,0x0026,0x0023,0x0021,0x0020,0x001E
 ;0A
-	dw 0X1BEF,0X1A5E,0X18E3,0X177D,0X162C,0X14ED,0X13C1,0X12A5,0X1199,0X109C,0X0FAD,0X0ECC
-	dw 0X0DF8,0X0D2F,0X0C71,0X0BBF,0X0B16,0X0A77,0X09E0,0X0952,0X08CC,0X084E,0X07D7,0X0766
-	dw 0X06FC,0X0697,0X0639,0X05DF,0X058B,0X053B,0X04F0,0X04A9,0X0466,0X0427,0X03EB,0X03B3
-	dw 0X037E,0X034C,0X031C,0X02F0,0X02C5,0X029E,0X0278,0X0255,0X0233,0X0214,0X01F6,0X01DA
-	dw 0X01BF,0X01A6,0X018E,0X0178,0X0163,0X014F,0X013C,0X012A,0X011A,0X010A,0X00FB,0X00ED
-	dw 0X00DF,0X00D3,0X00C7,0X00BC,0X00B1,0X00A7,0X009E,0X0095,0X008D,0X0085,0X007D,0X0076
-	dw 0X0070,0X0069,0X0064,0X005E,0X0059,0X0054,0X004F,0X004B,0X0046,0X0042,0X003F,0X003B
-	dw 0X0038,0X0035,0X0032,0X002F,0X002C,0X002A,0X0028,0X0025,0X0023,0X0021,0X001F,0X001E
+	dw 0x1BEF,0x1A5E,0x18E3,0x177D,0x162C,0x14ED,0x13C1,0x12A5,0x1199,0x109C,0x0FAD,0x0ECC
+	dw 0x0DF8,0x0D2F,0x0C71,0x0BBF,0x0B16,0x0A77,0x09E0,0x0952,0x08CC,0x084E,0x07D7,0x0766
+	dw 0x06FC,0x0697,0x0639,0x05DF,0x058B,0x053B,0x04F0,0x04A9,0x0466,0x0427,0x03EB,0x03B3
+	dw 0x037E,0x034C,0x031C,0x02F0,0x02C5,0x029E,0x0278,0x0255,0x0233,0x0214,0x01F6,0x01DA
+	dw 0x01BF,0x01A6,0x018E,0x0178,0x0163,0x014F,0x013C,0x012A,0x011A,0x010A,0x00FB,0x00ED
+	dw 0x00DF,0x00D3,0x00C7,0x00BC,0x00B1,0x00A7,0x009E,0x0095,0x008D,0x0085,0x007D,0x0076
+	dw 0x0070,0x0069,0x0064,0x005E,0x0059,0x0054,0x004F,0x004B,0x0046,0x0042,0x003F,0x003B
+	dw 0x0038,0x0035,0x0032,0x002F,0x002C,0x002A,0x0028,0x0025,0x0023,0x0021,0x001F,0x001E
 ;0B
-	dw 0X1BBC,0X1A2D,0X18B5,0X1752,0X1603,0X14C7,0X139C,0X1283,0X1179,0X107E,0X0F91,0X0EB1
-	dw 0X0DDE,0X0D17,0X0C5B,0X0BA9,0X0B02,0X0A63,0X09CE,0X0941,0X08BC,0X083F,0X07C8,0X0758
-	dw 0X06EF,0X068B,0X062D,0X05D5,0X0581,0X0532,0X04E7,0X04A1,0X045E,0X041F,0X03E4,0X03AC
-	dw 0X0377,0X0346,0X0317,0X02EA,0X02C0,0X0299,0X0274,0X0250,0X022F,0X0210,0X01F2,0X01D6
-	dw 0X01BC,0X01A3,0X018B,0X0175,0X0160,0X014C,0X013A,0X0128,0X0118,0X0108,0X00F9,0X00EB
-	dw 0X00DE,0X00D1,0X00C6,0X00BB,0X00B0,0X00A6,0X009D,0X0094,0X008C,0X0084,0X007D,0X0076
-	dw 0X006F,0X0069,0X0063,0X005D,0X0058,0X0053,0X004E,0X004A,0X0046,0X0042,0X003E,0X003B
-	dw 0X0037,0X0034,0X0031,0X002F,0X002C,0X002A,0X0027,0X0025,0X0023,0X0021,0X001F,0X001D
+	dw 0x1BBC,0x1A2D,0x18B5,0x1752,0x1603,0x14C7,0x139C,0x1283,0x1179,0x107E,0x0F91,0x0EB1
+	dw 0x0DDE,0x0D17,0x0C5B,0x0BA9,0x0B02,0x0A63,0x09CE,0x0941,0x08BC,0x083F,0x07C8,0x0758
+	dw 0x06EF,0x068B,0x062D,0x05D5,0x0581,0x0532,0x04E7,0x04A1,0x045E,0x041F,0x03E4,0x03AC
+	dw 0x0377,0x0346,0x0317,0x02EA,0x02C0,0x0299,0x0274,0x0250,0x022F,0x0210,0x01F2,0x01D6
+	dw 0x01BC,0x01A3,0x018B,0x0175,0x0160,0x014C,0x013A,0x0128,0x0118,0x0108,0x00F9,0x00EB
+	dw 0x00DE,0x00D1,0x00C6,0x00BB,0x00B0,0x00A6,0x009D,0x0094,0x008C,0x0084,0x007D,0x0076
+	dw 0x006F,0x0069,0x0063,0x005D,0x0058,0x0053,0x004E,0x004A,0x0046,0x0042,0x003E,0x003B
+	dw 0x0037,0x0034,0x0031,0x002F,0x002C,0x002A,0x0027,0x0025,0x0023,0x0021,0x001F,0x001D
 ;0C
-	dw 0X1B89,0X19FD,0X1888,0X1727,0X15DB,0X14A1,0X1378,0X1260,0X1158,0X105F,0X0F74,0X0E96
-	dw 0X0DC4,0X0CFF,0X0C44,0X0B94,0X0AED,0X0A50,0X09BC,0X0930,0X08AC,0X0830,0X07BA,0X074B
-	dw 0X06E2,0X067F,0X0622,0X05CA,0X0577,0X0528,0X04DE,0X0498,0X0456,0X0418,0X03DD,0X03A5
-	dw 0X0371,0X0340,0X0311,0X02E5,0X02BB,0X0294,0X026F,0X024C,0X022B,0X020C,0X01EE,0X01D3
-	dw 0X01B9,0X01A0,0X0188,0X0172,0X015E,0X014A,0X0138,0X0126,0X0116,0X0106,0X00F7,0X00E9
-	dw 0X00DC,0X00D0,0X00C4,0X00B9,0X00AF,0X00A5,0X009C,0X0093,0X008B,0X0083,0X007C,0X0075
-	dw 0X006E,0X0068,0X0062,0X005D,0X0057,0X0053,0X004E,0X004A,0X0045,0X0041,0X003E,0X003A
-	dw 0X0037,0X0034,0X0031,0X002E,0X002C,0X0029,0X0027,0X0025,0X0023,0X0021,0X001F,0X001D
+	dw 0x1B89,0x19FD,0x1888,0x1727,0x15DB,0x14A1,0x1378,0x1260,0x1158,0x105F,0x0F74,0x0E96
+	dw 0x0DC4,0x0CFF,0x0C44,0x0B94,0x0AED,0x0A50,0x09BC,0x0930,0x08AC,0x0830,0x07BA,0x074B
+	dw 0x06E2,0x067F,0x0622,0x05CA,0x0577,0x0528,0x04DE,0x0498,0x0456,0x0418,0x03DD,0x03A5
+	dw 0x0371,0x0340,0x0311,0x02E5,0x02BB,0x0294,0x026F,0x024C,0x022B,0x020C,0x01EE,0x01D3
+	dw 0x01B9,0x01A0,0x0188,0x0172,0x015E,0x014A,0x0138,0x0126,0x0116,0x0106,0x00F7,0x00E9
+	dw 0x00DC,0x00D0,0x00C4,0x00B9,0x00AF,0x00A5,0x009C,0x0093,0x008B,0x0083,0x007C,0x0075
+	dw 0x006E,0x0068,0x0062,0x005D,0x0057,0x0053,0x004E,0x004A,0x0045,0x0041,0x003E,0x003A
+	dw 0x0037,0x0034,0x0031,0x002E,0x002C,0x0029,0x0027,0x0025,0x0023,0x0021,0x001F,0x001D
 ;0D
-	dw 0X1B56,0X19CD,0X185A,0X16FD,0X15B2,0X147B,0X1354,0X123F,0X1138,0X1041,0X0F57,0X0E7B
-	dw 0X0DAB,0X0CE7,0X0C2D,0X0B7E,0X0AD9,0X0A3D,0X09AA,0X091F,0X089C,0X0821,0X07AC,0X073E
-	dw 0X06D5,0X0673,0X0617,0X05BF,0X056D,0X051F,0X04D5,0X0490,0X044E,0X0410,0X03D6,0X039F
-	dw 0X036B,0X033A,0X030B,0X02E0,0X02B6,0X028F,0X026B,0X0248,0X0227,0X0208,0X01EB,0X01CF
-	dw 0X01B5,0X019D,0X0186,0X0170,0X015B,0X0148,0X0135,0X0124,0X0114,0X0104,0X00F5,0X00E8
-	dw 0X00DB,0X00CE,0X00C3,0X00B8,0X00AE,0X00A4,0X009B,0X0092,0X008A,0X0082,0X007B,0X0074
-	dw 0X006D,0X0067,0X0061,0X005C,0X0057,0X0052,0X004D,0X0049,0X0045,0X0041,0X003D,0X003A
-	dw 0X0037,0X0034,0X0031,0X002E,0X002B,0X0029,0X0027,0X0024,0X0022,0X0021,0X001F,0X001D
+	dw 0x1B56,0x19CD,0x185A,0x16FD,0x15B2,0x147B,0x1354,0x123F,0x1138,0x1041,0x0F57,0x0E7B
+	dw 0x0DAB,0x0CE7,0x0C2D,0x0B7E,0x0AD9,0x0A3D,0x09AA,0x091F,0x089C,0x0821,0x07AC,0x073E
+	dw 0x06D5,0x0673,0x0617,0x05BF,0x056D,0x051F,0x04D5,0x0490,0x044E,0x0410,0x03D6,0x039F
+	dw 0x036B,0x033A,0x030B,0x02E0,0x02B6,0x028F,0x026B,0x0248,0x0227,0x0208,0x01EB,0x01CF
+	dw 0x01B5,0x019D,0x0186,0x0170,0x015B,0x0148,0x0135,0x0124,0x0114,0x0104,0x00F5,0x00E8
+	dw 0x00DB,0x00CE,0x00C3,0x00B8,0x00AE,0x00A4,0x009B,0x0092,0x008A,0x0082,0x007B,0x0074
+	dw 0x006D,0x0067,0x0061,0x005C,0x0057,0x0052,0x004D,0x0049,0x0045,0x0041,0x003D,0x003A
+	dw 0x0037,0x0034,0x0031,0x002E,0x002B,0x0029,0x0027,0x0024,0x0022,0x0021,0x001F,0x001D
 ;0E
-	dw 0X1B24,0X199E,0X182E,0X16D2,0X158A,0X1455,0X1331,0X121D,0X1119,0X1023,0X0F3B,0X0E60
-	dw 0X0D92,0X0CCF,0X0C17,0X0B69,0X0AC5,0X0A2A,0X0998,0X090E,0X088C,0X0812,0X079E,0X0730
-	dw 0X06C9,0X0667,0X060B,0X05B5,0X0563,0X0515,0X04CC,0X0487,0X0446,0X0409,0X03CF,0X0398
-	dw 0X0364,0X0334,0X0306,0X02DA,0X02B1,0X028B,0X0266,0X0244,0X0223,0X0204,0X01E7,0X01CC
-	dw 0X01B2,0X019A,0X0183,0X016D,0X0159,0X0145,0X0133,0X0122,0X0112,0X0102,0X00F4,0X00E6
-	dw 0X00D9,0X00CD,0X00C1,0X00B7,0X00AC,0X00A3,0X009A,0X0091,0X0089,0X0081,0X007A,0X0073
-	dw 0X006D,0X0066,0X0061,0X005B,0X0056,0X0051,0X004D,0X0048,0X0044,0X0041,0X003D,0X003A
-	dw 0X0036,0X0033,0X0030,0X002E,0X002B,0X0029,0X0026,0X0024,0X0022,0X0020,0X001E,0X001D
+	dw 0x1B24,0x199E,0x182E,0x16D2,0x158A,0x1455,0x1331,0x121D,0x1119,0x1023,0x0F3B,0x0E60
+	dw 0x0D92,0x0CCF,0x0C17,0x0B69,0x0AC5,0x0A2A,0x0998,0x090E,0x088C,0x0812,0x079E,0x0730
+	dw 0x06C9,0x0667,0x060B,0x05B5,0x0563,0x0515,0x04CC,0x0487,0x0446,0x0409,0x03CF,0x0398
+	dw 0x0364,0x0334,0x0306,0x02DA,0x02B1,0x028B,0x0266,0x0244,0x0223,0x0204,0x01E7,0x01CC
+	dw 0x01B2,0x019A,0x0183,0x016D,0x0159,0x0145,0x0133,0x0122,0x0112,0x0102,0x00F4,0x00E6
+	dw 0x00D9,0x00CD,0x00C1,0x00B7,0x00AC,0x00A3,0x009A,0x0091,0x0089,0x0081,0x007A,0x0073
+	dw 0x006D,0x0066,0x0061,0x005B,0x0056,0x0051,0x004D,0x0048,0x0044,0x0041,0x003D,0x003A
+	dw 0x0036,0x0033,0x0030,0x002E,0x002B,0x0029,0x0026,0x0024,0x0022,0x0020,0x001E,0x001D
 ;0F
-	dw 0X1AF2,0X196E,0X1801,0X16A8,0X1563,0X142F,0X130D,0X11FC,0X10F9,0X1005,0X0F1F,0X0E46
-	dw 0X0D79,0X0CB7,0X0C01,0X0B54,0X0AB1,0X0A18,0X0987,0X08FE,0X087D,0X0803,0X0790,0X0723
-	dw 0X06BC,0X065C,0X0600,0X05AA,0X0559,0X050C,0X04C3,0X047F,0X043E,0X0401,0X03C8,0X0391
-	dw 0X035E,0X032E,0X0300,0X02D5,0X02AC,0X0286,0X0262,0X023F,0X021F,0X0201,0X01E4,0X01C9
-	dw 0X01AF,0X0197,0X0180,0X016B,0X0156,0X0143,0X0131,0X0120,0X0110,0X0100,0X00F2,0X00E4
-	dw 0X00D8,0X00CB,0X00C0,0X00B5,0X00AB,0X00A1,0X0098,0X0090,0X0088,0X0080,0X0079,0X0072
-	dw 0X006C,0X0066,0X0060,0X005B,0X0056,0X0051,0X004C,0X0048,0X0044,0X0040,0X003C,0X0039
-	dw 0X0036,0X0033,0X0030,0X002D,0X002B,0X0028,0X0026,0X0024,0X0022,0X0020,0X001E,0X001D
+	dw 0x1AF2,0x196E,0x1801,0x16A8,0x1563,0x142F,0x130D,0x11FC,0x10F9,0x1005,0x0F1F,0x0E46
+	dw 0x0D79,0x0CB7,0x0C01,0x0B54,0x0AB1,0x0A18,0x0987,0x08FE,0x087D,0x0803,0x0790,0x0723
+	dw 0x06BC,0x065C,0x0600,0x05AA,0x0559,0x050C,0x04C3,0x047F,0x043E,0x0401,0x03C8,0x0391
+	dw 0x035E,0x032E,0x0300,0x02D5,0x02AC,0x0286,0x0262,0x023F,0x021F,0x0201,0x01E4,0x01C9
+	dw 0x01AF,0x0197,0x0180,0x016B,0x0156,0x0143,0x0131,0x0120,0x0110,0x0100,0x00F2,0x00E4
+	dw 0x00D8,0x00CB,0x00C0,0x00B5,0x00AB,0x00A1,0x0098,0x0090,0x0088,0x0080,0x0079,0x0072
+	dw 0x006C,0x0066,0x0060,0x005B,0x0056,0x0051,0x004C,0x0048,0x0044,0x0040,0x003C,0x0039
+	dw 0x0036,0x0033,0x0030,0x002D,0x002B,0x0028,0x0026,0x0024,0x0022,0x0020,0x001E,0x001D
 
 ;INCLUDE "_AMTOGS.a80" ;patched
-;AMTOGS  ;EQU 0XF800
-	dw 0X0000,0X0003,0X0005,0X0008,0X000B,0X000E,0X0010,0X0013
-	dw 0X0016,0X0018,0X001B,0X001E,0X0020,0X0023,0X0026,0X0029
-	dw 0X002B,0X002E,0X0031,0X0033,0X0036,0X0039,0X003B,0X003E
-	dw 0X0041,0X0044,0X0046,0X0049,0X004C,0X004E,0X0051,0X0054
-	dw 0X0057,0X0059,0X005C,0X005F,0X0061,0X0064,0X0067,0X0069
-	dw 0X006C,0X006F,0X0072,0X0074,0X0077,0X007A,0X007C,0X007F
-	dw 0X0082,0X0084,0X0087,0X008A,0X008D,0X008F,0X0092,0X0095
-	dw 0X0097,0X009A,0X009D,0X00A0,0X00A2,0X00A5,0X00A8,0X00AA
-	dw 0X00AD,0X00B0,0X00B2,0X00B5,0X00B8,0X00BB,0X00BD,0X00C0
-	dw 0X00C3,0X00C5,0X00C8,0X00CB,0X00CD,0X00D0,0X00D3,0X00D6
-	dw 0X00D8,0X00DB,0X00DE,0X00E0,0X00E3,0X00E6,0X00E9,0X00EB
-	dw 0X00EE,0X00F1,0X00F3,0X00F6,0X00F9,0X00FB,0X00FE,0X0101
-	dw 0X0104,0X0106,0X0109,0X010C,0X010E,0X0111,0X0114,0X0117
-	dw 0X0119,0X011C,0X011F,0X0121,0X0124,0X0127,0X0129,0X012C
-	dw 0X012F,0X0132,0X0134,0X0137,0X013A,0X013C,0X013F,0X0142
-	dw 0X0144,0X0147,0X014A,0X014D,0X014F,0X0152,0X0155,0X0157
-	dw 0X015A,0X015D,0X0160,0X0162,0X0165,0X0168,0X016A,0X016D
-	dw 0X0170,0X0172,0X0175,0X0178,0X017B,0X017D,0X0180,0X0183
-	dw 0X0185,0X0188,0X018B,0X018D,0X0190,0X0193,0X0196,0X0198
-	dw 0X019B,0X019E,0X01A0,0X01A3,0X01A6,0X01A9,0X01AB,0X01AE
-	dw 0X01B1,0X01B3,0X01B6,0X01B9,0X01BB,0X01BE,0X01C1,0X01C4
-	dw 0X01C6,0X01C9,0X01CC,0X01CE,0X01D1,0X01D4,0X01D6,0X01D9
-	dw 0X01DC,0X01DF,0X01E1,0X01E4,0X01E7,0X01E9,0X01EC,0X01EF
-	dw 0X01F2,0X01F4,0X01F7,0X01FA,0X01FC,0X01FF,0X0202,0X0204
-	dw 0X0207,0X020A,0X020D,0X020F,0X0212,0X0215,0X0217,0X021A
-	dw 0X021D,0X021F,0X0222,0X0225,0X0228,0X022A,0X022D,0X0230
-	dw 0X0232,0X0235,0X0238,0X023B,0X023D,0X0240,0X0243,0X0245
-	dw 0X0248,0X024B,0X024D,0X0250,0X0253,0X0256,0X0258,0X025B
-	dw 0X025E,0X0260,0X0263,0X0266,0X0269,0X026B,0X026E,0X0271
-	dw 0X0273,0X0276,0X0279,0X027B,0X027E,0X0281,0X0284,0X0286
-	dw 0X0289,0X028C,0X028E,0X0291,0X0294,0X0296,0X0299,0X029C
-	dw 0X029F,0X02A1,0X02A4,0X02A7,0X02A9,0X02AC,0X02AF,0X02B2
-	dw 0X02B4,0X02B7,0X02BA,0X02BC,0X02BF,0X02C2,0X02C4,0X02C7
-	dw 0X02CA,0X02CD,0X02CF,0X02D2,0X02D5,0X02D7,0X02DA,0X02DD
-	dw 0X02DF,0X02E2,0X02E5,0X02E8,0X02EA,0X02ED,0X02F0,0X02F2
-	dw 0X02F5,0X02F8,0X02FB,0X02FD,0X0300,0X0303,0X0305,0X0308
-	dw 0X030B,0X030D,0X0310,0X0313,0X0316,0X0318,0X031B,0X031E
-	dw 0X0320,0X0323,0X0326,0X0328,0X032B,0X032E,0X0331,0X0333
-	dw 0X0336,0X0339,0X033B,0X033E,0X0341,0X0344,0X0346,0X0349
-	dw 0X034C,0X034E,0X0351,0X0354,0X0356,0X0359,0X035C,0X035F
-	dw 0X0361,0X0364,0X0367,0X0369,0X036C,0X036F,0X0371,0X0374
-	dw 0X0377,0X037A,0X037C,0X037F,0X0382,0X0384,0X0387,0X038A
-	dw 0X038D,0X038F,0X0392,0X0395,0X0397,0X039A,0X039D,0X039F
-	dw 0X03A2,0X03A5,0X03A8,0X03AA,0X03AD,0X03B0,0X03B2,0X03B5
-	dw 0X03B8,0X03BB,0X03BD,0X03C0,0X03C3,0X03C5,0X03C8,0X03CB
-	dw 0X03CD,0X03D0,0X03D3,0X03D6,0X03D8,0X03DB,0X03DE,0X03E0
-	dw 0X03E3,0X03E6,0X03E8,0X03EB,0X03EE,0X03F1,0X03F3,0X03F6
-	dw 0X03F9,0X03FB,0X03FE,0X0401,0X0404,0X0406,0X0409,0X040C
-	dw 0X040E,0X0411,0X0414,0X0416,0X0419,0X041C,0X041F,0X0421
-	dw 0X0424,0X0427,0X0429,0X042C,0X042F,0X0431,0X0434,0X0437
-	dw 0X043A,0X043C,0X043F,0X0442,0X0444,0X0447,0X044A,0X044D
-	dw 0X044F,0X0452,0X0455,0X0457,0X045A,0X045D,0X045F,0X0462
-	dw 0X0465,0X0468,0X046A,0X046D,0X0470,0X0472,0X0475,0X0478
-	dw 0X047A,0X047D,0X0480,0X0483,0X0485,0X0488,0X048B,0X048D
-	dw 0X0490,0X0493,0X0496,0X0498,0X049B,0X049E,0X04A0,0X04A3
-	dw 0X04A6,0X04A8,0X04AB,0X04AE,0X04B1,0X04B3,0X04B6,0X04B9
-	dw 0X04BB,0X04BE,0X04C1,0X04C3,0X04C6,0X04C9,0X04CC,0X04CE
-	dw 0X04D1,0X04D4,0X04D6,0X04D9,0X04DC,0X04DF,0X04E1,0X04E4
-	dw 0X04E7,0X04E9,0X04EC,0X04EF,0X04F1,0X04F4,0X04F7,0X04FA
-	dw 0X04FC,0X04FF,0X0502,0X0504,0X0507,0X050A,0X050D,0X050F
-	dw 0X0512,0X0515,0X0517,0X051A,0X051D,0X051F,0X0522,0X0525
-	dw 0X0528,0X052A,0X052D,0X0530,0X0532,0X0535,0X0538,0X053A
-	dw 0X053D,0X0540,0X0543,0X0545,0X0548,0X054B,0X054D,0X0550
-	dw 0X0553,0X0556,0X0558,0X055B,0X055E,0X0560,0X0563,0X0566
-	dw 0X0568,0X056B,0X056E,0X0571,0X0573,0X0576,0X0579,0X057B
-	dw 0X057E,0X0581,0X0583,0X0586,0X0589,0X058C,0X058E,0X0591
-	dw 0X0594,0X0596,0X0599,0X059C,0X059F,0X05A1,0X05A4,0X05A7
-	dw 0X05A9,0X05AC,0X05AF,0X05B1,0X05B4,0X05B7,0X05BA,0X05BC
-	dw 0X05BF,0X05C2,0X05C4,0X05C7,0X05CA,0X05CC,0X05CF,0X05D2
-	dw 0X05D5,0X05D7,0X05DA,0X05DD,0X05DF,0X05E2,0X05E5,0X05E8
-	dw 0X05EA,0X05ED,0X05F0,0X05F2,0X05F5,0X05F8,0X05FA,0X05FD
-	dw 0X0600,0X0603,0X0605,0X0608,0X060B,0X060D,0X0610,0X0613
-	dw 0X0615,0X0618,0X061B,0X061E,0X0620,0X0623,0X0626,0X0628
-	dw 0X062B,0X062E,0X0631,0X0633,0X0636,0X0639,0X063B,0X063E
-	dw 0X0641,0X0643,0X0646,0X0649,0X064C,0X064E,0X0651,0X0654
-	dw 0X0656,0X0659,0X065C,0X065F,0X0661,0X0664,0X0667,0X0669
-	dw 0X066C,0X066F,0X0671,0X0674,0X0677,0X067A,0X067C,0X067F
-	dw 0X0682,0X0684,0X0687,0X068A,0X068C,0X068F,0X0692,0X0695
-	dw 0X0697,0X069A,0X069D,0X069F,0X06A2,0X06A5,0X06A8,0X06AA
-	dw 0X06AD,0X06B0,0X06B2,0X06B5,0X06B8,0X06BA,0X06BD,0X06C0
-	dw 0X06C3,0X06C5,0X06C8,0X06CB,0X06CD,0X06D0,0X06D3,0X06D5
-	dw 0X06D8,0X06DB,0X06DE,0X06E0,0X06E3,0X06E6,0X06E8,0X06EB
-	dw 0X06EE,0X06F1,0X06F3,0X06F6,0X06F9,0X06FB,0X06FE,0X0701
-	dw 0X0703,0X0706,0X0709,0X070C,0X070E,0X0711,0X0714,0X0716
-	dw 0X0719,0X071C,0X071E,0X0721,0X0724,0X0727,0X0729,0X072C
-	dw 0X072F,0X0731,0X0734,0X0737,0X073A,0X073C,0X073F,0X0742
-	dw 0X0744,0X0747,0X074A,0X074C,0X074F,0X0752,0X0755,0X0757
-	dw 0X075A,0X075D,0X075F,0X0762,0X0765,0X0767,0X076A,0X076D
-	dw 0X0770,0X0772,0X0775,0X0778,0X077A,0X077D,0X0780,0X0783
-	dw 0X0785,0X0788,0X078B,0X078D,0X0790,0X0793,0X0795,0X0798
-	dw 0X079B,0X079E,0X07A0,0X07A3,0X07A6,0X07A8,0X07AB,0X07AE
-	dw 0X07B1,0X07B3,0X07B6,0X07B9,0X07BB,0X07BE,0X07C1,0X07C3
-	dw 0X07C6,0X07C9,0X07CC,0X07CE,0X07D1,0X07D4,0X07D6,0X07D9
-	dw 0X07DC,0X07DE,0X07E1,0X07E4,0X07E7,0X07E9,0X07EC,0X07EF
-	dw 0X07F1,0X07F4,0X07F7,0X07FA,0X07FC,0X07FF,0X0802,0X0804
-	dw 0X0807,0X080A,0X080C,0X080F,0X0812,0X0815,0X0817,0X081A
-	dw 0X081D,0X081F,0X0822,0X0825,0X0827,0X082A,0X082D,0X0830
-	dw 0X0832,0X0835,0X0838,0X083A,0X083D,0X0840,0X0843,0X0845
-	dw 0X0848,0X084B,0X084D,0X0850,0X0853,0X0855,0X0858,0X085B
-	dw 0X085E,0X0860,0X0863,0X0866,0X0868,0X086B,0X086E,0X0870
-	dw 0X0873,0X0876,0X0879,0X087B,0X087E,0X0881,0X0883,0X0886
-	dw 0X0889,0X088C,0X088E,0X0891,0X0894,0X0896,0X0899,0X089C
-	dw 0X089E,0X08A1,0X08A4,0X08A7,0X08A9,0X08AC,0X08AF,0X08B1
-	dw 0X08B4,0X08B7,0X08B9,0X08BC,0X08BF,0X08C2,0X08C4,0X08C7
-	dw 0X08CA,0X08CC,0X08CF,0X08D2,0X08D5,0X08D7,0X08DA,0X08DD
-	dw 0X08DF,0X08E2,0X08E5,0X08E7,0X08EA,0X08ED,0X08F0,0X08F2
-	dw 0X08F5,0X08F8,0X08FA,0X08FD,0X0900,0X0903,0X0905,0X0908
-	dw 0X090B,0X090D,0X0910,0X0913,0X0915,0X0918,0X091B,0X091E
-	dw 0X0920,0X0923,0X0926,0X0928,0X092B,0X092E,0X0930,0X0933
-	dw 0X0936,0X0939,0X093B,0X093E,0X0941,0X0943,0X0946,0X0949
-	dw 0X094C,0X094E,0X0951,0X0954,0X0956,0X0959,0X095C,0X095E
-	dw 0X0961,0X0964,0X0967,0X0969,0X096C,0X096F,0X0971,0X0974
-	dw 0X0977,0X0979,0X097C,0X097F,0X0982,0X0984,0X0987,0X098A
-	dw 0X098C,0X098F,0X0992,0X0995,0X0997,0X099A,0X099D,0X099F
-	dw 0X09A2,0X09A5,0X09A7,0X09AA,0X09AD,0X09B0,0X09B2,0X09B5
-	dw 0X09B8,0X09BA,0X09BD,0X09C0,0X09C2,0X09C5,0X09C8,0X09CB
-	dw 0X09CD,0X09D0,0X09D3,0X09D5,0X09D8,0X09DB,0X09DE,0X09E0
-	dw 0X09E3,0X09E6,0X09E8,0X09EB,0X09EE,0X09F0,0X09F3,0X09F6
-	dw 0X09F9,0X09FB,0X09FE,0X0A01,0X0A03,0X0A06,0X0A09,0X0A0B
-	dw 0X0A0E,0X0A11,0X0A14,0X0A16,0X0A19,0X0A1C,0X0A1E,0X0A21
-	dw 0X0A24,0X0A27,0X0A29,0X0A2C,0X0A2F,0X0A31,0X0A34,0X0A37
-	dw 0X0A39,0X0A3C,0X0A3F,0X0A42,0X0A44,0X0A47,0X0A4A,0X0A4C
-	dw 0X0A4F,0X0A52,0X0A55,0X0A57,0X0A5A,0X0A5D,0X0A5F,0X0A62
-	dw 0X0A65,0X0A67,0X0A6A,0X0A6D,0X0A70,0X0A72,0X0A75,0X0A78
-	dw 0X0A7A,0X0A7D,0X0A80,0X0A82,0X0A85,0X0A88,0X0A8B,0X0A8D
-	dw 0X0A90,0X0A93,0X0A95,0X0A98,0X0A9B,0X0A9E,0X0AA0,0X0AA3
-	dw 0X0AA6,0X0AA8,0X0AAB,0X0AAE,0X0AB0,0X0AB3,0X0AB6,0X0AB9
-	dw 0X0ABB,0X0ABE,0X0AC1,0X0AC3,0X0AC6,0X0AC9,0X0ACB,0X0ACE   
+;AMTOGS  ;EQU 0xF800
+	dw 0x0000,0x0003,0x0005,0x0008,0x000B,0x000E,0x0010,0x0013
+	dw 0x0016,0x0018,0x001B,0x001E,0x0020,0x0023,0x0026,0x0029
+	dw 0x002B,0x002E,0x0031,0x0033,0x0036,0x0039,0x003B,0x003E
+	dw 0x0041,0x0044,0x0046,0x0049,0x004C,0x004E,0x0051,0x0054
+	dw 0x0057,0x0059,0x005C,0x005F,0x0061,0x0064,0x0067,0x0069
+	dw 0x006C,0x006F,0x0072,0x0074,0x0077,0x007A,0x007C,0x007F
+	dw 0x0082,0x0084,0x0087,0x008A,0x008D,0x008F,0x0092,0x0095
+	dw 0x0097,0x009A,0x009D,0x00A0,0x00A2,0x00A5,0x00A8,0x00AA
+	dw 0x00AD,0x00B0,0x00B2,0x00B5,0x00B8,0x00BB,0x00BD,0x00C0
+	dw 0x00C3,0x00C5,0x00C8,0x00CB,0x00CD,0x00D0,0x00D3,0x00D6
+	dw 0x00D8,0x00DB,0x00DE,0x00E0,0x00E3,0x00E6,0x00E9,0x00EB
+	dw 0x00EE,0x00F1,0x00F3,0x00F6,0x00F9,0x00FB,0x00FE,0x0101
+	dw 0x0104,0x0106,0x0109,0x010C,0x010E,0x0111,0x0114,0x0117
+	dw 0x0119,0x011C,0x011F,0x0121,0x0124,0x0127,0x0129,0x012C
+	dw 0x012F,0x0132,0x0134,0x0137,0x013A,0x013C,0x013F,0x0142
+	dw 0x0144,0x0147,0x014A,0x014D,0x014F,0x0152,0x0155,0x0157
+	dw 0x015A,0x015D,0x0160,0x0162,0x0165,0x0168,0x016A,0x016D
+	dw 0x0170,0x0172,0x0175,0x0178,0x017B,0x017D,0x0180,0x0183
+	dw 0x0185,0x0188,0x018B,0x018D,0x0190,0x0193,0x0196,0x0198
+	dw 0x019B,0x019E,0x01A0,0x01A3,0x01A6,0x01A9,0x01AB,0x01AE
+	dw 0x01B1,0x01B3,0x01B6,0x01B9,0x01BB,0x01BE,0x01C1,0x01C4
+	dw 0x01C6,0x01C9,0x01CC,0x01CE,0x01D1,0x01D4,0x01D6,0x01D9
+	dw 0x01DC,0x01DF,0x01E1,0x01E4,0x01E7,0x01E9,0x01EC,0x01EF
+	dw 0x01F2,0x01F4,0x01F7,0x01FA,0x01FC,0x01FF,0x0202,0x0204
+	dw 0x0207,0x020A,0x020D,0x020F,0x0212,0x0215,0x0217,0x021A
+	dw 0x021D,0x021F,0x0222,0x0225,0x0228,0x022A,0x022D,0x0230
+	dw 0x0232,0x0235,0x0238,0x023B,0x023D,0x0240,0x0243,0x0245
+	dw 0x0248,0x024B,0x024D,0x0250,0x0253,0x0256,0x0258,0x025B
+	dw 0x025E,0x0260,0x0263,0x0266,0x0269,0x026B,0x026E,0x0271
+	dw 0x0273,0x0276,0x0279,0x027B,0x027E,0x0281,0x0284,0x0286
+	dw 0x0289,0x028C,0x028E,0x0291,0x0294,0x0296,0x0299,0x029C
+	dw 0x029F,0x02A1,0x02A4,0x02A7,0x02A9,0x02AC,0x02AF,0x02B2
+	dw 0x02B4,0x02B7,0x02BA,0x02BC,0x02BF,0x02C2,0x02C4,0x02C7
+	dw 0x02CA,0x02CD,0x02CF,0x02D2,0x02D5,0x02D7,0x02DA,0x02DD
+	dw 0x02DF,0x02E2,0x02E5,0x02E8,0x02EA,0x02ED,0x02F0,0x02F2
+	dw 0x02F5,0x02F8,0x02FB,0x02FD,0x0300,0x0303,0x0305,0x0308
+	dw 0x030B,0x030D,0x0310,0x0313,0x0316,0x0318,0x031B,0x031E
+	dw 0x0320,0x0323,0x0326,0x0328,0x032B,0x032E,0x0331,0x0333
+	dw 0x0336,0x0339,0x033B,0x033E,0x0341,0x0344,0x0346,0x0349
+	dw 0x034C,0x034E,0x0351,0x0354,0x0356,0x0359,0x035C,0x035F
+	dw 0x0361,0x0364,0x0367,0x0369,0x036C,0x036F,0x0371,0x0374
+	dw 0x0377,0x037A,0x037C,0x037F,0x0382,0x0384,0x0387,0x038A
+	dw 0x038D,0x038F,0x0392,0x0395,0x0397,0x039A,0x039D,0x039F
+	dw 0x03A2,0x03A5,0x03A8,0x03AA,0x03AD,0x03B0,0x03B2,0x03B5
+	dw 0x03B8,0x03BB,0x03BD,0x03C0,0x03C3,0x03C5,0x03C8,0x03CB
+	dw 0x03CD,0x03D0,0x03D3,0x03D6,0x03D8,0x03DB,0x03DE,0x03E0
+	dw 0x03E3,0x03E6,0x03E8,0x03EB,0x03EE,0x03F1,0x03F3,0x03F6
+	dw 0x03F9,0x03FB,0x03FE,0x0401,0x0404,0x0406,0x0409,0x040C
+	dw 0x040E,0x0411,0x0414,0x0416,0x0419,0x041C,0x041F,0x0421
+	dw 0x0424,0x0427,0x0429,0x042C,0x042F,0x0431,0x0434,0x0437
+	dw 0x043A,0x043C,0x043F,0x0442,0x0444,0x0447,0x044A,0x044D
+	dw 0x044F,0x0452,0x0455,0x0457,0x045A,0x045D,0x045F,0x0462
+	dw 0x0465,0x0468,0x046A,0x046D,0x0470,0x0472,0x0475,0x0478
+	dw 0x047A,0x047D,0x0480,0x0483,0x0485,0x0488,0x048B,0x048D
+	dw 0x0490,0x0493,0x0496,0x0498,0x049B,0x049E,0x04A0,0x04A3
+	dw 0x04A6,0x04A8,0x04AB,0x04AE,0x04B1,0x04B3,0x04B6,0x04B9
+	dw 0x04BB,0x04BE,0x04C1,0x04C3,0x04C6,0x04C9,0x04CC,0x04CE
+	dw 0x04D1,0x04D4,0x04D6,0x04D9,0x04DC,0x04DF,0x04E1,0x04E4
+	dw 0x04E7,0x04E9,0x04EC,0x04EF,0x04F1,0x04F4,0x04F7,0x04FA
+	dw 0x04FC,0x04FF,0x0502,0x0504,0x0507,0x050A,0x050D,0x050F
+	dw 0x0512,0x0515,0x0517,0x051A,0x051D,0x051F,0x0522,0x0525
+	dw 0x0528,0x052A,0x052D,0x0530,0x0532,0x0535,0x0538,0x053A
+	dw 0x053D,0x0540,0x0543,0x0545,0x0548,0x054B,0x054D,0x0550
+	dw 0x0553,0x0556,0x0558,0x055B,0x055E,0x0560,0x0563,0x0566
+	dw 0x0568,0x056B,0x056E,0x0571,0x0573,0x0576,0x0579,0x057B
+	dw 0x057E,0x0581,0x0583,0x0586,0x0589,0x058C,0x058E,0x0591
+	dw 0x0594,0x0596,0x0599,0x059C,0x059F,0x05A1,0x05A4,0x05A7
+	dw 0x05A9,0x05AC,0x05AF,0x05B1,0x05B4,0x05B7,0x05BA,0x05BC
+	dw 0x05BF,0x05C2,0x05C4,0x05C7,0x05CA,0x05CC,0x05CF,0x05D2
+	dw 0x05D5,0x05D7,0x05DA,0x05DD,0x05DF,0x05E2,0x05E5,0x05E8
+	dw 0x05EA,0x05ED,0x05F0,0x05F2,0x05F5,0x05F8,0x05FA,0x05FD
+	dw 0x0600,0x0603,0x0605,0x0608,0x060B,0x060D,0x0610,0x0613
+	dw 0x0615,0x0618,0x061B,0x061E,0x0620,0x0623,0x0626,0x0628
+	dw 0x062B,0x062E,0x0631,0x0633,0x0636,0x0639,0x063B,0x063E
+	dw 0x0641,0x0643,0x0646,0x0649,0x064C,0x064E,0x0651,0x0654
+	dw 0x0656,0x0659,0x065C,0x065F,0x0661,0x0664,0x0667,0x0669
+	dw 0x066C,0x066F,0x0671,0x0674,0x0677,0x067A,0x067C,0x067F
+	dw 0x0682,0x0684,0x0687,0x068A,0x068C,0x068F,0x0692,0x0695
+	dw 0x0697,0x069A,0x069D,0x069F,0x06A2,0x06A5,0x06A8,0x06AA
+	dw 0x06AD,0x06B0,0x06B2,0x06B5,0x06B8,0x06BA,0x06BD,0x06C0
+	dw 0x06C3,0x06C5,0x06C8,0x06CB,0x06CD,0x06D0,0x06D3,0x06D5
+	dw 0x06D8,0x06DB,0x06DE,0x06E0,0x06E3,0x06E6,0x06E8,0x06EB
+	dw 0x06EE,0x06F1,0x06F3,0x06F6,0x06F9,0x06FB,0x06FE,0x0701
+	dw 0x0703,0x0706,0x0709,0x070C,0x070E,0x0711,0x0714,0x0716
+	dw 0x0719,0x071C,0x071E,0x0721,0x0724,0x0727,0x0729,0x072C
+	dw 0x072F,0x0731,0x0734,0x0737,0x073A,0x073C,0x073F,0x0742
+	dw 0x0744,0x0747,0x074A,0x074C,0x074F,0x0752,0x0755,0x0757
+	dw 0x075A,0x075D,0x075F,0x0762,0x0765,0x0767,0x076A,0x076D
+	dw 0x0770,0x0772,0x0775,0x0778,0x077A,0x077D,0x0780,0x0783
+	dw 0x0785,0x0788,0x078B,0x078D,0x0790,0x0793,0x0795,0x0798
+	dw 0x079B,0x079E,0x07A0,0x07A3,0x07A6,0x07A8,0x07AB,0x07AE
+	dw 0x07B1,0x07B3,0x07B6,0x07B9,0x07BB,0x07BE,0x07C1,0x07C3
+	dw 0x07C6,0x07C9,0x07CC,0x07CE,0x07D1,0x07D4,0x07D6,0x07D9
+	dw 0x07DC,0x07DE,0x07E1,0x07E4,0x07E7,0x07E9,0x07EC,0x07EF
+	dw 0x07F1,0x07F4,0x07F7,0x07FA,0x07FC,0x07FF,0x0802,0x0804
+	dw 0x0807,0x080A,0x080C,0x080F,0x0812,0x0815,0x0817,0x081A
+	dw 0x081D,0x081F,0x0822,0x0825,0x0827,0x082A,0x082D,0x0830
+	dw 0x0832,0x0835,0x0838,0x083A,0x083D,0x0840,0x0843,0x0845
+	dw 0x0848,0x084B,0x084D,0x0850,0x0853,0x0855,0x0858,0x085B
+	dw 0x085E,0x0860,0x0863,0x0866,0x0868,0x086B,0x086E,0x0870
+	dw 0x0873,0x0876,0x0879,0x087B,0x087E,0x0881,0x0883,0x0886
+	dw 0x0889,0x088C,0x088E,0x0891,0x0894,0x0896,0x0899,0x089C
+	dw 0x089E,0x08A1,0x08A4,0x08A7,0x08A9,0x08AC,0x08AF,0x08B1
+	dw 0x08B4,0x08B7,0x08B9,0x08BC,0x08BF,0x08C2,0x08C4,0x08C7
+	dw 0x08CA,0x08CC,0x08CF,0x08D2,0x08D5,0x08D7,0x08DA,0x08DD
+	dw 0x08DF,0x08E2,0x08E5,0x08E7,0x08EA,0x08ED,0x08F0,0x08F2
+	dw 0x08F5,0x08F8,0x08FA,0x08FD,0x0900,0x0903,0x0905,0x0908
+	dw 0x090B,0x090D,0x0910,0x0913,0x0915,0x0918,0x091B,0x091E
+	dw 0x0920,0x0923,0x0926,0x0928,0x092B,0x092E,0x0930,0x0933
+	dw 0x0936,0x0939,0x093B,0x093E,0x0941,0x0943,0x0946,0x0949
+	dw 0x094C,0x094E,0x0951,0x0954,0x0956,0x0959,0x095C,0x095E
+	dw 0x0961,0x0964,0x0967,0x0969,0x096C,0x096F,0x0971,0x0974
+	dw 0x0977,0x0979,0x097C,0x097F,0x0982,0x0984,0x0987,0x098A
+	dw 0x098C,0x098F,0x0992,0x0995,0x0997,0x099A,0x099D,0x099F
+	dw 0x09A2,0x09A5,0x09A7,0x09AA,0x09AD,0x09B0,0x09B2,0x09B5
+	dw 0x09B8,0x09BA,0x09BD,0x09C0,0x09C2,0x09C5,0x09C8,0x09CB
+	dw 0x09CD,0x09D0,0x09D3,0x09D5,0x09D8,0x09DB,0x09DE,0x09E0
+	dw 0x09E3,0x09E6,0x09E8,0x09EB,0x09EE,0x09F0,0x09F3,0x09F6
+	dw 0x09F9,0x09FB,0x09FE,0x0A01,0x0A03,0x0A06,0x0A09,0x0A0B
+	dw 0x0A0E,0x0A11,0x0A14,0x0A16,0x0A19,0x0A1C,0x0A1E,0x0A21
+	dw 0x0A24,0x0A27,0x0A29,0x0A2C,0x0A2F,0x0A31,0x0A34,0x0A37
+	dw 0x0A39,0x0A3C,0x0A3F,0x0A42,0x0A44,0x0A47,0x0A4A,0x0A4C
+	dw 0x0A4F,0x0A52,0x0A55,0x0A57,0x0A5A,0x0A5D,0x0A5F,0x0A62
+	dw 0x0A65,0x0A67,0x0A6A,0x0A6D,0x0A70,0x0A72,0x0A75,0x0A78
+	dw 0x0A7A,0x0A7D,0x0A80,0x0A82,0x0A85,0x0A88,0x0A8B,0x0A8D
+	dw 0x0A90,0x0A93,0x0A95,0x0A98,0x0A9B,0x0A9E,0x0AA0,0x0AA3
+	dw 0x0AA6,0x0AA8,0x0AAB,0x0AAE,0x0AB0,0x0AB3,0x0AB6,0x0AB9
+	dw 0x0ABB,0x0ABE,0x0AC1,0x0AC3,0x0AC6,0x0AC9,0x0ACB,0x0ACE   
 
 		DEPHASE

@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 15.01.2024 savelij
+; LAST UPDATE: 11.12.2024 savelij
 
 ; номера функций плеера
  INIT_VAR
@@ -81,5 +81,5 @@ PLAYER_OK		EQU 0x77		; плеер готов к работе
 
 ; типы файлов
  INIT_VAR 1
- SETVAR FILE_MP3
  SETVAR FILE_MOD
+ SETVAR FILE_MP3

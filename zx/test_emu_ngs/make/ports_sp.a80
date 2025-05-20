@@ -1,0 +1,139 @@
+
+; LAST UPDATE: 25.02.2023 savelij
+
+; порты Z84
+Z84_CTC_0	EQU 0x10		; STC0_C
+Z84_CTC_1	EQU 0x11		; STC1_C
+Z84_CTC_2	EQU 0x12		; STC2_C
+Z84_CTC_3	EQU 0x13		; STC3_C
+
+Z84_SIO_ADATA	EQU 0x18		; DAT_A
+Z84_SIO_ACTRL	EQU 0x19		; COM_A
+Z84_SIO_BDATA	EQU 0x1A		; DAT_B
+Z84_SIO_BCTRL	EQU 0x1B		; COM_B
+
+Z84_PIO_ADATA	EQU 0x1C		; LPT1_D
+Z84_PIO_ACMD	EQU 0x1D		; LPT1_C
+Z84_PIO_BDATA	EQU 0x1E		; LPT2_D
+Z84_PIO_BCMD	EQU 0x1F		; LPT2_C
+
+PAL_SCP		EQU Z84_PIO_BDATA
+
+Z84_SCRP	EQU 0xEE		; Systen Contorl Register Pointer
+Z84_SCDP	EQU 0xEF		; Systen Control Data Port
+
+Z84_WDTMR	EQU 0xF0		; Watch-Dog Timer (Master Register)
+Z84_WDTCR	EQU 0xF1		; Watch-Dog Timer (Control Register)
+Z84_INTPRIREG	EQU 0xF4		; Interrupt Priority Register
+
+STC0_C		EQU Z84_CTC_0
+STC1_C		EQU Z84_CTC_1
+STC2_C		EQU Z84_CTC_2
+STC3_C		EQU Z84_CTC_3
+
+KBD_DAT		EQU Z84_SIO_BDATA
+KBD_COM		EQU Z84_SIO_BCTRL
+
+COM_A		EQU Z84_SIO_ACTRL
+DAT_A		EQU Z84_SIO_ADATA
+COM_B		EQU Z84_SIO_BCTRL
+DAT_B		EQU Z84_SIO_BDATA
+
+LPT1_D		EQU Z84_PIO_ADATA
+LPT1_C		EQU Z84_PIO_ACMD
+LPT2_D		EQU Z84_PIO_BDATA
+LPT2_C		EQU Z84_PIO_BCMD
+
+; порты
+PAGE_CPU0	EQU 0x82		; окно проецирования 0
+PAGE_CPU1	EQU 0xA2		; окно проецирования 1
+PAGE_CPU2	EQU 0xC2		; окно проецирования 2
+PAGE_CPU3	EQU 0xE2		; окно проецирования 3
+
+SYS_PORT_OFF	EQU 0x3C
+SYS_PORT_ON	EQU 0x7C
+SYS_PORT_ROMS	EQU 0x5C
+PORT_COVOX	EQU 0x4E
+PORT_MODES	EQU 0x204E
+
+Y_PORT		EQU 0x89
+RGADR		EQU 0x89
+RGMOD		EQU 0xC9
+RGSCR		EQU 0xE9
+
+PAL_V_PAGE	EQU 0x9E
+
+CNF_PAGE	EQU 0x40
+SYS_PAGE	EQU 0xFE
+MODE_PAGE	EQU 0xFC
+
+P_KBD_OUT	EQU 0xF8
+P_KBD_IN	EQU 0xFE
+
+PORT_JOI	EQU 0xFF
+
+; порты CMOS
+CMOS_DATA_RD	EQU 0xFFBD
+CMOS_DATA_WR	EQU 0xBFBD
+CMOS_ADR_WR	EQU 0xDFBD
+
+ISA_PORT	EQU 0x9FBD
+
+CNF_0		EQU 0x04
+CNF_1		EQU 0x0C
+CNF_2		EQU 0x14
+CNF_3		EQU 0x1C
+CNF_512		EQU 0x80	; включение Pentagon 128
+
+CBL_DIR		EQU 0x4E	; порт управления COVOX-Blaster
+				; bit 7 - 1 включить CBL
+
+PG_SP1		equ 0xEC
+PG_SP2		equ 0xEE
+PG_AY		equ 0xEA
+
+; порты FDD
+VG_COM		EQU 0x0F
+VG_TRK		EQU 0x3F
+VG_SEC		EQU 0x5F
+VG_DATA		EQU 0x7F
+VG_FF		EQU 0xFF
+VG_SELECT	EQU 0xBD
+VG_SEL_720	EQU 0x01
+VG_SEL_1440	EQU 0x21
+
+PORT_VSYNC	EQU VG_SELECT
+.SELECT_320L	EQU 0x41
+.SELECT_312L	EQU 0x61
+
+; порты HDD
+PR_1F7W			EQU 0x4153	; W регистр команд
+PR_1F7R			EQU 0x4053	; R регистр состояния
+PR_1F6W			EQU 0x4152	; W CHS-номер головы и устройства/LBA адрес 24-27
+PR_1F6R			EQU 0x4052	; R CHS-номер головы и устройства/LBA адрес 24-27
+PR_1F5W			EQU 0x0155	; W CHS-цилиндр 8-15/LBA адрес 16-23
+PR_1F5R			EQU 0x0055	; R CHS-цилиндр 8-15/LBA адрес 16-23
+PR_1F4W			EQU 0x0154	; W CHS-цилиндр 0-7/LBA адрес 8-15
+PR_1F4R			EQU 0x0054	; R CHS-цилиндр 0-7/LBA адрес 8-15
+PR_1F3W			EQU 0x0153	; W CHS-номер сектора/LBA адрес 0-7
+PR_1F3R			EQU 0x0053	; R CHS-номер сектора/LBA адрес 0-7
+PR_1F2W			EQU 0x0152	; W счетчик секторов
+PR_1F2R			EQU 0x0052	; R счетчик секторов
+PR_1F1W			EQU 0x0151	; W порт свойств
+PR_1F1R			EQU 0x0051	; R порт ошибок
+PR_1F0W			EQU 0x0150	; W порт данных младшие 8 бит
+PR_1F0R			EQU 0x0050	; R порт данных младшие 8 бит
+PR_3F7W			EQU 0x4155	; W регистр комманд
+PR_3F6W			EQU 0x4154	; W 
+PR_HDD_SELECT		EQU 0xBC	; выбор IDE канала
+PR_HDD_SECONDARY	EQU 0x01 
+PR_HDD_PRIMARY		EQU 0x21
+
+; биты порта статуса
+ BITMASK BSY,		7
+ BITMASK RDY,		6
+ BITMASK DRQ,		3
+ BITMASK ERR,		0
+
+ BITMASK LBA_CHS,	6		; бит выбора 1-LBA, 0-CHS
+ BITMASK MS_SL,		4		; бит выбора 0-MASTER, 1-SLAVE 

@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 13.01.2024 savelij
+; LAST UPDATE: 17.05.2025 savelij
 
 STACK_CURR_DIR		EQU 0x6000	; стек номеров дир перед входом в нее
 
@@ -85,7 +85,7 @@ ERR_DRV		LD SP,(ERORDRV)
 EXITDRV		POP IY
 		POP IX
 		PUSH AF
-		LD A,(INT_MODE)
+		LD A,(VAR_INT_MODE)
 		AND A
 		JR Z,EXITDRV1
 		EI
@@ -949,13 +949,31 @@ RDFAT04		XOR A
 		POP AF
 		JP INIRTSC
 
-F_EXT		DZ "MP3MOD"
+F_EXT		DW F_EXT_VS1001			; 0 for VS1001	(MA8201)	9B58
+		DW F_EXT_VS1011			; 1 for VS1011	(MA8201A)	9B58
+		DW 0	; 2 for VS1002	; не поддерживается, не проверялся
+		DW F_EXT_VS1003			; 3 for VS1003
+		DW F_EXT_VS1053			; 4 for VS1053 and VS8053	; пока не доделан
+		DW 0	; 5 for VS1033	; не поддерживается, не проверялся
+		DW F_EXT_VS1063			; 6 for VS1063	; пока не доделан
+		DW 0	; 7 for VS1103	; не поддерживается, не проверялся
 
 CP_EXT		PUSH BC
 		PUSH DE
 		PUSH HL
+		PUSH HL
 		LD C,0
-		LD DE,F_EXT
+		LD A,(VAR_CHIP_TYPE)
+		ADD A,A
+		ADD A,LOW (F_EXT)
+		LD L,A
+		ADC A,HIGH (F_EXT)
+		SUB L
+		LD H,A
+		LD E,(HL)
+		INC HL
+		LD D,(HL)
+		POP HL
 .L3		LD A,(DE)
 		AND A
 		JR Z,.L2
@@ -1325,7 +1343,7 @@ LD_F9		LD A,0x20
 LD_E		IN A,(GSCFG0)
 		RES B_EXPAG,A
 		OUT (GSCFG0),A
-		LD A,(PAGE_PLAYER)
+		LD A,(VAR_PAGE_PLAYER)
 		OUT (MPAG),A
 		LD A,(BUF_PAG+0xFF)
 		SRL A
@@ -1514,7 +1532,7 @@ FNDMP30		LD HL,(PAGEMP3)
 		RR L
 		LD DE,2
 		LD (KOLVMP3),HL
-		LD (COUNT_MP3),HL
+		LD (VAR_COUNT_MP3),HL
 		AND A
 		SBC HL,DE
 		EX AF,AF'

@@ -1,18 +1,13 @@
-@ECHO On
+
+@echo on
 
 cd ..\main_rom
 
-..\..\tools\asw\asw -U -L main_ngs.a80
-..\..\tools\asw\p2bin main_ngs.p neogs.rom -r $-$ -k
-
-del *.lst
+call build.bat
 
 cd ..\loader_ngs
 
-..\..\tools\asw\asw -U -L loader_ngs.a80
-..\..\tools\asw\p2bin loader_ngs.p loader_ngs.rom -r $-$ -k
-
-del *.lst
+call build.bat
 
 cd ..\bootFPGA00
 
@@ -39,6 +34,6 @@ copy /B /Y ..\bootFPGA00\bootFPGA.crc fpga.bin
 del loader_ngs.rom
 del neogs.rom
 
-copy /B /Y full_ngs.rom D:\yad\UnrealSpeccy\bootgs.rom
+copy /B /Y full_ngs.rom D:\yad\UnrealSpeccy\full_ngs.rom
 
 pause

@@ -1,0 +1,979 @@
+
+; LAST UPDATE: 29.11.2024 savelij
+
+		include macros.a80
+		include ports_ngs.a80
+		include local_macros.a80
+		include local_define.a80
+	        include macros_sp.a80
+		include dss.a80
+		include bios_sp.a80
+		include define_sp.a80
+		include ports_sp.a80
+		include sdcomand.a80
+
+GSCOD		EQU 0x8000			; адрес куда закидывать код на нгс
+
+		ORG ADR_START
+START		DI
+	IFDEF _SPRINTER
+		CALL CLS
+	DE_ADR_SCR ((32-(EMESS24-MESS24))/2),15
+		LD HL,MESS24
+		CALL PRINT
+	DE_ADR_SCR 4,9
+		LD HL,MESS28
+		CALL PRINT
+		XOR A
+		CALL DETECT_ISA
+		CALL CHECK_ISA
+		JR NC,.L1
+		CALL CLOSE_ISA
+		LD A,1
+		CALL DETECT_ISA
+		JR NC,.L1
+	DE_ADR_SCR 8,8
+		LD HL,NOT_FOUND_ISA
+		CALL PRINT
+		JP NO_ISA
+	ELSE
+		LD HL,0x0110
+		LD (0x5C09),HL			; установка переменной клавиатуры
+		RES 3,(IY+48)
+		RES 5,(IY+1)
+	ENDIF
+.L1		LD (OLD_STACK),SP		; сохранение стека
+		LD SP,0
+OLD_STACK	EQU $-2
+	IFDEF _SPRINTER
+; TODO добавить получение ключей из командной строки доса
+	ELSE
+		LD A,0x7F
+		IN A,(0xFE)
+		RRA
+		RRA
+		JR NC,LOOP21
+	ENDIF
+
+; тест наличия GS/NeoGS
+		LD B,0x30			; для определения наличия нгс используется
+						; команда 0x1D с параметром =0
+	OUT_GSDAT 0				; ждем ответа 0x30 прерываний
+	OUT_GSCOM 0x1D
+LOOP22		EI
+		HALT
+		DI
+		DEC B
+		JR Z,LOOP21			; счетчик обнулился, а может нгс висит?
+	IN_GSCOM				; ждем сброса команд бита
+		RRA
+		JR C,LOOP22
+	IN_GSDAT				; команд бит сбросился, читаем ответ из дата порта
+						; попытка получить флаговый байт с нгс
+	OUT_GSDAT 0				; при первом запуске команда 0xFF еще не пропатчена
+		LD B,0x30			; ждем ответа 0x30 прерываний
+	OUT_GSCOM 0xFF
+LOOP001		EI
+		HALT
+		DI
+		DEC B
+		JR Z,LOOP21			; счетчик обнулился, пробуем перезапустить нгс
+	IN_GSCOM
+		RRA
+		JR C,LOOP001
+		JR LOOP13			; нгс ответил на команду, подключаемся к внутреннему плееру
+
+; принудительный перезапуск NeoGS
+LOOP21
+	OUT_GSCTR M_DBIT			; полный сброс нгс
+		EI
+		HALT
+		HALT
+		DI
+	OUT_GSCOM 0xF3				; холодный перезапуск нгс прошивки
+		LD B,0x30			; ждем 0x30 прерываний
+LOOP25		EI
+		HALT
+		HALT
+		DI
+		DEC B
+		JP Z,NO__GS			; нет ответа, нет нгс
+	IN_GSCOM
+		RRA
+		JR C,LOOP25			; команд бит изменился, продолжаем
+; загрузка и запуск кода на NeoGS
+RST_NGS_CODE					; запрос количества страниц памяти
+	OUT_GSCOM 0x23				; для определения в какую страницу плеер закидывать
+		CALL WC
+	IN_GSDAT
+		OR 0x3F
+		LD D,A
+		LD E,MPAG			; включаем стандартной командой прошивки
+		CALL OUTPORT			; страницу на нгс для загрузки внутреннего плеера
+						; стандартными средствами грузим код на нгс 
+		LD DE,FAT_END - GO_YES
+		LD A,E
+	OUT_GSDAT_A
+	OUT_GSCOM 0x14
+		CALL WC
+		LD A,D
+	OUT_GSDAT_A
+		CALL WD
+	OUT_GSDAT LOW (GSCOD)
+		CALL WD
+	OUT_GSDAT HIGH(GSCOD)
+		CALL WD
+		LD HL,GO_YES
+.LODCOD		LD A,(HL)
+		INC HL
+	OUT_GSDAT_A
+		CALL WD
+		DEC DE
+		LD A,D
+		OR E
+		JR NZ,.LODCOD
+; код загрузили, запускаем
+	OUT_GSDAT LOW (GSCOD)
+	OUT_GSCOM 0x13
+		CALL WC
+	OUT_GSDAT HIGH (GSCOD)
+		EI
+		HALT
+		HALT
+		DI				; подождали 2 прерывания запуска кода
+LOOP13		LD A,7
+		CALL CLS			; очистили экран
+	DE_ADR_SCR 0,8
+		LD HL,MESS20			; печать текста о поиске на SD карточке
+		CALL PRINT
+						; подаем команду проверки что на нгс крутится
+	OUT_GSDAT 0x1D
+	OUT_GSCOM 0x1F
+		LD B,0
+		CALL WAITGS			; ожидаем ответа покручивавая палочку
+	IN_GSDAT				; читаем ответ
+		CP 0x8B	
+		JP Z,RST_NGS_CODE		; если 0x8B то ответила стандартная прошивка
+		CP PLAYER_OK
+		JP Z,Warm			; если ответ 0x77, то ответил внутренний плеер
+		CP SD_NOT_FOUND
+		JP NZ,LOOP17			; SD карта найдена?
+		LD A,7
+		CALL CLS
+		LD HL,MESS13
+	DE_ADR_SCR 0,16
+LOOP20		CALL PRINT
+		LD HL,MESS15
+	DE_ADR_SCR 0,18
+		CALL PRINT
+		LD HL,MESS16
+	DE_ADR_SCR 0,20
+		CALL PRINT
+		JR LOOP16
+
+LOOP17		CP FAT_NOT_FOUND
+		JR NZ,LOOP26			; на SD карте FAT не обнаружен
+		LD A,7
+		CALL CLS
+		LD HL,MESS14
+	DE_ADR_SCR 0,16
+		JR LOOP20
+
+LOOP26		CP FILES_NOT_FOUND
+		JR NZ,LOOP27
+		LD A,7
+		CALL CLS
+		LD HL,MESS23
+	DE_ADR_SCR 0,16
+		JR LOOP20
+
+LOOP27		CP NEOGS_ERROR
+		JP NZ,RST_NGS_CODE		; плата GS стараго типав
+		JP NO_NGS
+
+LOOP16
+	IFDEF _SPRINTER
+		EI
+	SPDSS DSSF.SCANKEY
+		JR Z,LOOP16
+	ELSE
+		EI
+		HALT
+		DI
+		BIT 5,(IY+1)
+		JR Z,LOOP16
+		LD A,(IY-0x32)
+		RES 5,(IY+1)
+	ENDIF
+		CP 0x0D
+		JP Z,START
+		CP 0x20
+		JP Z,RESCOMP
+		JR LOOP16
+
+Warm		LD A,7
+		CALL CLS			; очистка экрана
+		LD HL,START_TEST
+	DE_ADR_SCR 1,0
+		CALL PRINT
+
+; зацикливание теста передачи портов на 256 заходов между компом и NGS
+CYCLEZX		LD A,(.NEXT)
+		PUSH AF
+		LD HL,STEP_TEST
+	DE_ADR_SCR 1,2
+		CALL PRINT
+		POP AF
+		CALL PRIHEX
+		LD C,0
+.NEXT		EQU $-1
+	OUT_GSDAT 0x1F
+	OUT_GSCOM 0x1F
+		EI
+		HALT
+		DI
+	IN_GSDAT
+		CP C
+		JR NZ,.ERROR
+		INC C
+		JR Z,.START_TEST_SD
+		LD A,C
+		LD (.NEXT),A
+		DEC A
+		EI
+		HALT
+		HALT
+		DI
+		JR CYCLEZX
+
+.ERROR		LD HL,TEST_ERROR
+	DE_ADR_SCR 2,8
+		CALL PRINT
+		JP NO_ISA
+
+; тестирование чтения секторов с SD карты, чтение с передачей на комп
+.START_TEST_SD
+	DE_ADR_SCR 1,4
+		LD HL,TEST_SD
+		CALL PRINT
+
+; инит SD карты
+	OUT_GSDAT 0
+	OUT_GSCOM 0x1F
+		CALL WN
+.L6
+	IN_GSDAT
+		CP PLAYER_OK
+		JR NZ,.L6
+
+		LD BC,0
+		LD DE,0x0100
+.		LD IXL,0
+.L2		PUSH BC
+		PUSH DE
+		LD HL,STEP_TEST
+	DE_ADR_SCR 1,6
+		CALL PRINT
+		LD A,IXL
+		CALL PRIHEX
+		POP DE
+		POP BC
+		EI
+		HALT
+		DI
+; чтения сектора в цикле
+.L1		LD A,1			; количество секторов для чтения
+		EX AF,AF'
+		LD A,0x20		; команда драйверу
+		CALL COMM2SD
+		PUSH BC
+		PUSH DE
+	OUT_GSCOM_A
+		CALL WC
+		LD DE,512
+		LD HL,FAT_END
+.L4		CALL WN
+	IN_GSDAT
+		LD (HL),A
+		INC HL
+		DEC DE
+		LD A,D
+		OR E
+		JR NZ,.L4
+		CALL WN
+.L5
+	IN_GSDAT
+		CP PLAYER_OK
+		JR NZ,.L5
+		EX AF,AF'
+		POP DE
+		POP BC
+		INC IXL
+		LD E,IXL
+		JR NZ,.L2
+		LD HL,END_TEST
+	DE_ADR_SCR 1,8
+		CALL PRINT
+		CALL ANYKEY
+		JP RESCOMP
+
+; передатчик команд/параметров в драйвер на NeoGS
+COMM2SD
+	OUT_GSDAT_A			; ушла команда драйверу
+	OUT_GSCOM 0x1F			; ушла команда прошивке
+		CALL WC
+		LD A,B
+	OUT_GSDAT_A			; ушли биты 31-24 параметров
+		CALL WD
+		LD A,C
+	OUT_GSDAT_A			; ушли биты 23-16 параметров
+		CALL WD
+		LD A,D
+	OUT_GSDAT_A			; ушли биты 15-8 параметров
+		CALL WD
+		LD A,E
+	OUT_GSDAT_A			; ушли биты 7-0 параметров
+		CALL WD
+		EX AF,AF'
+	OUT_GSDAT_A			; ушло кол-во секторов
+		EX AF,AF'
+		DUPL 9
+		RET
+
+; при отсутствии NeoGS выход в 128 басик
+NO_NGS		LD A,7
+		CALL CLS
+	DE_ADR_SCR 9,8
+		LD HL,MESS17
+		CALL PRINT
+NO_ISA
+	DE_ADR_SCR 6,10
+		LD HL,MESS19
+		CALL PRINT
+		CALL ANYKEY
+		JP RESCOMP
+
+; ждем нажатия кнопки
+ANYKEY
+	IFDEF _SPRINTER
+		EI
+	SPDSS DSSF.SCANKEY
+		JR Z,ANYKEY
+		RET
+	ELSE
+.L1		XOR A
+		IN A,(0xFE)
+		CPL
+		AND 0x1F
+		JR Z,.L1
+		RET
+	ENDIF
+
+; ждем отпускания кнопки
+NANYKEY
+	IFDEF _SPRINTER
+		EI
+	SPDSS DSSF.SCANKEY
+		JR NZ,NANYKEY
+		RET
+	ELSE
+.L1		XOR A
+		IN A,(0xFE)
+		CPL
+		AND 0x1F
+		JR NZ,.L1
+		RET
+	ENDIF
+
+; при отсутствии GS выход в 128 басик
+NO__GS		LD A,7
+		CALL CLS
+	DE_ADR_SCR 10,8
+		LD HL,MESS18
+		CALL PRINT
+	DE_ADR_SCR 6,10
+		LD HL,MESS19
+		CALL PRINT
+		CALL ANYKEY
+		JP RESCOMP
+
+; печать текста до байта 0 или пока B не обнулица
+PRINT_B		LD A,(HL)
+		AND A
+		RET Z
+		INC HL
+		CALL PRISYM
+		DJNZ PRINT_B
+		RET
+
+; печать текста до байта 0
+PRINT		LD A,(HL)
+		INC HL
+		AND A
+		RET Z
+		CALL PRISYM
+		JR PRINT
+
+
+; ожидание отпускания кнопки и сброс
+RESCOMP		CALL NANYKEY
+	IFDEF _SPRINTER
+		CALL CLS
+		CALL CLOSE_ISA
+	SPDSS DSSF.EXIT
+	ELSE
+		XOR A
+		LD BC,0x7FFD
+		OUT (C),A
+		JP 0
+	ENDIF
+
+WAITGS		LD E,B
+		LD D,0
+		LD HL,VENTIL
+		ADD HL,DE
+		LD A,(HL)
+	DE_ADR_SCR 27,8
+		CALL PRISYM
+		LD C,5
+.L1		EI
+		HALT
+		DI
+		DEC C
+		JR NZ,.L1
+	IN_GSCOM
+		RRA
+		RET NC
+		INC B
+		RES 2,B
+		JR WAITGS
+
+MOD00		DZ "Length:        "
+MOD02		DZ "Position:      "
+MOD03		DZ "Note:          "
+
+VENTIL		DB 0xC4,0x5C,0x7C,0x2F
+
+MESS16		DZ "\"Space\" Exit"
+MESS13		DZ "SD-Card Not Found"
+MESS14		DZ "FAT not Found"
+MESS15		DZ "Press \"ENTER\" 4 Restart Init SD"
+MESS17		DB "Neo"
+MESS18		DZ "GS not found"
+MESS19		DB "Press any key for "
+	IFDEF _SPRINTER
+		DZ "exit"
+	ELSE
+		DZ "reset"
+	ENDIF
+MESS20		DZ "Please wait, search files"
+MESS23		DZ "File(s) not found"
+MESS24		DB "Neo Player Light v";,VERS_PLAYER,0
+EMESS24		EQU $-1
+MESS28		DZ "Please wait, detect NeoGS"
+
+	IFDEF _SPRINTER
+NOT_FOUND_ISA	DZ "ISA Slot not found. Emulator?"
+	ENDIF
+
+START_TEST	DZ "Test ports ZX <-> NGS"
+STEP_TEST	DZ "Position: "
+TEST_ERROR	DZ "Error test"
+TEST_SD		DZ "Test SD card read"
+END_TEST	DZ "Test OK, press any key 4 reset"
+
+CLS
+	IFDEF _SPRINTER
+		LD HL,32 << 8 + 80
+		LD DE,0
+	SPBIOS BIOSF.LP_CLS_WIN, LGRAY
+	ELSE
+		LD HL,0x4000
+		LD E,L
+		LD D,H
+		LD (HL),L
+		INC E
+		LD BC,0x1800
+		LDIR
+		LD (0x5C8D),A
+		LD (0x5C48),A
+		LD HL,0x5800
+		LD D,H
+		LD E,L
+		LD (HL),A
+		LD BC,0x02FF
+		INC E
+		LDIR
+		RRCA
+		RRCA
+		RRCA
+		AND 7
+		OUT (0xFE),A
+	ENDIF
+		RET
+
+; чтение из порта NeoGS
+; вход: E-адрес порта
+; выход: A-прочитанное значение
+INPORT		LD A,E
+	OUT_GSDAT_A
+	OUT_GSCOM 0x11
+		CALL WC
+	IN_GSDAT
+		RET
+
+; запись в порт NEOGS
+; вход: E-адрес порта, D-значение
+OUTPORT		LD A,E
+	OUT_GSDAT_A
+	OUT_GSCOM 0x10
+		CALL WC
+		LD A,D
+	OUT_GSDAT_A
+		JR WD
+
+RES_PORTNGS	XOR A
+	OUT_GSDAT_A
+	OUT_GSCOM_A
+	IN_GSCOM
+		RET
+
+; ожидание установки DATA бита
+WN
+	IN_GSCOM
+		RLA
+		JR NC,WN
+		RET
+
+; ожидание сброса COMMAND бита
+WC
+	IN_GSCOM
+		RRA
+		JR C,WC
+		RET
+
+; ожидание сброса DATA бита
+WD
+	IN_GSCOM
+		RLA
+		JR C,WD
+		RET
+
+; прием E байт из NeoGS
+INI_E
+INI_E1		LD D,0
+INI_E2		DEC D
+		JR Z,INI_E3
+		CALL WN
+	IN_GSDAT
+		LD (HL),A
+		INC HL
+		DEC E
+		JR NZ,INI_E1
+		RET
+
+INI_E3
+		LD SP,(OLD_STACK)
+		JP LOOP21
+
+PRIHEX		PUSH AF
+		RRA
+		RRA
+		RRA
+		RRA
+		CALL .PHC
+		POP AF
+.PHC		AND 0x0F
+		CP 0x0A
+		JR C,.L1
+		ADD A,7
+.L1		ADD A,'0'
+PRISYM		PUSH HL
+		PUSH DE
+	IFDEF _SPRINTER
+		PUSH BC
+		LD B,1
+	SPBIOS BIOSF.LP_PRINT_SYM
+		POP BC
+		POP DE
+		POP HL
+		RET
+	ELSE
+		PUSH DE
+		LD L,A
+		LD H,0
+		LD DE,CHARS
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,DE
+		POP DE
+	REPT 8
+		LD A,(HL)
+		LD (DE),A
+		INC HL
+		INC D
+	ENDM
+		POP DE
+		POP HL
+		INC E
+		RET
+	ENDIF
+
+	IFDEF _SPRINTER
+; установка позиции печати
+SET_DE_ADR_SCR	PUSH AF
+		PUSH HL
+		PUSH DE
+		PUSH BC
+	SPBIOS BIOSF.LP_SET_PLACE
+		POP BC
+		POP DE
+		POP HL
+		POP AF
+		RET
+
+DETECT_ISA	LD (OPEN_ISA.SLOT),A
+; A - номер слота 0 или 1
+OPEN_ISA	LD A,0
+.SLOT		EQU $-1
+		ex af,af'
+		in a,(PAGE_CPU3);(mmu3)
+		ld (CLOSE_ISA.pg),a
+		ld bc,0x1FFD;sc_port
+		ld a,0x11
+		out (c),a
+		ex af,af'
+		rlca
+		or %11010100;ISA.SLOT0_PORT
+		out (PAGE_CPU3),a;(mmu3),a
+		ld bc,ISA_PORT;ISA.DIR
+		xor a
+		out (c),a
+		ret
+
+CLOSE_ISA	ld bc,0x1FFD;sc_port
+		ld a,1
+		out (c),a
+		ld a,0
+.pg		EQU $-1
+		out (PAGE_CPU3),a;(mmu3),a
+		ret
+
+CHECK_ISA	ld a,(0xC000)
+		cp 0xff
+		ret z				; норм, шина ISA есть
+		scf				; нет, шины нет (эмулятор?)
+		ret
+	ENDIF
+
+	IFNDEF _SPRINTER
+CHARS		binclude make/altstd.bin
+	ENDIF
+
+; код для выполнения на нгс
+GO_YES		;binclude tmp/play_on_ngs.rom
+
+; патч прошивки для плеерения MOD
+; плеерение, проверка и прочее
+COMINT		EQU 0x026B
+COMINT_		EQU 0x026E
+COMINT0		EQU 0x0273
+COMINT1		EQU 0x0295
+WTDTL		EQU 0x02BC
+EMPTY1		EQU 0x0942
+ADDA80		EQU 0x0EF8
+EMPTY2		EQU 0x3D5F
+NUMPG		EQU 0x4080				; всего страниц
+CPAGE		EQU 0x4081
+CNTMOD		EQU 0x4090
+CURMOD		EQU 0x4096
+CONVERT		EQU 0x40B7
+MTSTAT		EQU 0x4151
+MTSNGPS		EQU 0x415B
+MTSNGSZ		EQU 0x415C
+PlMode		EQU 0x41A0
+MODLLEN		EQU 0x41A1
+ISTACK		EQU 0x4400
+LDMOD		EQU 0xC3F8
+PLAYMOD		EQU 0xC426
+FXB01		EQU 0xD2B2
+
+ INIT_VAR 0x4168
+ SETVAR FLAGS,			BYTE
+ SETVAR STATUS,			BYTE			; статус плеера
+ SETVAR GETVTSL,		BYTE			; громкость MP3 чипа
+ SETVAR GETVTSH,		BYTE			; биты режимов
+ SETVAR VSTBL,			WORD			; текущие настройки тембров
+ SETVAR COUNT_MP3,		WORD			; количество MP3
+ SETVAR NUMFILE,		WORD			; номер текущего файла
+ SETVAR TYPE_RESET,		BYTE			; тип сброса
+ SETVAR TYPE_FAT,		BYTE			; калибр FAT
+ SETVAR BUF_TEXT,		8			; буфер для текста
+ SETVAR SIZE_PATTERN_MOD,	BYTE			; кол-во патернов в загруженном MOD
+ SETVAR SIZE_PAGES_MOD,		BYTE			; кол-во страниц MOD
+ SETVAR TIMEOUT,		WORD			; TIMEOUT на работу с новым файлом
+ SETVAR KUDAXOR,		WORD			; адрес перехода на XOR BIT 7
+ SETVAR PAGE_PLAYER,		BYTE			; номер страницы расположения плеера
+ SETVAR INT_MODE,		BYTE			; флаг разрешенности прерываний
+ SETVAR CHIP_TYPE,		BYTE			; тип чина на плате
+ SETVAR FILE_TYPE,		BYTE			; тип файла
+ SETVAR BCDE,			DWORD			; параметры от спека
+ SETVAR SIZE,			BYTE			;
+ SETVAR PARAM1,			BYTE
+ SETVAR SIZE_VARS,		0			; количество переменных
+
+	PHASE 0x8000
+		DI
+		LD SP,ISTACK
+		CALL PATCH
+		OUT (ZXDATWR),A
+		OUT (CLRCBIT),A				; сообщили спеку о результатах инита
+		JP COMINT
+
+PATCH		LD A,(NUMPG)
+		OR %00111111
+		LD (PAGE_PLAYER),A			; страница расположения плеера
+		IN A,(GSCFG0)
+		RES B_RAMRO,A
+		SET B_EXPAG,A
+		OUT (GSCFG0),A
+		LD A,0x80
+		OUT (MPAGEX),A
+
+		LD HL,0x11D6
+		LD (HL),0xCD
+		INC HL
+		LD (HL),LOW (NXTMODR)
+		INC HL
+		LD (HL),HIGH (NXTMODR)
+		INC HL
+		EX DE,HL
+		LD HL,0x11E3
+		XOR A
+		SBC HL,DE
+		LD B,H
+		LD C,L
+		LD H,D
+		LD L,E
+		LD (HL),A
+		INC DE
+		LDIR					; зачистка хвостов в ПЗУ
+
+		LD HL,P_START
+		LD DE,EMPTY1
+		LD BC,P__END - P_00
+		LDIR					; перенос управления MP3 плеером в ПЗУ
+		LD HL,(NUMPG)
+		LD H,0x40
+		DEC L
+		LD (HL),1
+		INC L
+		LD (HL),0				; отрубание последней страницы ОЗУ
+							; от основного списка страниц
+		LD HL,NUMPG
+		DEC (HL)
+		LD HL,P_00
+		LD (0x0300 + (0x1F * 2)),HL		; патч команды 1F
+		LD HL,COMMFF
+		LD (0x0300 + (0x2F * 2)),HL		; патч команды FF
+		IN A,(GSCFG0)
+;		SET B_RAMRO,A				; запрет звписи в прошивку
+		RES B_EXPAG,A
+		OUT (GSCFG0),A
+		LD A,(PAGE_PLAYER)
+		OUT (MPAG),A
+
+		LD A,PLAYER_OK				; код ошибки =все замечательно
+		LD (STATUS),A
+		RET
+
+NXTMODR		LD A,(PAGE_PLAYER)
+		OUT (MPAG),A
+		JP OPROS
+
+COMMFF		IN A,(ZXDATRD)
+		OUT (CLRCBIT),A
+		ADD A,LOW (FLAGS)
+		LD IYL,A
+		LD A,HIGH (FLAGS)
+		ADC A,0
+		LD IYH,A
+		LD A,(IY+0)
+		OUT (ZXDATWR),A
+		JP COMINT_
+;	DEPHASE
+
+P_START
+	PHASE EMPTY1
+
+; основной цикл общения со спеком
+P_00		JP OPROS.L3
+
+; продолжить играть MOD
+CONROM		LD A,(CPAGE)
+		OUT (MPAG),A
+		JP COMINT
+
+OPROS		IN A,(ZXSTAT)
+		RRA
+		JR C,.L1
+		JR OPROS
+
+.L1		IN A,(ZXCMD)
+		CP 0x1F
+		JR NZ,CONROM
+.L3		IN A,(ZXDATRD)
+		OUT (CLRCBIT),A
+		LD (PARAM1),A
+		CP 0x20
+		JR NZ,.L4
+		EX AF,AF'
+		CALL WDY
+		IN A,(ZXDATRD)			; прием битов 31-24 параметра
+		LD H,A
+		CALL WDY
+		IN A,(ZXDATRD)			; прием битов 23-16 параметра
+		LD L,A
+		LD (BCDE),HL
+		CALL WDY
+		IN A,(ZXDATRD)			; прием битов 15-8 параметра
+		LD H,A
+		CALL WDY
+		IN A,(ZXDATRD)			; прием битов 7-0 параметра
+		LD L,A
+		LD (BCDE+2),HL
+		CALL WDY
+		IN A,(ZXDATRD)			; прием кол-во секторов
+		LD (SIZE),A
+.L2		EX AF,AF'
+.L4		LD HL,CONROM
+		PUSH HL
+		ADD A,A
+		ADD A,LOW (TABFUNC)
+		LD L,A
+		LD A,HIGH (TABFUNC)
+		ADC A,0
+		LD H,A
+		LD A,(PAGE_PLAYER)
+		OUT (MPAG),A
+		LD A,(HL)
+		INC HL
+		LD H,(HL)
+		LD L,A
+		JP (HL)
+
+;----FUNC1D----
+; ответ на запрос какой код работает
+TEST_MODE	IN A,(ZXDATRD)
+		OUT (CLRCBIT),A
+		LD A,(STATUS)
+		OUT (ZXDATWR),A
+		RET		
+
+;----FUNC1F-----
+; тест порта с возвратом кода
+CYCLE		IN A,(ZXDATRD)
+		OUT (CLRCBIT),A
+		LD C,0
+.NEXT		EQU $-1
+		LD B,0
+		DJNZ $
+		LD A,C
+		OUT (ZXDATWR),A
+		INC A
+		LD (.NEXT),A
+NONFUNC		RET
+
+;----FUNC20-----
+; читать сектора карты по номеру
+READ_SD_SECTOR	LD A,(SIZE)
+		EX AF,AF'
+		LD A,2
+		LD HL,BUFREAD
+		LD DE,(BCDE)
+		LD BC,(BCDE+2)
+		PUSH HL
+		CALL COM2SD
+		POP HL
+		LD DE,512
+; передача одного сектора на спек
+RDSECTG		IN A,(ZXSTAT)
+		RRA
+		JR NC,RDSECTG
+		OUT (CLRCBIT),A
+.L1		LD A,(HL)
+		INC HL
+		OUT (ZXDATWR),A
+		CALL WDN
+		DEC DE
+		LD A,D
+		OR E
+		JR NZ,.L1
+
+OK_WORK		LD A,PLAYER_OK
+OUTSTAT		OUT (ZXDATWR),A
+; ждем пока спек заберет байт из порта
+WDN		IN A,(ZXSTAT)
+		RLA
+		JR C,WDN
+		RET
+
+; ждем пока спек даст байт в порт
+WDY		IN A,(ZXSTAT)
+		RLA
+		JR NC,WDY
+		RET
+
+INIT_SD		XOR A
+		CALL COM2SD
+		AND A
+		LD A,PLAYER_OK				; код ошибки =все замечательно
+		JR Z,.L1
+		LD A,SD_NOT_FOUND
+.L1		LD (STATUS),A
+		OUT (ZXDATWR),A
+		RET
+
+COM2SD		include sd_on_ngs.a80	
+
+TABFUNC		DW INIT_SD					; 00 перезапуск SD
+		DW NONFUNC;PREV_TRACK				; 01 предыдущий трек
+		DW NONFUNC;PLAY					; 02 плей
+		DW NONFUNC;PAUSE				; 03 пауза
+		DW NONFUNC;STOP					; 04 стоп
+		DW NONFUNC;NEXT_TRACK				; 05 следующий трек
+		DW NONFUNC;XORBASS				; 06 XOR TREBLE/BASS
+		DW NONFUNC;XORSURR				; 07 XOR SURROUND
+		DW NONFUNC;VOL_UP				; 08 громкость +
+		DW NONFUNC;VOL_DOWN				; 09 громкость -
+		DW NONFUNC;MUTE					; 0A вкл/выкл громкости
+		DW NONFUNC;GET_TIME				; 0B отдать время
+		DW NONFUNC;GET_VTS				; 0C отдать парам 6-10
+		DW NONFUNC;GET_CURRENT				; 0D отдать тек номер
+		DW NONFUNC;SET_NUM				; 0E установка текущего номера
+		DW NONFUNC;RESET_MP3				; 0F сброс MP3 декодера
+		DW NONFUNC;FAT_TYPE				; 10 тип FAT
+		DW NONFUNC;GET_LNG				; 11 отдать имя файла
+		DW NONFUNC;GET_FILE_DESCR			; 12 отдать описатель
+		DW NONFUNC;GET_COUNT_FILES			; 13 отдать колво *.EXT
+		DW NONFUNC;SEND_MP3				; 14 прд на MP3
+		DW NONFUNC;TXT_COUNT_FILES			; 15 DEC число файлов
+		DW NONFUNC;TXT_CURRENT_FILE			; 16 DEC число текущ+1
+		DW NONFUNC;XOR_RESET				; 17 переключения типа сброса
+		DW NONFUNC;PREV_DIR				; 18 следующий DIR
+		DW NONFUNC;NEXT_DIR				; 19 предыдущий DIR
+		DW NONFUNC;SET_TEMBR				; 1A уст. тембров
+		DW NONFUNC;TXT_TEMBR_STATUS			; 1B чтение тембров
+		DW NONFUNC;BITRATE				; 1C RD битрейт и проч
+		DW TEST_MODE					; 1D тест режима
+		DW NONFUNC;GET_CHIP_TYPE			; 1E номер чипа MP3
+		DW CYCLE					; 1F тест обмена
+		DW READ_SD_SECTOR				; 20 читать сектора карты по номеру
+END_TAB
+
+P__END
+	DEPHASE
+BUFREAD
+	DEPHASE
+FAT_END
