@@ -2,7 +2,7 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.sch"
 
 (asciiHeader 
   (asciiVersion 3 0)
-  (timeStamp 2025 5 20 23 38 39)
+  (timeStamp 2025 5 22 22 34 36)
   (program "P-CAD 2006 Schematic" "19.02.9589")
   (copyright "Copyright © 1992-2006 Altium Limited")
   (fileAuthor "")
@@ -10631,7 +10631,7 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.sch"
     (junctionSize 20.0)
     (refPointSizePrint 100.0)
     (infoPointSizePrint 100.0)
-    (junctionSizePrint 20.0)
+    (junctionSizePrint 15.0)
   )
   (titleSheet 
      "C:\\Program Files\\P-CAD 2002\\Titles\\ADT_A2.ttl"
@@ -12603,7 +12603,7 @@ ACCEL_ASCII "D:\NedoPC\svn\ngs\pcad\revC-VS\NeoGS.sch"
     (text (pt 20400.0 700.0) "DAC in SO package" (textStyleRef "(DefaultTTF)") (justify UpperCenter) (extent 25.73072 mm 3.7703 mm) )
     (text (pt 20400.0 1800.0) "DAC in DIP package" (textStyleRef "(DefaultTTF)") (justify UpperCenter) (extent 26.52447 mm 3.7703 mm) )
     (text (pt 19000.0 5700.0) "SD card holder" (textStyleRef "Russian") (justify Left) (extent 25.92916 mm 5.02707 mm) )
-    (text (pt 18300.0 14100.0) "mp3 chips                              CVDD       J2         DA7*,C51*    C52*-C54*, R54*-R57* \r\nMA8201                                  nc           not         not                 not              \r\nVS1001, VS1011                    3.3V        short      not                 install \r\nVS1003 (DA1 must be 2.8V)   2.5V        not         install 2.5v     install \r\nVS1053, VS1063                    1.8V         not         install 1.8v     install \r\n" (textStyleRef "(DefaultTTF)") (justify UpperCenter) (extent 106.69322 mm 16.4703 mm) )
+    (text (pt 18300.0 14100.0) "mp3 chips                              CVDD       J2         DA7*,C51*    C52*-C55*, R54*-R57* \r\nMA8201                                  nc           not         not                 not              \r\nVS1001, VS1011                    3.3V        short      not                 install \r\nVS1003 (DA1 must be 2.8V)   2.5V        not         install 2.5v     install \r\nVS1053, VS1063                    1.8V         not         install 1.8v     install \r\n" (textStyleRef "(DefaultTTF)") (justify UpperCenter) (extent 106.69322 mm 16.4703 mm) )
     (line (pt 22700.0 3300.0) (pt 24800.0 3300.0) )
     (symbol (symbolRef "NPN_1") (refDesRef "VT1") (partNum 1) (pt 23900.0 9000.0) )
     (symbol (symbolRef "JUMPER_1") (refDesRef "J1") (partNum 1) (pt 24300.0 9400.0) 
