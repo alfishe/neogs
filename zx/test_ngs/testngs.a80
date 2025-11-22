@@ -1,0 +1,487 @@
+
+; LAST UPDATE: 13.11.2025 savelij
+
+		include macros.a80
+		include ports_ngs.a80
+		include sdcomand.a80
+		include local_macros.a80
+		include define_vs10xx.a80
+
+NSGCODESIZE	EQU GSDDRVE - GSDDRV
+
+		ORG ADR_START
+		DI
+		CALL FADRTSC
+RESTART		CALL CLEAR_SCREEN
+		LD HL,NAME
+		CALL PRINT_MSG
+		LD HL,TEST.RESTART
+		CALL PRINT_MSG
+	IF 0
+		LD A,0x80
+		OUT (GSCTR),A
+		NOP
+		NOP
+		NOP
+		NOP
+		LD A,0x55
+		OUT (GSDAT),A
+		OUT (GSCOM),A	;первый ожидаемый байт загрузчиком
+		CALL WC		;ждем очистки COMMAND BIT
+		LD A,0xAA
+		OUT (GSDAT),A
+		OUT (GSCOM),A	;второй ожидаемый байт загрузчиком
+		CALL WC
+		XOR A
+		OUT (GSDAT),A
+		LD A,8
+		OUT (GSCOM),A
+		CALL WC
+		LD HL,VVARS.TEXT
+		LD BC,GSDAT
+.L1		CALL WN
+		IN A,(C)
+		LD (HL),A
+		INC HL
+		AND A
+		JR NZ,.L1
+
+		LD HL,VVARS.TEXT
+		CALL PRINT_MSG
+	ELSE
+		LD HL,TEST.FIND_NGS
+		CALL PRINT_MSG
+		CALL FIND_NGS
+		JR NC,.L2
+		LD HL,TEST.NO_NGS
+		CALL PRINT_MSG
+		JP FIND_SD
+	ENDIF
+
+.L2		LD E,GSCFG0
+		CALL INPORT
+		AND M_EXPAG ! 0xFF
+		LD D,A
+		CALL OUTPORT
+		LD HL,TEST.FOUND
+		CALL PRINT_MSG
+	OUT_GSCOM 0x23
+		CALL WC
+	IN_GSDAT
+		OR %00001111
+		INC A
+		LD IXL,A
+		LD HL,TEST.ALL_PAGE
+		CALL PRINT_MSG
+		LD A,IXL
+		CALL PRIHEX
+		LD HL,TEST.NEWLINE
+		CALL PRINT_MSG
+; запись номеров страниц в страницы
+		CALL SET_DE
+		LD IXH,2
+.L1		LD D,IXH
+		LD E,MPAG			; включаем стандартной командой прошивки
+		CALL OUTPORT			; страницу на нгс для загрузки внутреннего плеера
+		LD A,IXH
+		CALL POKE_DE
+		INC IXH
+		LD A,IXH
+		CP IXL
+		JR C,.L1
+; вычитывание номеров страниц с проверкой
+		LD HL,VVARS.PAGES
+		LD D,H
+		LD E,L
+		INC DE
+		LD BC,0xFF
+		LD (HL),0
+		LDIR
+		CALL SET_DE
+		LD IXH,2
+.L4		LD D,IXH
+		LD E,MPAG			; включаем стандартной командой прошивки
+		CALL OUTPORT			; страницу на нгс для загрузки внутреннего плеера
+		CALL PEEK_DE
+		CP IXH
+		JR Z,.L6
+		LD H,HIGH (VVARS.PAGES)
+		LD L,A
+		INC (HL)
+.L6		INC IXH
+		LD A,IXH
+		CP IXL
+		JR C,.L4
+		LD HL,VVARS.PAGES
+.L7		INC (HL)
+		DEC (HL)
+		JR NZ,.L3
+		INC L
+		LD A,IXL
+		SUB L
+		JR NZ,.L7
+
+.L5		LD HL,TEST.OK
+		CALL PRINT_MSG
+		JR FIND_SD
+
+.L3		PUSH HL
+		LD HL,TEST.ERROR
+		CALL PRINT_MSG
+		POP HL
+.L8		INC (HL)
+		DEC (HL)
+		JR Z,.L9
+		LD A,L
+		PUSH HL
+		CALL PRIHEX
+		LD A,','
+		CALL PRINT_A_
+		POP HL
+.L9		INC L
+		JR NZ,.L8
+; поиск SD карты
+FIND_SD		CALL INSTSDD
+		JR Z,FIND_FAT
+		LD HL,TEST.SD_NOT_FOUND
+.L1		CALL PRINT_MSG
+		CALL START_COMSDG
+		DB 6
+		PUSH AF
+		LD HL,TEST.MP3CHIP
+		CALL PRINT_MSG
+		POP AF
+		AND %00001111
+		CP %00001111
+		JR Z,.L2
+		LD E,A
+		ADD A,A
+		ADD A,E
+		ADD A,A
+		ADD A,E
+		LD E,A
+		LD D,0
+		LD HL,MP3CHIPS
+		ADD HL,DE
+		CALL PRINT_MSG
+		JR END_TEST
+
+.L2		LD HL,TEST.MP3NONE
+		CALL PRINT_MSG
+END_TEST	CALL ANYKEY
+		CALL NANYKEY
+		JP RESTART
+
+; поиск FAT
+FIND_FAT	LD HL,TEST.SD_FOUND
+		CALL PRINT_MSG
+		CALL START_COMSDG
+		DB 0
+		LD HL,TEST.SD_NOT_INIT
+		JR NZ,FIND_SD.L1
+		LD HL,VVARS.BUFSEC
+		LD DE,0
+		LD BC,0
+		CALL START_COMSDG
+		DB 2
+		CALL CHECK_VOL
+		LD HL,TEST.VOL_NOT_FOUND
+		JP NZ,FIND_SD.L1
+		LD HL,TEST.FATTYPE
+		CALL PRINT_MSG
+		LD DE,5
+		LD HL,VVARS.BUFSEC + 0x36
+		LD A,'F'
+		CP (HL)
+		JR Z,.L1
+		LD HL,VVARS.BUFSEC + 0x52
+.L1		ADD HL,DE
+		LD (HL),0
+		SBC HL,DE
+		CALL PRINT_MSG
+		LD HL,TEST.NEWLINE
+		JR FIND_SD.L1
+
+CHECK_VOL	LD DE,0x01BE
+		LD IX,VVARS.BUFSEC
+		ADD IX,DE
+		LD BC,0x0400
+RD0HDD0		LD A,(IX + 0)
+		AND A
+		JR Z,RD0HDD1
+		CP 0x80
+		JR NZ,RD0HDD2
+RD0HDD1		LD A,(IX + 4)
+		CALL CP_RAZD
+		JR NZ,RD0HDD2
+		INC C
+RD0HDD2		LD DE,0x10
+		ADD IX,DE
+		DJNZ RD0HDD0
+		LD A,C
+		AND A
+		JP NZ,SCANMBR
+		LD IX,VVARS.BUFSEC
+		LD C,(IX+0x0D)
+		XOR A
+		LD E,A
+		LD B,8
+		RR C
+		ADC A,0
+		DJNZ $-4
+		DEC A
+		JR NZ,$+3
+		INC E
+		LD A,(IX+0x0E)
+		OR (IX+0x0F)
+		JR Z,$+3
+		INC E
+		LD A,(IX+0x13)
+		OR (IX+0x14)
+		JR NZ,$+3
+		INC E
+		LD A,(IX+0x20)
+		OR (IX+0x21)
+		OR (IX+0x22)
+		OR (IX+0x22)
+		JR NZ,$+3
+		INC E
+		LD A,(IX+0x15)
+		AND 0xF0
+		CP 0xF0
+		JR NZ,$+3
+		INC E
+		LD A,E
+		CP 4
+		RET
+
+SCANMBR		LD HL,VVARS.BUFSEC + 0x1BE + 8
+		LD E,(HL)
+		INC HL
+		LD D,(HL)
+		INC HL
+		LD C,(HL)
+		INC HL
+		LD B,(HL)
+		LD HL,VVARS.BUFSEC
+		CALL START_COMSDG
+		DB 2
+		RET
+
+CP_RAZD		LD E,1
+		CP 4
+		RET Z
+		CP 6
+		RET Z
+		CP 0x0E
+		RET Z
+		LD E,2
+		CP 0x0B
+		RET Z
+		CP 0x0C
+		RET Z
+		LD E,0
+		CP 1
+		RET
+
+; ждем нажатия кнопки
+ANYKEY
+	IFDEF _SPRINTER
+		EI
+	SPDSS DSSF.SCANKEY
+		JR Z,ANYKEY
+		RET
+	ELSE
+.L1		XOR A
+		IN A,(0xFE)
+		CPL
+		AND 0x1F
+		JR Z,.L1
+		RET
+	ENDIF
+
+; ждем отпускания кнопки
+NANYKEY
+	IFDEF _SPRINTER
+		EI
+	SPDSS DSSF.SCANKEY
+		JR NZ,NANYKEY
+		RET
+	ELSE
+.L1		XOR A
+		IN A,(0xFE)
+		CPL
+		AND 0x1F
+		JR NZ,.L1
+		RET
+	ENDIF
+
+SET_DE
+	OUT_GSDAT 0x88
+	OUT_GSCOM 0x18
+		CALL WC
+	OUT_GSDAT 0x88
+		CALL WD
+		RET
+
+POKE_DE
+	OUT_GSDAT_A
+	OUT_GSCOM 0x19
+		JR WC
+
+PEEK_DE
+	OUT_GSCOM 0x1A
+		CALL WC
+	IN_GSDAT
+		RET
+
+WRBYTE
+	OUT_GSDAT_A
+	OUT_GSCOM 0x16
+		CALL WC
+	OUT_GSDAT 0x88
+		CALL WD
+	OUT_GSDAT 0x88
+		CALL WD
+		RET
+
+RDBYTE
+	OUT_GSDAT 0x88
+	OUT_GSCOM 0x17
+		CALL WD
+	OUT_GSDAT 0x88
+		CALL WD
+	IN_GSDAT
+		RET
+
+; запись в порт NEOGS
+; вход: E-адрес порта, D-значение
+OUTPORT		LD A,E
+	OUT_GSDAT_A
+	OUT_GSCOM 0x10
+		CALL WC
+		LD A,D
+	OUT_GSDAT_A
+		JR WD
+
+; E-адрес порта для чтения
+INPORT		LD A,E
+	OUT_GSDAT_A
+	OUT_GSCOM 0x11
+		CALL WN
+	IN_GSDAT
+		RET
+
+WC		IN A,(GSCOM)
+		RRCA
+		JR C,WC
+		RET
+
+WD		IN A,(GSCOM)
+		RLCA
+		JR C,WD
+		RET
+
+WN		IN A,(GSCOM)
+		RLCA
+		JR NC,WN
+		RET
+
+; тест наличия GS/NeoGS
+FIND_NGS
+		LD B,0x30			; для определения наличия нгс используется
+						; команда 0x1D с параметром =0
+	OUT_GSDAT 0				; ждем ответа 0x30 прерываний
+	OUT_GSCOM 0x1D
+LOOP22		EI
+		HALT
+		DI
+		DEC B
+		JR Z,LOOP21			; счетчик обнулился, а может нгс висит?
+	IN_GSCOM				; ждем сброса команд бита
+		RRA
+		JR C,LOOP22
+	IN_GSDAT				; команд бит сбросился, читаем ответ из дата порта
+						; попытка получить флаговый байт с нгс
+	OUT_GSDAT 0				; при первом запуске команда 0xFF еще не пропатчена
+		LD B,0x30			; ждем ответа 0x30 прерываний
+	OUT_GSCOM 0xFF
+LOOP001		EI
+		HALT
+		DI
+		DEC B
+		JR Z,LOOP21			; счетчик обнулился, пробуем перезапустить нгс
+	IN_GSCOM
+		RRA
+		JR C,LOOP001
+		XOR A
+		RET				; нгс ответил на команду, подключаемся к внутреннему плееру
+
+; принудительный перезапуск NeoGS
+LOOP21
+	OUT_GSCTR M_DBIT			; полный сброс нгс
+		EI
+		HALT
+		HALT
+		DI
+	OUT_GSCOM 0xF3				; холодный перезапуск нгс прошивки
+		LD B,0x30			; ждем 0x30 прерываний
+LOOP25		EI
+		HALT
+		HALT
+		DI
+		DEC B
+		SCF
+		RET Z				; нет ответа, нет нгс
+	IN_GSCOM
+		RRA
+		JR C,LOOP25			; команд бит изменился, продолжаем
+		XOR A
+		RET
+
+NAME		DB "\x16\x08\x00\x17\x06Test NeoGS build "
+		TEXTDATE
+		DZ " \x0D"
+
+MP3CHIPS	DZ "VS1001"
+		DZ "VS1011"
+		DZ "VS1002"
+		DZ "VS1003"
+		DZ "VS1053"
+		DZ "VS1033"
+		DZ "VS1063"
+		DZ "VS1103"
+
+TEST
+.ALL_PAGE	DZ "\x16\x00\x02Всего страниц: 0x"
+.CURR_PAGE	DZ "\x16\x00\x03Текущая страница: "
+.NO_NGS		DZ "не найден"
+.NEWLINE	DZ "\x0D"
+.ERROR		DZ "Page error: "
+.OK		DZ "Pages ok\x0D"
+.FIND_NGS	DZ "\x16\x00\x01\x17\x07Определение NeoGS: "
+.SD_FOUND	DZ "SD карта найдена\x0D"
+.SD_NOT_FOUND	DZ "SD карты не найдена\x0D"
+.SD_NOT_INIT	DZ "SD карта не отвечает\x0D"
+.VOL_NOT_FOUND	DZ "Разделы не найдены\x0D"
+.FAT_NOT_FOUND	DZ "FAT не найден\x0D"
+.FOUND		DZ "найден\x0D"
+.FATTYPE	DZ "Тип FAT: "
+.MP3CHIP	DZ "MP3 чип: "
+.MP3NONE	DZ "не определен\x0D"
+.RESTART	DZ "\x16\x08\x17\x17\x42\"SPACE\" restart test"
+
+		include screen.a80
+ADR_DRIVER	include ngs_drv.a80
+
+FONT		binclude altstd.fnt
+
+VVARS
+ _INIT_VAR 0xA000
+ _SETVAR .BUFTSC,	0x200			; буфер адресов экрана
+ _SETVAR .PAGES,	0x100
+ _SETVAR .BUFSEC,	0x200
+ _SETVAR .PPOS_X,	BYTE
+ _SETVAR .PPOS_Y,	BYTE
+ _SETVAR .COLORSYM,	BYTE
+ _SETVAR .TEXT,		BYTE
