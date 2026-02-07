@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 11.12.2024 savelij
+; LAST UPDATE: 13.10.2025 savelij
 
 		include ../macros.a80
 		include ../ports_ngs.a80
@@ -303,7 +303,7 @@ COMHIGH		LD HL,COMINT_
 		LD L,A
 		JP (HL)
 
-WTDTL		IN A,(ZXSTAT)
+WTDTL:		IN A,(ZXSTAT)
 		AND 0x81
 		JR Z,WTDTL
 		IN A,(ZXDATRD)

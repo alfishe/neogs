@@ -11,8 +11,8 @@ call build.bat
 
 cd ..\create_update
 
-copy /B /Y ..\loader_ngs\loader_ngs.rom
-copy /B /Y ..\main_rom\neogs.rom
+copy /B /Y ..\loader_ngs\loader_ngs.rom loader_ngs.rom
+copy /B /Y ..\main_rom\neogs.rom neogs.rom
 addcrc loader_ngs.rom
 ren crc.bin loader.crc
 addcrc fpga.bin

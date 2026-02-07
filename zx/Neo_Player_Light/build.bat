@@ -5,6 +5,8 @@ if not exist tmp md tmp
 set path=%path%;d:\yad\svn\pentevo\tools\asl\bin\;d:\yad\svn\pentevo\tools\mhmt\
 set includes=d:\yad\svn\pentevo\rom\;make
 
+cls
+
 asl -U -L -x -olist tmp\play_on_ngs.lst -i %includes% play_on_ngs.a80 || goto error
 p2bin play_on_ngs.p tmp\play_on_ngs.rom -r $-$ -k || goto error
 

@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 11.12.2024 savelij
+; LAST UPDATE: 24.05.2025 savelij
 
 ; номера функций плеера
  INIT_VAR
@@ -77,9 +77,14 @@ SD_NOT_FOUND		EQU 0xEE		; SD карта не найдена
 FAT_NOT_FOUND		EQU 0xDD		; FAT не найден
 NEOGS_ERROR		EQU 0xCC		; NeoGS не найден, это GS
 FILES_NOT_FOUND		EQU 0xBB		; файлы не найдены
+START_PROGRESS		EQU 0x88		; код запущен, надо ждать
 PLAYER_OK		EQU 0x77		; плеер готов к работе
 
-; типы файлов
+; типы файлов, порядок должен соответствовать табличке F_EXT_VS10xx
  INIT_VAR 1
  SETVAR FILE_MOD
  SETVAR FILE_MP3
+ SETVAR FILE_WAV
+ SETVAR FILE_WMA
+ SETVAR FILE_MID
+ SETVAR FILE_OGG

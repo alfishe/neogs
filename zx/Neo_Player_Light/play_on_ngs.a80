@@ -77,6 +77,9 @@ FREQ24		EQU 3
 		ORG 0x8000
 START		DI
 		LD SP,ISTACK
+		LD A,START_PROGRESS
+		OUT (ZXDATWR),A
+		OUT (CLRCBIT),A				; сообщили спеку о результатах инита
 		CALL ALLRES				; сброс всех настроек
 		OUT (ZXDATWR),A
 		OUT (CLRCBIT),A				; сообщили спеку о результатах инита
@@ -86,11 +89,7 @@ START		DI
 		LD (MODLLEN),HL
 		JP CONTINUE_MOD
 
-F_EXT_VS1001
-F_EXT_VS1011	DZ "MODMP3"
-F_EXT_VS1003	DZ "MODMP3WAVWMAMID"
-F_EXT_VS1053	DZ "MODMP3WAVWMAMIDOGG"
-F_EXT_VS1063	DZ "MODMP3"
+		include exts_files.a80
 
 TABFUNC		DW INIT_SD				; 00 перезапуск SD
 		DW PREV_TRACK				; 01 предыдущий трек
@@ -825,8 +824,8 @@ PLAYMP3		LD A,(VAR_FLAGS)
 		BIT B_PLAY_STOP,A
 		RET Z
 		LD A,(VAR_FILE_TYPE)
-		CP FILE_MP3
-		RET NZ
+		CP FILE_MOD
+		RET Z
 ; только MP3
 		LD A,Nextsec
 		CALL COM_FAT
@@ -865,10 +864,10 @@ INIPLAY		PUSH BC
 		POP HL
 		LD (VAR_GETVTSL),HL
 		LD (VAR_FILE_TYPE),A
-		CP FILE_MP3
-		LD E,FREQ20				; 20 Мгц для играния MOD
-		JR NZ,.L2
-		LD E,FREQ12				; 12 Мгц для играния MP3
+		CP FILE_MOD
+		LD E,FREQ12				; 20 Мгц для играния MOD
+		JR Z,.L2
+		LD E,FREQ20				; 12 Мгц для играния MP3
 .L2		LD A,Freqnc
 		CALL COM__SD
 		LD HL,VAR_FLAGS
@@ -1117,8 +1116,8 @@ NXTMODR		LD A,(VAR_PAGE_PLAYER)
 		OUT (MPAG),A
 		CALL NEXT_TRACK
 		LD A,(VAR_FILE_TYPE)
-		CP FILE_MP3
-		JP NZ,LD_MOD
+		CP FILE_MOD
+		JP Z,LD_MOD
 		POP HL
 		JP OPROS
 
@@ -1145,8 +1144,8 @@ NXTMOD1		LD A,(VAR_PAGE_PLAYER)
 		CALL NEXT_TRACK
 ; продолжить играть MOD
 CONTINUE_MOD	LD A,(VAR_FILE_TYPE)
-		CP FILE_MP3
-		JR Z,OPROS
+		CP FILE_MOD
+		JR NZ,OPROS
 		LD A,(VAR_FLAGS)
 		BIT B_PLAY_STOP,A
 		JR Z,CONROM

@@ -1,5 +1,5 @@
 
-; LAST UPDATE 20.05.2025 savelij
+; LAST UPDATE 24.05.2025 savelij
 
 		include macros.a80
 		include ports_ngs.a80
@@ -120,7 +120,7 @@ RST_NGS_CODE					; запрос количества страниц памяти
 	OUT_GSCOM 0x23				; для определения в какую страницу плеер закидывать
 		CALL WC
 	IN_GSDAT
-		OR 0x3F
+		OR 0x0F
 		LD D,A
 		LD E,MPAG			; включаем стандартной командой прошивки
 		CALL OUTPORT			; страницу на нгс для загрузки внутреннего плеера
@@ -153,7 +153,6 @@ RST_NGS_CODE					; запрос количества страниц памяти
 	OUT_GSDAT HIGH (GSCOD)
 		EI
 		HALT
-		HALT
 		DI				; подождали 2 прерывания запуска кода
 LOOP13		LD A,7
 		CALL CLS			; очистили экран
@@ -161,11 +160,16 @@ LOOP13		LD A,7
 		LD HL,MESS20			; печать текста о поиске на SD карточке
 		CALL PRINT
 						; подаем команду проверки что на нгс крутится
-	OUT_GSDAT 0x1D
+.L2	OUT_GSDAT 0x1D
 	OUT_GSCOM 0x1F
+		EI
+		HALT
+		DI
 		LD B,0
 		CALL WAITGS			; ожидаем ответа покручивавая палочку
 	IN_GSDAT				; читаем ответ
+		CP START_PROGRESS
+		JR Z,.L2
 		CP 0x8B	
 		JP Z,RST_NGS_CODE		; если 0x8B то ответила стандартная прошивка
 		CP PLAYER_OK
@@ -255,8 +259,8 @@ NO_PRESS_KEY
 		POP AF
 		LD A,VARP_FILE_TYPE
 		CALL GET_VTS
-		CP FILE_MP3
-		JR NZ,LOOPM
+		CP FILE_MOD
+		JR Z,LOOPM
 ; продолжаем для MP3
 	DE_ADR_SCR 11,11
 		CALL READSEC			; время играния
@@ -282,9 +286,9 @@ LOOP14
 		LD B,A
 		LD A,VARP_FILE_TYPE
 		CALL GET_VTS
-		CP FILE_MP3
+		CP FILE_MOD
 		LD HL,MODCOM
-		JR NZ,LOOP14_1
+		JR Z,LOOP14_1
 		LD HL,MP3COM
 LOOP14_1	LD DE,4
 LOOP14_2	LD A,(HL)
@@ -405,11 +409,11 @@ WAITGS		LD E,B
 .L1		EI
 		HALT
 		DI
-		DEC C
-		JR NZ,.L1
 	IN_GSCOM
 		RRA
 		RET NC
+		DEC C
+		JR NZ,.L1
 		INC B
 		RES 2,B
 		JR WAITGS
@@ -480,8 +484,8 @@ DAT_VTS		CALL FGETVTS		; запрос флагового байта
 	DE_ADR_SCR 16,13
 		LD A,VARP_FILE_TYPE
 		CALL GET_VTS
-		CP FILE_MP3
-		RET NZ			; это MOD
+		CP FILE_MOD
+		RET Z			; это MOD
 		BIT B_ENABLE_TEMBR,H
 		LD A,'+'
 		JR NZ,.L1
@@ -851,7 +855,7 @@ MORDALL		LD HL,MESS1
 	SPBIOS BIOSF.LP_PRINT_ATR,32
 		POP BC		
 	ELSE ; SPRINTER
-		CP CYAN
+		CP 4
 		LD B,1	; BLUE
 		JR C,.L3
 		LD B,6	; YELLOW

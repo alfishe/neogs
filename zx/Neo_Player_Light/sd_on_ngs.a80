@@ -1,5 +1,5 @@
 
-; LAST UPDATE 17.05.2025 savelij
+; LAST UPDATE 23.05.2025 savelij
 
 ; SD & MP3 функции по номерам
  INIT_VAR
@@ -387,7 +387,7 @@ ZER2MP3		LD D,0x40
 		JR NZ,.L2
 		RET
 
-; SS_VER is 
+; SS_VER в битах 7-4
 TABL_CLOCK	DW 0x8000 + (14000000 / 2000)	; 0 for VS1001	(MA8201)	9B58
 		DW 0x8000 + (14000000 / 2000)	; 1 for VS1011	(MA8201A)	9B58
 		DW 0	; 2 for VS1002	; не поддерживается, не проверялся
@@ -409,11 +409,11 @@ SET_CLOCKF	LD A,(VAR_CHIP_TYPE)
 		INC HL
 		LD D,(HL)
 		LD HL,VS10XX_WRITE << 8 + SCI_CLOCKF;0x0202
-		JP COM_MP3			; установка частоты для декодера
+		CALL COM_MP3			; установка частоты для декодера
 
 ; ожидание готовности MP3 декодера
 DRQVS		IN A,(SSTAT)
-		RRA
+		RRA				; B_MDDRQ
 		JR NC,DRQVS			; дождались готовности декодера
 		RET
 
@@ -431,16 +431,26 @@ HARDMP3		CALL VOL_MOD			; заглушили громкость портов GS
 		CALL NOPER
 		LD A,M_MPXRS + M_SNCLR		; 0x84
 		OUT (SCTRL),A			; выдали сброс на декодер
-		CALL DRQVS
+;		CALL DRQVS
 		CALL SET_CLOCKF
 		LD A,(VAR_CHIP_TYPE)
+		PUSH AF
 		CP VS1001
 		LD HL,VS10XX_WRITE << 8 + SCI_BASS;0x0202
 		LD DE,%1000000000001000		; 0x8008
 		CALL Z,COM_MP3			; для VS1001 запись недокументированного пинка в
 						; недокументированный регистр, если
 						; биты 7-4 регистра статуса в нуле
-		LD E,1
+		LD HL,VS10XX_WRITE << 8 + SCI_MODE
+		LD DE,0
+		CALL COM_MP3
+		POP AF
+		CP VS1001
+		JR Z,.L1
+		LD HL,VS10XX_WRITE << 8 + SCI_AIADDR
+		LD DE,0
+		CALL COM_MP3
+.L1		LD E,1
 		JP FREQNC			; выставили частоту на NGS 12 МГц
 
 ; программный сброс MP3 декодера, рекомендуется вызывать перед каждым новым файлом, сбрасывает счетчик секунд
@@ -456,7 +466,6 @@ SOFTMP3		LD BC,MC_SEND
 		CALL COM_MP3
 		LD A,E
 		AND SCISTATUS.M_SS_VER
-		PUSH AF
 		LD HL,VS10XX_READ << 8 + SCI_MODE;0x0300
 		CALL COM_MP3			; читаем состояние MODE
 		LD A,SCIMODE.M_SM_RESET
@@ -469,11 +478,12 @@ SOFTMP3		LD BC,MC_SEND
 		LD E,A
 		LD A,(VAR_CHIP_TYPE)
 		CP VS1001
+		PUSH AF
 		JR Z,.L1
 		RES SCIMODE.B_SM_SDINEW,D	; отмена SPI modes
 .L1		LD HL,VS10XX_WRITE << 8 + SCI_MODE;0x0200
 		CALL COM_MP3			;даем команду софт-сброса
-		CALL DRQVS
+;		CALL DRQVS
 		CALL SET_CLOCKF
 		POP AF
 		LD HL,VS10XX_WRITE << 8 + SCI_BASS;0x0202
@@ -517,7 +527,9 @@ COM_MP3		CALL DRQVS
 		OUT (C),D
 		CALL NOPER
 		OUT (C),E			; записали в адрес декодера
-MP3_END		CALL NOPER
+MP3_END
+;		CALL NOPER
+		CALL DRQVS
 		LD A,M_MCNCS + M_SNCLR		; 0x82 снимаем выбор декодера
 		OUT (SCTRL),A
 		RET
