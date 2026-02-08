@@ -1,8 +1,8 @@
 
-;LAST UPDATE: 28.05.2021 savelij
+; LAST UPDATE: 08.02.2026 savelij
 	
-		include ../../../pentevo/rom/macros.a80
-		include vers.a80
+		include macros.a80
+		include ../vers.a80
 
 ADRWORK		EQU 0x8000
 UNPACKER	EQU 0X5B00
@@ -32,7 +32,7 @@ START0
 		RET
 
 DEPACK		include dec40.a80
-BINFLASHER	binclude flasher_pack.rom
+BINFLASHER	binclude ../tmp/flasher.pack
 EBINFLASHER
 
 		DUPL 0X100-LOW ($),0

@@ -1,18 +1,11 @@
 
-;LAST UPDATE: 28.05.2021 savelij
+; LAST UPDATE: 08.02.2026 savelij
 
-		include ../../../pentevo/rom/macros.a80
+		include macros.a80
 		include ports_ngs.a80
 		include vers.a80
 
-DDMMYY		EQU "28.05.20121"
-
-DD		EQU 28				;—ˆ‘‹Ž
-MM		EQU 5				;Œ…‘Ÿ–
-YY		EQU 21				;ƒŽ„
-DATA		EQU DD|MM<<5|YY<<9|0X8000	;‡€ŠŽ„ˆŽ‚€€Ÿ „€’€
-
-SM_LDT		EQU 0X54
+;SM_LDT		EQU 0X54
 ADR_PROGR	EQU 0X5800
 
 BUFTSC		EQU 0XB800
@@ -268,8 +261,10 @@ KENTER1		LD IX,UPDATE_NGS
 		DI
 		JP RESTARTUPD
 
-;‚›•Ž„ ˆ‡ Ž˜ˆ‚€‹œ™ˆŠ€
-KENTER4		LD HL,0
+; ¢ëå®¤ ¨§ ¯à®è¨¢ «ìé¨ª  á® á¡à®á®¬ NeoGS
+KENTER4		LD A,C_GRST
+		OUT (GSCTR),A
+		LD HL,0
 		PUSH HL
 		JP 0X3D2F
 
@@ -693,7 +688,7 @@ NGS_LOADER	binclude ../loader_ngs/loader_ngs.rom
 NGS_LOADERE
 
 		include window.a80
-CHARS		binclude altstd.bin
+CHARS		binclude make/altstd.bin
 		include flasher_data.a80
 
 TEXT_VERSUS
