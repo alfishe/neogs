@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 22.11.2025 savelij
+; LAST UPDATE: 08.08.2026 savelij
 
 ;‘’€‚‹…’‘ € …‘’ ‡ ‹…’€ FATALL
 ;……„ ‘‹‡‚€… ‚‡‹’€’, ‚ ‘›‘‹… ‡€’…‹… ‚›‡‚ “‘’€‚™€
@@ -79,6 +79,7 @@ NGSSDT		DW GSDINIT			; 00 ’ SD €’›
 		DW SDWRSIN			; 04 ‘€’ 1 ‘…’
 		DW SDWRMUL			; 05 ‘€’ "A" ‘…’‚
 		DW GETMP3TYPE			; 06
+		DW SETFREQ			; 07 γαβ ­®Άª  η αβ®βλ ­£α
 
 ;‡€‘ "A" ‘…’‚
 SDWRMUL		EX AF,AF'
@@ -150,6 +151,24 @@ SDRDSN2		CALL WN_
 		POP BC
 		POP DE
 		XOR A
+		RET
+
+SETFREQ		LD A,7
+		CALL COMM2SD
+		LD BC,GSDAT
+		LD A,0x77
+		OUT (GSCOM),A
+		CALL WN_
+		LD B,0
+.L1
+	REPT 4
+		NOP
+	ENDM
+		IN A,(C)
+		CP 0X77
+		RET Z;JR NZ,.L1
+		DJNZ .L1
+		SCF
 		RET
 
 GETMP3TYPE	LD A,6
@@ -370,6 +389,7 @@ TABLSDG		DW SDINITG			; 00 €€…’‚ … ’…“…’, € ‚›•„… A
 		DW OK_WORK;WRSING			; 04 ‘€’ 1 ‘…’
 		DW OK_WORK;WRMULG			; 05 ‘€’ "A" ‘…’‚
 		DW GET_CHIPTYPE			; 06
+		DW SET_FREQ			; 07
 
 GET_CHIPTYPE	CALL HARDMP3
 .L1		IN A,(ZXSTAT)
@@ -379,6 +399,9 @@ GET_CHIPTYPE	CALL HARDMP3
 		LD A,(MP3_CHIP_TYPE)
 		OUT (ZXDATWR),A
 		CALL WDN
+		JP OK_WORK
+
+SET_FREQ	CALL FREQNC
 		JP OK_WORK
 
 FREQNC		LD A,E
