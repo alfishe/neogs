@@ -22,7 +22,12 @@ env:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # Clean image: the runner's own git conflicts with the distro git-svn package
+    container: debian:stable-slim
     steps:
+      - name: Install git-svn
+        run: apt-get update -qq && apt-get install -y -qq git git-svn subversion ca-certificates
+
       - name: Checkout mirror
         uses: actions/checkout@v4
         with:
@@ -31,11 +36,9 @@ jobs:
           # Optional PAT with "workflow" scope; needed if GITHUB_TOKEN cannot push commits touching .github/workflows
           token: ${{ secrets.SYNC_TOKEN || github.token }}
 
-      - name: Install git-svn
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq git-svn subversion
-
       - name: Fetch SVN revisions
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git svn init "$SVN_URL"
           git svn fetch
 
