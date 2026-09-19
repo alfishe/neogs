@@ -1,0 +1,55 @@
+name: Sync from SVN
+
+# Mirrors svn://svn.nedopc.com/ngs (WebSVN: http://svn.nedopc.com/listing.php?repname=ngs)
+# The only non-SVN commit on master is the one that adds this workflow; it is
+# re-applied on top of the newest SVN revision after every sync.
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: svn-sync
+  cancel-in-progress: false
+
+env:
+  SVN_URL: svn://svn.nedopc.com/ngs
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mirror
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          # Optional PAT with "workflow" scope; needed if GITHUB_TOKEN cannot push commits touching .github/workflows
+          token: ${{ secrets.SYNC_TOKEN || github.token }}
+
+      - name: Install git-svn
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq git-svn subversion
+
+      - name: Fetch SVN revisions
+        run: |
+          git svn init "$SVN_URL"
+          git svn fetch
+
+      - name: Rebase local commits onto SVN tip and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          svn_tip=$(git rev-parse refs/remotes/git-svn)
+          if git merge-base --is-ancestor "$svn_tip" master; then
+            echo "Already up to date ($(git log -1 --format=%b "$svn_tip" | grep -o 'git-svn-id.*' || echo "$svn_tip"))"
+            exit 0
+          fi
+
+          base=$(git merge-base master refs/remotes/git-svn)
+          git rebase --onto refs/remotes/git-svn "$base" master
+          git push --force-with-lease=master:"$(git rev-parse origin/master)" origin master
