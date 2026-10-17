@@ -56,8 +56,8 @@ module GS_cpld(
 	input  wire        in_ramcs2_n,
 	input  wire        in_ramcs3_n,
 
-	output wire        out_ramcs0_n,
-	output wire        out_ramcs1_n,
+	output reg         out_ramcs0_n,
+	output reg         out_ramcs1_n,
 
 
 	output wire        ra6,  // some buffered memory addresses
@@ -287,8 +287,26 @@ module GS_cpld(
 
 	// memory CS'ing
 
-	assign out_ramcs0_n = disbl ? ( in_ramcs0_n & in_ramcs1_n ) : int_ramcs_n;
-	assign out_ramcs1_n = disbl ? ( in_ramcs2_n & in_ramcs3_n ) : 1'b1;
+//	assign out_ramcs0_n = disbl ? ( in_ramcs0_n & in_ramcs1_n ) : int_ramcs_n;
+//	assign out_ramcs1_n = disbl ? ( in_ramcs2_n & in_ramcs3_n ) : 1'b1;
+
+	always @*
+	if( !disbl )
+	begin
+		out_ramcs0_n = int_ramcs_n;
+		out_ramcs1_n = 1'b1;
+	end
+	else
+	case( {in_ramcs3_n, in_ramcs2_n, in_ramcs1_n, in_ramcs0_n} )
+		4'b1110: {out_ramcs1_n, out_ramcs0_n} = 2'b10;
+		4'b1101: {out_ramcs1_n, out_ramcs0_n} = 2'b10;
+		4'b1011: {out_ramcs1_n, out_ramcs0_n} = 2'b01;
+		4'b0111: {out_ramcs1_n, out_ramcs0_n} = 2'b01;
+		default: {out_ramcs1_n, out_ramcs0_n} = 2'b11;
+	endcase
+
+
+
 
 	assign mema19 = disbl ? ( in_ramcs0_n & in_ramcs2_n ) : 1'b0;
 

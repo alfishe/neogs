@@ -16,7 +16,7 @@
 // PROGRAM "Quartus II"
 // VERSION "Version 7.2 Build 207 03/18/2008 Service Pack 3 SJ Full Version"
 
-// DATE "01/17/2011 02:13:26"
+// DATE "10/17/2026 18:38:59"
 
 // 
 // Device: Altera EPM3064ATC100-10 Package TQFP100
@@ -194,10 +194,11 @@ wire \a13~2_dataout ;
 wire \int_cs~8_dataout ;
 wire \int_mema14~10_dataout ;
 wire \in_ramcs2_n~dataout ;
-wire \in_ramcs3_n~dataout ;
-wire \out_ramcs1_n~5_dataout ;
 wire \in_ramcs0_n~dataout ;
 wire \mema19~14_dataout ;
+wire \in_ramcs3_n~dataout ;
+wire \in_ramcs1_n~dataout ;
+wire \out_ramcs1_n~34_dataout ;
 wire \clk20in~dataout ;
 wire \clk|inst39~9_dataout ;
 wire \clk24in~dataout ;
@@ -216,8 +217,7 @@ wire \clk|inst38~23_dataout ;
 wire \clk|inst36~dataout ;
 wire \clk|inst37~dataout ;
 wire \clk|inst16|5~62_dataout ;
-wire \in_ramcs1_n~dataout ;
-wire \out_ramcs0_n~41_dataout ;
+wire \out_ramcs0_n~160_dataout ;
 wire \rd[1]~39_dataout ;
 wire \rd[2]~41_dataout ;
 wire \rd[3]~43_dataout ;
@@ -1448,44 +1448,6 @@ defparam \in_ramcs2_n~I .operation_mode = "input";
 defparam \in_ramcs2_n~I .weak_pull_up = "false";
 // synopsys translate_on
 
-// atom is at PIN_17
-max_io \in_ramcs3_n~I (
-	.datain(gnd),
-	.oe(gnd),
-	.dataout(\in_ramcs3_n~dataout ),
-	.padio(in_ramcs3_n));
-// synopsys translate_off
-defparam \in_ramcs3_n~I .bus_hold = "false";
-defparam \in_ramcs3_n~I .open_drain_output = "false";
-defparam \in_ramcs3_n~I .operation_mode = "input";
-defparam \in_ramcs3_n~I .weak_pull_up = "false";
-// synopsys translate_on
-
-// atom is at LC55
-max_mcell \out_ramcs1_n~5 (
-	.clk(gnd),
-	.aclr(gnd),
-	.pexpin(gnd),
-	.fpin(vcc),
-	.pterm0({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
-	.pterm1({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,\in_ramcs3_n~dataout ,\in_ramcs2_n~dataout }),
-	.pterm2({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,!\disbl~dataout }),
-	.pterm3({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
-	.pterm4({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
-	.pterm5({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
-	.pxor({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
-	.pclk({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
-	.pena({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc}),
-	.paclr({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
-	.papre({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
-	.dataout(\out_ramcs1_n~5_dataout ),
-	.pexpout());
-// synopsys translate_off
-defparam \out_ramcs1_n~5 .operation_mode = "normal";
-defparam \out_ramcs1_n~5 .output_mode = "comb";
-defparam \out_ramcs1_n~5 .pexp_mode = "off";
-// synopsys translate_on
-
 // atom is at PIN_13
 max_io \in_ramcs0_n~I (
 	.datain(gnd),
@@ -1522,6 +1484,57 @@ max_mcell \mema19~14 (
 defparam \mema19~14 .operation_mode = "normal";
 defparam \mema19~14 .output_mode = "comb";
 defparam \mema19~14 .pexp_mode = "off";
+// synopsys translate_on
+
+// atom is at PIN_17
+max_io \in_ramcs3_n~I (
+	.datain(gnd),
+	.oe(gnd),
+	.dataout(\in_ramcs3_n~dataout ),
+	.padio(in_ramcs3_n));
+// synopsys translate_off
+defparam \in_ramcs3_n~I .bus_hold = "false";
+defparam \in_ramcs3_n~I .open_drain_output = "false";
+defparam \in_ramcs3_n~I .operation_mode = "input";
+defparam \in_ramcs3_n~I .weak_pull_up = "false";
+// synopsys translate_on
+
+// atom is at PIN_14
+max_io \in_ramcs1_n~I (
+	.datain(gnd),
+	.oe(gnd),
+	.dataout(\in_ramcs1_n~dataout ),
+	.padio(in_ramcs1_n));
+// synopsys translate_off
+defparam \in_ramcs1_n~I .bus_hold = "false";
+defparam \in_ramcs1_n~I .open_drain_output = "false";
+defparam \in_ramcs1_n~I .operation_mode = "input";
+defparam \in_ramcs1_n~I .weak_pull_up = "false";
+// synopsys translate_on
+
+// atom is at LC55
+max_mcell \out_ramcs1_n~34 (
+	.clk(gnd),
+	.aclr(gnd),
+	.pexpin(gnd),
+	.fpin(vcc),
+	.pterm0({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,!\in_ramcs1_n~dataout }),
+	.pterm1({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,\in_ramcs3_n~dataout ,\in_ramcs2_n~dataout }),
+	.pterm2({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,!\in_ramcs3_n~dataout ,!\in_ramcs2_n~dataout }),
+	.pterm3({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,!\disbl~dataout }),
+	.pterm4({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,!\in_ramcs0_n~dataout }),
+	.pterm5({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
+	.pxor({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
+	.pclk({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
+	.pena({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc}),
+	.paclr({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
+	.papre({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
+	.dataout(\out_ramcs1_n~34_dataout ),
+	.pexpout());
+// synopsys translate_off
+defparam \out_ramcs1_n~34 .operation_mode = "normal";
+defparam \out_ramcs1_n~34 .output_mode = "comb";
+defparam \out_ramcs1_n~34 .pexp_mode = "off";
 // synopsys translate_on
 
 // atom is at PIN_90
@@ -1820,42 +1833,29 @@ defparam \clk|inst16|5~62 .output_mode = "comb";
 defparam \clk|inst16|5~62 .pexp_mode = "off";
 // synopsys translate_on
 
-// atom is at PIN_14
-max_io \in_ramcs1_n~I (
-	.datain(gnd),
-	.oe(gnd),
-	.dataout(\in_ramcs1_n~dataout ),
-	.padio(in_ramcs1_n));
-// synopsys translate_off
-defparam \in_ramcs1_n~I .bus_hold = "false";
-defparam \in_ramcs1_n~I .open_drain_output = "false";
-defparam \in_ramcs1_n~I .operation_mode = "input";
-defparam \in_ramcs1_n~I .weak_pull_up = "false";
-// synopsys translate_on
-
 // atom is at LC62
-max_mcell \out_ramcs0_n~41 (
+max_mcell \out_ramcs0_n~160 (
 	.clk(gnd),
 	.aclr(gnd),
 	.pexpin(gnd),
 	.fpin(vcc),
 	.pterm0({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
-	.pterm1({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,!\disbl~dataout ,\a15~dataout ,!memcfg[1]}),
-	.pterm2({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,!\a14~dataout ,!\disbl~dataout ,!\a15~dataout }),
-	.pterm3({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,\in_ramcs1_n~dataout ,\in_ramcs0_n~dataout ,\disbl~dataout }),
-	.pterm4({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
+	.pterm1({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,!\disbl~dataout ,\a15~dataout ,memcfg[1]}),
+	.pterm2({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,\a14~dataout ,!\disbl~dataout ,!\a15~dataout }),
+	.pterm3({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,\in_ramcs3_n~dataout ,\in_ramcs2_n~dataout ,\in_ramcs0_n~dataout ,!\in_ramcs1_n~dataout ,\disbl~dataout }),
+	.pterm4({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,\in_ramcs3_n~dataout ,\in_ramcs2_n~dataout ,!\in_ramcs0_n~dataout ,\in_ramcs1_n~dataout ,\disbl~dataout }),
 	.pterm5({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
 	.pxor({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
 	.pclk({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
 	.pena({vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc,vcc}),
 	.paclr({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
 	.papre({gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd,gnd}),
-	.dataout(\out_ramcs0_n~41_dataout ),
+	.dataout(\out_ramcs0_n~160_dataout ),
 	.pexpout());
 // synopsys translate_off
-defparam \out_ramcs0_n~41 .operation_mode = "normal";
-defparam \out_ramcs0_n~41 .output_mode = "comb";
-defparam \out_ramcs0_n~41 .pexp_mode = "off";
+defparam \out_ramcs0_n~160 .operation_mode = "invert";
+defparam \out_ramcs0_n~160 .output_mode = "comb";
+defparam \out_ramcs0_n~160 .pexp_mode = "off";
 // synopsys translate_on
 
 // atom is at LC37
@@ -2393,19 +2393,6 @@ defparam \mema14~I .operation_mode = "output";
 defparam \mema14~I .weak_pull_up = "false";
 // synopsys translate_on
 
-// atom is at PIN_71
-max_io \out_ramcs1_n~I (
-	.datain(\out_ramcs1_n~5_dataout ),
-	.oe(vcc),
-	.dataout(),
-	.padio(out_ramcs1_n));
-// synopsys translate_off
-defparam \out_ramcs1_n~I .bus_hold = "false";
-defparam \out_ramcs1_n~I .open_drain_output = "false";
-defparam \out_ramcs1_n~I .operation_mode = "output";
-defparam \out_ramcs1_n~I .weak_pull_up = "false";
-// synopsys translate_on
-
 // atom is at PIN_68
 max_io \mema19~I (
 	.datain(\mema19~14_dataout ),
@@ -2417,6 +2404,19 @@ defparam \mema19~I .bus_hold = "false";
 defparam \mema19~I .open_drain_output = "false";
 defparam \mema19~I .operation_mode = "output";
 defparam \mema19~I .weak_pull_up = "false";
+// synopsys translate_on
+
+// atom is at PIN_71
+max_io \out_ramcs1_n~I (
+	.datain(\out_ramcs1_n~34_dataout ),
+	.oe(vcc),
+	.dataout(),
+	.padio(out_ramcs1_n));
+// synopsys translate_off
+defparam \out_ramcs1_n~I .bus_hold = "false";
+defparam \out_ramcs1_n~I .open_drain_output = "false";
+defparam \out_ramcs1_n~I .operation_mode = "output";
+defparam \out_ramcs1_n~I .weak_pull_up = "false";
 // synopsys translate_on
 
 // atom is at PIN_96
@@ -2434,7 +2434,7 @@ defparam \clkout~I .weak_pull_up = "false";
 
 // atom is at PIN_83
 max_io \out_ramcs0_n~I (
-	.datain(\out_ramcs0_n~41_dataout ),
+	.datain(\out_ramcs0_n~160_dataout ),
 	.oe(vcc),
 	.dataout(),
 	.padio(out_ramcs0_n));
